@@ -1,50 +1,58 @@
 "use client";
 
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useEffect } from "react";
 import { Virtuoso } from "react-virtuoso";
 import PostCard from "../PostCard";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  setPosts,
+  setPostsLoading,
+  setPostsError,
+} from "@/lib/store/features/postsSlice";
 
 const PostFeed = () => {
-  const [posts, setPosts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const cursorRef = useRef<string | null>(null);
+  const dispatch = useDispatch();
+
+  const {
+    items: posts,
+    loading,
+    has_next: hasMore,
+    next_cursor,
+  } = useSelector((state: any) => state.posts);
 
   const fetchPosts = useCallback(async () => {
-    if (loading || !hasMore) return;
+    if (loading || (!hasMore && posts.length > 0)) return;
 
-    setLoading(true);
+    dispatch(setPostsLoading(true));
+
     try {
-      const cursorParam = cursorRef.current
-        ? `&cursor=${cursorRef.current}`
-        : "";
+      const cursorParam = next_cursor ? `&cursor=${next_cursor}` : "";
       const response = await fetch(`/api/feed/?limit=10${cursorParam}`);
       const data = await response.json();
-      const newItems = data.results || data;
 
-      if (Array.isArray(newItems) && newItems.length > 0) {
-        setPosts((prev) => {
-          const existingIds = new Set(prev.map((p) => p.id));
-          const uniqueNew = newItems.filter((p) => !existingIds.has(p.id));
-          return [...prev, ...uniqueNew];
-        });
-
-        cursorRef.current = newItems[newItems.length - 1].id;
-        if (newItems.length < 10) setHasMore(false);
+      if (response.ok) {
+        dispatch(
+          setPosts({
+            results: data.results,
+            next_cursor: data.next_cursor,
+            has_next: data.has_next,
+          }),
+        );
+        console.log(data);
       } else {
-        setHasMore(false);
+        dispatch(setPostsError(data.error || "Failed to fetch feed"));
       }
     } catch (err) {
       console.error("Feed error:", err);
-      setHasMore(false);
-    } finally {
-      setLoading(false);
+      dispatch(setPostsError("Failed to connect to server"));
     }
-  }, [loading, hasMore]);
+  }, [loading, hasMore, next_cursor, dispatch, posts.length]);
 
-  // Initial Load Trigger
+  // Initial Load
   useEffect(() => {
-    fetchPosts();
+    if (posts.length === 0) {
+      fetchPosts();
+    }
   }, []);
 
   return (
@@ -54,15 +62,20 @@ const PostFeed = () => {
         data={posts}
         endReached={fetchPosts}
         itemContent={(index, post) => (
-          <div className="">
+          <div className="pb-4">
             <PostCard post={post} index={index} />
           </div>
         )}
         components={{
           Footer: () => (
-            <div className="h-20 flex items-center justify-center">
+            <div className="h-24 flex items-center justify-center">
               {loading && (
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+              )}
+              {!hasMore && posts.length > 0 && (
+                <p className="text-muted-foreground text-sm">
+                  You've reached the end!
+                </p>
               )}
             </div>
           ),

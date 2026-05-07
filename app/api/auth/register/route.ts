@@ -5,9 +5,10 @@ const AUTH_API = process.env.NEXT_PUBLIC_AUTH_URL as string;
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, password, name, username, phone_no, dob, gender } = body;
+    const { email, password, full_name, username, phone_no, dob, gender } =
+      body;
 
-    if (!email || !password || !name) {
+    if (!email || !password || !full_name) {
       return NextResponse.json(
         { error: "Email, password, and name are required" },
         { status: 400 },
@@ -20,7 +21,7 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         email,
         password,
-        full_name: name,
+        full_name: full_name,
         username: username || email.split("@")[0],
         phone_no,
         dob,
@@ -29,14 +30,19 @@ export async function POST(request: NextRequest) {
     });
 
     if (!response.ok) {
-      const error = await response.json();
+      const errorData = await response.json();
+      console.error("DEBUG: Backend rejected request:", errorData);
       return NextResponse.json(
-        { error: error.message || error.detail || "Registration failed" },
+        {
+          error:
+            errorData.message || errorData.detail || JSON.stringify(errorData),
+        },
         { status: 400 },
       );
     }
 
     const data = await response.json();
+    console.log(data);
 
     return NextResponse.json({
       success: true,

@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
-import { Loader2, UserPlus } from "lucide-react";
-import { Button } from "./ui/button";
+import { Loader2 } from "lucide-react";
+import FollowToggle from "./FollowToggle";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -16,10 +16,11 @@ const FollowerList = () => {
       try {
         const res = await fetch("/api/followers");
         const data = await res.json();
-        setFollowers(data.followers || []);
+
+        setFollowers(data.followers || data || []);
         console.log(data);
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching followers:", err);
       } finally {
         setLoading(false);
       }
@@ -64,13 +65,15 @@ const FollowerList = () => {
                 </span>
               </div>
             </div>
-            <Button
-              variant="outline"
-              className="rounded-full border-primary text-primary hover:bg-primary hover:text-white gap-2 h-8 text-xs"
-            >
-              <UserPlus size={14} />
-              Follow Back
-            </Button>
+
+            {/* Reusable FollowToggle */}
+            <FollowToggle
+              userId={user.id}
+              // !! converts null/undefined/0/1 to strict booleans (true/false)
+              initialIsFollowed={!!user.is_followed}
+              username={user.username}
+              variant="button"
+            />
           </div>
         ))
       ) : (

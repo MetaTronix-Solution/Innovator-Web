@@ -41,7 +41,7 @@ const UserDropdown = ({
           </span>
         </div>
         <div className="border-t border-border mt-2 pt-2">
-          <button className="w-full flex items-center justify-center gap-2 py-2 text-sm font-semibold text-primary hover:bg-primary/10 rounded-md transition-colors">
+          <button className="w-full flex items-center justify-center gap-2 py-2 text-sm font-semibold text-foreground/80 hover:bg-primary/10 rounded-md transition-colors">
             <UserCircle size={18} /> See all profiles
           </button>
         </div>

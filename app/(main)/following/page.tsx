@@ -9,7 +9,6 @@ const NetworkPage = () => {
   const [tab, setTab] = useState<"following" | "followers">("following");
   const [counts, setCounts] = useState({ following: 0, followers: 0 });
 
-  // Fetch counts to display in the header regardless of which tab is active
   useEffect(() => {
     const fetchCounts = async () => {
       try {

@@ -11,8 +11,8 @@ export async function GET() {
     const response = await fetch(`${BACKEND_URL}/api/users/following/`, {
       method: "GET",
       headers: {
+        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
-        ...(token && { Authorization: `Bearer ${token}` }),
       },
       next: { revalidate: 60 },
     });
@@ -25,6 +25,7 @@ export async function GET() {
     }
 
     const data = await response.json();
+
     return NextResponse.json(data);
   } catch (error) {
     console.error("FOLLOWING_FETCH_ERROR:", error);

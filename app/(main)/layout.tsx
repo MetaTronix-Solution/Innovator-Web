@@ -16,12 +16,10 @@ export default function MainLayout({
     (state: any) => state.auth,
   );
   const router = useRouter();
-
   const { mode } = useSelector((state: RootState) => state.theme);
 
   useEffect(() => {
     const root = window.document.documentElement;
-
     if (mode === "light") {
       root.classList.add("light");
       root.classList.remove("dark");
@@ -46,18 +44,25 @@ export default function MainLayout({
   }
 
   return (
-    <div className="min-h-screen bg-background font-sans">
+    <div className="min-h-screen bg-background font-sans transition-colors duration-300">
       <Navbar />
 
-      <div className="max-w-[1440px] mx-auto px-4 md:px-8">
-        <div className="flex justify-between pt-4 gap-6 xl:gap-12">
-          <aside className="hidden xl:block w-[300px] sticky top-[72px] h-[calc(100vh-72px)] overflow-y-auto no-scrollbar">
+      {/* 2. Removed max-w limit to let the layout breathe, or increased it for ultra-wide screens */}
+      <div className="w-full mx-auto px-0 md:px-4 lg:px-8">
+        {/* 3. Changed justify-between to justify-center to keep the feed focused while sidebars fill the edges */}
+        <div className="flex justify-center pt-4 gap-4 xl:gap-8">
+          {/* Left Sidebar: Fixed width, disappears on smaller screens */}
+          <aside className="hidden xl:block w-[280px] 2xl:w-[320px] sticky top-[72px] h-[calc(100vh-72px)] overflow-y-auto no-scrollbar">
             <LeftSidebar />
           </aside>
 
-          <main className="flex-1 max-w-[680px] min-w-0">{children}</main>
+          {/* Main Feed: Takes remaining space but has a max-width for readability */}
+          <main className="w-full max-w-[680px] min-w-0 px-2 md:px-0">
+            {children}
+          </main>
 
-          <aside className="hidden lg:block w-[320px] sticky top-[72px] h-[calc(100vh-72px)] overflow-y-auto no-scrollbar">
+          {/* Right Sidebar: Fixed width, disappears on medium screens */}
+          <aside className="hidden lg:block w-[300px] 2xl:w-[350px] sticky top-[72px] h-[calc(100vh-72px)] overflow-y-auto no-scrollbar">
             <RightWidgets />
           </aside>
         </div>

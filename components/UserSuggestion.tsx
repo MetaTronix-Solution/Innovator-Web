@@ -8,6 +8,7 @@ import {
   Sparkles,
   ChevronDown,
   ChevronUp,
+  User, // Added User icon for fallback
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
@@ -24,7 +25,7 @@ interface SuggestedUser {
 const UserSuggestion = () => {
   const [users, setUsers] = useState<SuggestedUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const [displayLimit, setDisplayLimit] = useState(3); // Initial limit set to 3
+  const [displayLimit, setDisplayLimit] = useState(3);
   const router = useRouter();
 
   const INITIAL_LIMIT = 3;
@@ -60,7 +61,6 @@ const UserSuggestion = () => {
     if (isFullyExpanded) {
       setDisplayLimit(INITIAL_LIMIT);
     } else {
-      // Show all or increment by a set amount
       setDisplayLimit(users.length);
     }
   };
@@ -88,26 +88,32 @@ const UserSuggestion = () => {
             className="flex items-center justify-between p-3 transition-colors hover:bg-accent/40 cursor-pointer group"
           >
             <div className="flex items-center gap-3 min-w-0">
-              <div className="relative h-10 w-10 shrink-0">
-                <Image
-                  src={user.avatar || "/person.png"}
-                  alt={user.username}
-                  fill
-                  className="rounded-full object-cover border border-border group-hover:border-primary/50 transition-all shadow-sm"
-                  unoptimized
-                />
+              {/* Profile Image Container - Updated for perfect centering */}
+              <div className="relative h-10 w-10 shrink-0 rounded-full bg-muted border border-border flex items-center justify-center overflow-hidden group-hover:border-primary/50 transition-all shadow-sm">
+                {user.avatar && user.avatar !== "null" ? (
+                  <Image
+                    src={user.avatar}
+                    alt={user.username}
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
+                ) : (
+                  <User
+                    size={22}
+                    className="text-muted-foreground/60 block leading-none"
+                  />
+                )}
               </div>
+
               <div className="flex flex-col min-w-0">
                 <h4 className="text-sm font-bold text-foreground truncate tracking-tight">
                   {user.full_name || user.username}
                 </h4>
                 <div className="flex flex-col">
-                  <span className="text-[10px] text-primary/80 font-semibold uppercase leading-tight">
-                    {user.reason}
-                  </span>
                   <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
                     <Sparkles size={10} />
-                    <span>{user.mutual_count} mutual visionaries</span>
+                    <span>{user.mutual_count} mutual friends</span>
                   </div>
                 </div>
               </div>
@@ -119,11 +125,10 @@ const UserSuggestion = () => {
               className="h-8 px-3 rounded-full border-primary/20 hover:border-primary hover:bg-primary hover:text-white transition-all active:scale-95 shadow-sm"
               onClick={(e) => {
                 e.stopPropagation();
-                // Follow logic here
               }}
             >
               <UserPlus size={14} className="mr-1.5" />
-              <span className="text-xs font-bold">Connect</span>
+              <span className="text-xs font-bold">Follow</span>
             </Button>
           </div>
         ))}

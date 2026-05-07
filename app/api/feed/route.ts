@@ -1,4 +1,3 @@
-// app/api/feed/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
@@ -16,7 +15,6 @@ export async function GET(request: NextRequest) {
     if (!token)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    // REST call using cursor instead of offset
     const backendUrl = `${BASE_URL}/api/feed/?limit=${limit}${cursor ? `&cursor=${cursor}` : ""}`;
 
     const response = await fetch(backendUrl, {
@@ -25,13 +23,13 @@ export async function GET(request: NextRequest) {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-      // Using revalidate: 0 for feed data to prevent stale posts in infinite scroll
       next: { revalidate: 0 },
     });
 
     if (!response.ok) throw new Error("Backend unavailable");
 
     const data = await response.json();
+
     return NextResponse.json(data);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

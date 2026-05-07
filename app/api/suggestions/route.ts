@@ -25,7 +25,6 @@ export async function GET(request: Request) {
     }
 
     const data = await response.json();
-    // Return just the suggestions array to the client
     return NextResponse.json(data.suggestions || []);
   } catch (error) {
     return NextResponse.json(

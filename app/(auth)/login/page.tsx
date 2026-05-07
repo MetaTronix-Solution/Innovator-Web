@@ -8,7 +8,7 @@ import Image from "next/image";
 import { useDispatch, useSelector } from "react-redux";
 import { setCredentials, setLoading } from "@/lib/store/features/authSlice";
 import { RootState } from "@/lib/store/store";
-import { authService } from "@/services/authService";
+import { authService } from "@/lib/services/authService";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -48,6 +48,10 @@ export default function LoginPage() {
           token: data.access_token,
         }),
       );
+
+      console.log(data);
+
+      document.cookie = `accessToken=${data.access_token}; path='/'; max-age=${60 * 60 * 24}; SameSite=Lax`;
 
       if (rememberMe) {
         localStorage.setItem("rememberedEmail", email);

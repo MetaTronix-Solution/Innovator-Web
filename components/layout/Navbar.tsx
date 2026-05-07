@@ -16,10 +16,11 @@ import {
   Menu,
   X,
   LogOut,
+  User,
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { usePathname, useRouter } from "next/navigation";
-import { authService } from "@/services/authService";
+import { authService } from "@/lib/services/authService";
 import { logout } from "@/lib/store/features/authSlice";
 import { ThemeToggle } from "../ThemeToggle";
 import SearchBar from "../SearchBar";
@@ -68,11 +69,12 @@ const Navbar = () => {
   const { user } = useSelector((state: RootState) => state.auth);
 
   const getProfileImage = () => {
-    if (!user?.profile_image) return "/person.png";
+    if (!user?.profile_image || user?.profile_image === "null") return null;
     return user.profile_image.startsWith("http")
       ? user.profile_image
       : `${BASE_URL}${user.profile_image}`;
   };
+  const profileImage = getProfileImage();
 
   const handleLogout = async () => {
     try {
@@ -105,7 +107,6 @@ const Navbar = () => {
 
       <nav className="sticky top-0 z-50 w-full bg-card border-b border-border shadow-sm">
         <div className="max-w-[1440px] mx-auto px-4 md:px-8 flex items-center justify-between h-14">
-          {/* Left: Logo & Search */}
           <div className="flex items-center flex-1 gap-2">
             <div
               onClick={() => router.push("/")}
@@ -134,7 +135,6 @@ const Navbar = () => {
             ))}
           </div>
 
-          {/* Right: User Tools */}
           <div className="flex items-center justify-end flex-1 gap-1 md:gap-2">
             <div className="hidden sm:flex items-center gap-1 md:gap-2">
               <ThemeToggle />
@@ -142,25 +142,35 @@ const Navbar = () => {
               <IconButton icon={<Bell />} />
             </div>
 
-            {/* Profile Image */}
             <div ref={dropdownRef} className="relative shrink-0">
               <div
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="relative w-9 h-9 rounded-full overflow-hidden border border-border cursor-pointer active:scale-95 transition-transform"
+                className="relative w-9 h-9 rounded-full bg-muted border border-border cursor-pointer active:scale-95 transition-all flex items-center justify-center overflow-hidden shrink-0 p-0"
               >
-                <Image
-                  src={getProfileImage()}
-                  alt="Profile"
-                  fill
-                  className="object-cover"
-                  unoptimized
-                />
-                <div className="absolute -bottom-1 -right-1 p-0.5 bg-accent text-accent-foreground rounded-full border border-card">
-                  <ChevronDown size={10} />
+                {profileImage ? (
+                  <Image
+                    src={profileImage}
+                    alt={user?.username || "User profile"}
+                    fill
+                    className="rounded-full object-cover"
+                    unoptimized
+                  />
+                ) : (
+                  /* Nudge logic: If it still looks 1px too high, 
+         use 'translate-y-[1px]' to visually correct it.
+      */
+                  <User
+                    size={22}
+                    className="text-muted-foreground/60 block leading-none"
+                  />
+                )}
+
+                {/* Chevron Indicator */}
+                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-accent text-accent-foreground rounded-full border border-card flex items-center justify-center">
+                  <ChevronDown size={8} />
                 </div>
               </div>
 
-              {/* Dropdown Menu */}
               {isDropdownOpen && (
                 <UserDropdown
                   user={user}
