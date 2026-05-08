@@ -5,10 +5,10 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 // GET: Fetch single reel
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
-    const { id } = params;
+    const { id } = await context.params;
 
     const response = await fetch(`${BACKEND_URL}/api/reels/${id}`, {
       method: "GET",
@@ -39,10 +39,10 @@ export async function GET(
 // PUT: Update reel
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
-    const { id } = params;
+    const { id } = await context.params;
     const formData = await request.formData();
 
     const response = await fetch(`${BACKEND_URL}/api/reels/${id}`, {
@@ -72,10 +72,10 @@ export async function PUT(
 // PATCH: Partial update (optional)
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
-    const { id } = params;
+    const { id } = await context.params;
     const body = await request.json();
 
     const response = await fetch(`${BACKEND_URL}/api/reels/${id}`, {
@@ -108,10 +108,10 @@ export async function PATCH(
 // DELETE: Remove reel
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
-    const { id } = params;
+    const { id } = await context.params;
 
     const response = await fetch(`${BACKEND_URL}/api/reels/${id}`, {
       method: "DELETE",
