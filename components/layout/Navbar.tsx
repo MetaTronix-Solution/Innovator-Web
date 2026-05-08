@@ -114,9 +114,6 @@ const Navbar = () => {
             >
               I
             </div>
-            <div className="hidden lg:block w-full max-w-xs">
-              <SearchBar />
-            </div>
           </div>
 
           {/* Center: Desktop Navigation */}
@@ -137,7 +134,7 @@ const Navbar = () => {
 
           <div className="flex items-center justify-end flex-1 gap-1 md:gap-2">
             <div className="hidden sm:flex items-center gap-1 md:gap-2">
-              <ThemeToggle />
+              <SearchBar />
               <IconButton icon={<MessageCircle />} />
               <IconButton icon={<Bell />} />
             </div>
@@ -156,16 +153,12 @@ const Navbar = () => {
                     unoptimized
                   />
                 ) : (
-                  /* Nudge logic: If it still looks 1px too high, 
-         use 'translate-y-[1px]' to visually correct it.
-      */
                   <User
                     size={22}
                     className="text-muted-foreground/60 block leading-none"
                   />
                 )}
 
-                {/* Chevron Indicator */}
                 <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-accent text-accent-foreground rounded-full border border-card flex items-center justify-center">
                   <ChevronDown size={8} />
                 </div>
@@ -180,7 +173,6 @@ const Navbar = () => {
               )}
             </div>
 
-            {/* Mobile Menu Toggle */}
             <button
               className="md:hidden p-2 text-foreground relative z-50"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -190,7 +182,6 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* Mobile Menu Overlay */}
         {isMobileMenuOpen && (
           <div
             ref={menuRef}

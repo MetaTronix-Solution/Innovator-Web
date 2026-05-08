@@ -18,7 +18,6 @@ const FollowerList = () => {
         const data = await res.json();
 
         setFollowers(data.followers || data || []);
-        console.log(data);
       } catch (err) {
         console.error("Error fetching followers:", err);
       } finally {

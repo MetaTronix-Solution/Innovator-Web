@@ -5,7 +5,6 @@ export async function POST(request: NextRequest) {
   try {
     const { postId, type } = await request.json();
 
-    // 1. Get the token from the cookies set during login
     const cookieStore = await cookies();
     const token = cookieStore.get("accessToken")?.value;
 

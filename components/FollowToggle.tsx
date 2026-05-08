@@ -35,7 +35,6 @@ const FollowToggle = ({
 
     setIsLoading(true);
     try {
-      // Logic: if isFollowed is true, we are calling 'unfollow'. If false, 'follow'.
       await toggleFollowUser(userId, isFollowed);
       const newStatus = !isFollowed;
 

@@ -10,7 +10,6 @@ export default function SharePostModal({ isOpen, onClose, post }: any) {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // External share links
   const postUrl = `${window.location.origin}/post/${post.id}`;
   const shareText = encodeURIComponent(
     `Check out this post by ${post.username} on Innovator!`,
@@ -41,13 +40,9 @@ export default function SharePostModal({ isOpen, onClose, post }: any) {
   const fetchFollowers = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/followers"); // Use your internal Next.js route
+      const res = await fetch("/api/followers");
       const data = await res.json();
 
-      // Debugging: Look at your browser console to see the structure
-      console.log("Followers API Response:", data);
-
-      // Ensure we set an array to state
       if (Array.isArray(data)) {
         setFollowers(data);
       } else if (data.results && Array.isArray(data.results)) {
@@ -55,7 +50,7 @@ export default function SharePostModal({ isOpen, onClose, post }: any) {
       } else if (data.followers && Array.isArray(data.followers)) {
         setFollowers(data.followers);
       } else {
-        setFollowers([]); // Fallback to empty array to prevent the crash
+        setFollowers([]);
       }
     } catch (err) {
       toast.error("Failed to load followers");

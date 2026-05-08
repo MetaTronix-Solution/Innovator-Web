@@ -5,16 +5,17 @@ import Image from "next/image";
 import {
   Settings,
   HelpCircle,
-  Moon,
   LogOut,
   ChevronRight,
   UserCircle,
+  User,
 } from "lucide-react";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface UserDropdownProps {
   user: any;
   onLogout: () => void;
-  getProfileImage: () => string;
+  getProfileImage: () => string | null;
 }
 
 const UserDropdown = ({
@@ -22,19 +23,23 @@ const UserDropdown = ({
   onLogout,
   getProfileImage,
 }: UserDropdownProps) => {
+  const profileImage = getProfileImage();
   return (
     <div className="absolute top-12 right-0 w-[360px] bg-card border border-border shadow-2xl rounded-xl overflow-hidden z-[60] p-4 animate-in fade-in zoom-in-95 duration-200">
-      {/* Profile Section */}
       <div className="p-2 mb-2 rounded-lg shadow-md border border-border bg-background/50">
         <div className="flex items-center gap-3 p-2 hover:bg-accent rounded-md transition-colors cursor-pointer">
-          <div className="relative w-10 h-10 rounded-full overflow-hidden border border-border">
-            <Image
-              src={getProfileImage()}
-              alt="User"
-              fill
-              className="object-cover"
-              unoptimized
-            />
+          <div className="relative w-10 h-10 rounded-full overflow-hidden border border-border flex items-center justify-center">
+            {profileImage ? (
+              <Image
+                src={profileImage}
+                alt="User"
+                fill
+                className="object-cover"
+                unoptimized
+              />
+            ) : (
+              <User size={20} className="text-muted-foreground" />
+            )}
           </div>
           <span className="font-bold text-foreground">
             {user?.full_name || user?.username}
@@ -59,11 +64,7 @@ const UserDropdown = ({
           label="Help & support"
           hasArrow
         />
-        <MenuLink
-          icon={<Moon size={20} />}
-          label="Display & accessibility"
-          hasArrow
-        />
+        <MenuLink icon={<ThemeToggle />} label="Display & accessibility" />
 
         <div onClick={onLogout}>
           <MenuLink icon={<LogOut size={20} />} label="Log out" />
@@ -79,9 +80,10 @@ const MenuLink = ({ icon, label, sublabel, hasArrow, onClick }: any) => (
     className="flex items-center justify-between p-2 rounded-lg hover:bg-accent cursor-pointer transition-colors group"
   >
     <div className="flex items-center gap-3">
-      <div className="p-2 bg-secondary rounded-full group-hover:bg-secondary/80 transition-colors">
+      <div className="w-10 h-10 flex items-center justify-center bg-secondary rounded-full group-hover:bg-secondary/80 transition-colors shrink-0">
         {icon}
       </div>
+
       <div className="flex flex-col">
         <span className="text-sm font-semibold text-foreground">{label}</span>
         {sublabel && (

@@ -25,10 +25,10 @@ interface SuggestedUser {
 const UserSuggestion = () => {
   const [users, setUsers] = useState<SuggestedUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const [displayLimit, setDisplayLimit] = useState(3);
+  const [displayLimit, setDisplayLimit] = useState(5);
   const router = useRouter();
 
-  const INITIAL_LIMIT = 3;
+  const INITIAL_LIMIT = 5;
 
   useEffect(() => {
     const loadSuggestions = async () => {
@@ -88,7 +88,6 @@ const UserSuggestion = () => {
             className="flex items-center justify-between p-3 transition-colors hover:bg-accent/40 cursor-pointer group"
           >
             <div className="flex items-center gap-3 min-w-0">
-              {/* Profile Image Container - Updated for perfect centering */}
               <div className="relative h-10 w-10 shrink-0 rounded-full bg-muted border border-border flex items-center justify-center overflow-hidden group-hover:border-primary/50 transition-all shadow-sm">
                 {user.avatar && user.avatar !== "null" ? (
                   <Image

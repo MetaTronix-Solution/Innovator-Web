@@ -17,9 +17,7 @@ const FollowingList = () => {
         const res = await fetch("/api/following");
         const data = await res.json();
 
-        // Matches the data extraction logic from FollowerList
         setFollowings(data.following || data || []);
-        console.log(data);
       } catch (err) {
         console.error("Error fetching followings:", err);
       } finally {

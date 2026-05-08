@@ -64,8 +64,15 @@ export default function LoginPage() {
 
       router.push("/");
       router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+    } catch (err: any) {
+      console.error("Login Submission Error:", err);
+
+      const errorMessage =
+        err.response?.data?.message ||
+        err.message ||
+        "An unexpected error occurred. Please try again.";
+
+      setError(errorMessage);
     } finally {
       dispatch(setLoading(false));
     }

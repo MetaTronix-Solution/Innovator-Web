@@ -8,12 +8,12 @@ import {
   ThumbsUp,
   Repeat2,
   X,
-  Share2,
   Loader2,
   User,
   SendHorizontal,
   ChevronLeft,
   ChevronRight,
+  Send,
 } from "lucide-react";
 import { toast } from "sonner";
 import { repostPost } from "@/lib/services/postService";
@@ -36,10 +36,10 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
   const [newComment, setNewComment] = useState("");
   const [isLoadingComments, setIsLoadingComments] = useState(false);
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const dispatch = useDispatch();
 
-  // Carousel State
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -115,7 +115,6 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
   };
 
   const handleLike = async () => {
-    // 1. Determine if we are liking or unliking
     const isUnliking = post.current_user_reaction === "like";
     const newReaction = isUnliking ? null : "like";
 
@@ -138,14 +137,12 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        // If unauthorized (cookie expired), maybe redirect to login
         if (response.status === 401) {
           router.push("/login");
         }
         throw new Error(errorData.detail || "Failed to sync reaction");
       }
     } catch (error) {
-      // 3. Rollback Redux state if the API call fails
       dispatch(
         togglePostReaction({
           postId: post.id,
@@ -196,7 +193,6 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
   return (
     <>
       <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm mb-4 transition-all hover:shadow-md">
-        {/* Header */}
         <div className="p-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-full bg-muted border border-border flex items-center justify-center overflow-hidden shrink-0 relative">
@@ -234,18 +230,34 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
           </button>
         </div>
 
-        {/* Text Content */}
+        {/* Caption Section */}
         {(post.caption || post.content) && (
           <div className="px-4 pb-3">
-            <p className="text-[15px] text-foreground/90 leading-relaxed whitespace-pre-wrap">
-              {post.caption || post.content}
-            </p>
+            <div className="relative">
+              <p
+                className={`text-[15px] text-foreground/90 leading-relaxed whitespace-pre-wrap transition-all duration-300 ${
+                  !isExpanded ? "line-clamp-2" : ""
+                }`}
+              >
+                {post.caption || post.content}
+              </p>
+
+              {(post.caption || post.content).length > 100 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsExpanded(!isExpanded);
+                  }}
+                  className="text-primary hover:text-primary/80 text-sm font-semibold mt-1 transition-colors focus:outline-none"
+                >
+                  {isExpanded ? "Show less" : "more"}
+                </button>
+              )}
+            </div>
           </div>
         )}
 
-        {/* Media Section - UPDATED to handle both structures */}
         {(() => {
-          // 1. Check if we have a media array (posts with multiple media)
           if (post.media && post.media.length > 0) {
             return (
               <div className="w-full bg-muted/20 relative border-y border-border/40 group">
@@ -324,7 +336,6 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
             );
           }
 
-          // 2. Check for single video (reel structure)
           if (post.video) {
             const videoUrl = getMediaUrl(post.video);
             return (
@@ -342,7 +353,6 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
             );
           }
 
-          // 3. Check for single image/file (post structure)
           const singleMediaUrl = getMediaUrl(post.file || post.image_url);
           if (singleMediaUrl) {
             const isVideo = singleMediaUrl
@@ -377,7 +387,6 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
             );
           }
 
-          // 4. No media found
           return null;
         })()}
 
@@ -417,7 +426,7 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
             onClick={handleShare}
             className="p-2 hover:bg-accent rounded-full text-muted-foreground transition-all"
           >
-            <Share2 size={18} />
+            <Send size={18} />
           </button>
           <SharePostModal
             isOpen={isShareModalOpen}
@@ -426,7 +435,6 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
           />
         </div>
 
-        {/* Comments Drawer */}
         {showComments && (
           <div className="border-t border-border/50 bg-muted/5 animate-in fade-in slide-in-from-top-1 duration-200">
             <form
@@ -514,46 +522,114 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
 
       {/* Repost Modal */}
       {isRepostModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/60 backdrop-blur-md">
-          <div className="bg-card border border-border w-full max-w-lg rounded-[2rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/60 backdrop-blur-md animate-in fade-in duration-300">
+          <div
+            className="absolute inset-0"
+            onClick={() => setIsRepostModalOpen(false)}
+          />
+
+          <div className="bg-card border border-border w-full max-w-lg rounded-[2rem] shadow-2xl overflow-hidden relative z-[110] animate-in zoom-in-95 duration-300">
             <div className="px-6 py-4 border-b border-border/50 flex items-center justify-between">
               <h3 className="font-bold text-xl text-foreground">Repost</h3>
               <button
                 onClick={() => setIsRepostModalOpen(false)}
-                className="p-2 hover:bg-accent rounded-full text-muted-foreground"
+                className="p-2 hover:bg-accent rounded-full text-muted-foreground transition-colors"
               >
                 <X size={20} />
               </button>
             </div>
+
             <div className="p-6 space-y-5">
+              {/* User Input Section */}
               <div className="flex gap-4">
-                <div className="w-10 h-10 relative rounded-full bg-muted overflow-hidden shrink-0">
-                  {avatarUrl ? (
-                    <Image
-                      src={avatarUrl}
-                      alt="avatar"
-                      fill
-                      className="object-cover"
-                      unoptimized
-                    />
-                  ) : (
-                    <User size={24} className="m-2" />
-                  )}
+                <div className="w-10 h-10 relative rounded-full bg-muted border border-border overflow-hidden shrink-0">
+                  {/* Using a placeholder or actual user avatar if available in your global state */}
+                  <User size={20} className="m-2.5 text-muted-foreground" />
                 </div>
                 <textarea
                   autoFocus
-                  placeholder="Add your thoughts..."
-                  className="w-full bg-transparent resize-none text-foreground text-lg focus:outline-none min-h-[80px]"
+                  placeholder="Add your thoughts about this..."
+                  className="w-full bg-transparent resize-none text-foreground text-lg focus:outline-none min-h-[100px] py-1"
                   value={repostCaption}
                   onChange={(e) => setRepostCaption(e.target.value)}
                 />
               </div>
+
+              {/* Original Post Preview (The Quote) */}
+              <div className="ml-2 border border-border/60 rounded-2xl p-4 bg-muted/30 relative overflow-hidden group">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-5 h-5 rounded-full bg-muted border border-border relative overflow-hidden shrink-0">
+                    {post.avatar ? (
+                      <Image
+                        src={getMediaUrl(post.avatar)}
+                        alt={post.username}
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                    ) : (
+                      <User size={10} className="m-1 text-muted-foreground" />
+                    )}
+                  </div>
+                  <span className="text-xs font-bold text-foreground/80">
+                    @{post.username}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    • {formatRelativeTime(post.created_at)}
+                  </span>
+                </div>
+
+                <p className="text-sm text-foreground/70 line-clamp-2 leading-relaxed mb-3">
+                  {post.caption || post.content}
+                </p>
+
+                {/* Media Thumbnail Rendering */}
+                {(() => {
+                  const mediaUrl = post.video
+                    ? getMediaUrl(post.thumbnail)
+                    : getMediaUrl(
+                        post.media?.[0]?.file || post.file || post.image_url,
+                      );
+
+                  if (!mediaUrl) return null;
+
+                  return (
+                    <div className="relative w-full h-42 rounded-lg overflow-hidden border border-border/40 bg-black/5">
+                      <Image
+                        src={mediaUrl}
+                        alt="Original post thumbnail"
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                      {post.video && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                          <div className="bg-white/20 backdrop-blur-sm p-1.5 rounded-full">
+                            <svg
+                              className="w-4 h-4 text-white fill-current"
+                              viewBox="0 0 24 24"
+                            >
+                              <path d="M8 5v14l11-7z" />
+                            </svg>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Action Button */}
               <button
                 onClick={handleRepostSubmit}
                 disabled={isSubmitting || !repostCaption.trim()}
-                className="w-full bg-primary text-primary-foreground px-8 py-2.5 rounded-full font-bold transition-all flex items-center justify-center gap-2"
+                className="w-full bg-primary text-primary-foreground px-8 py-3 rounded-full font-bold transition-all flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] disabled:opacity-50"
               >
-                {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                {isSubmitting ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Send size={18} />
+                )}
                 {isSubmitting ? "Sharing..." : "Repost Now"}
               </button>
             </div>

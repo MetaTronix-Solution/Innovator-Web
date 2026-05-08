@@ -33,7 +33,6 @@ const NetworkPage = () => {
   return (
     <main className="flex-1 max-w-2xl mx-auto p-4">
       <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
-        {/* Innovator Header */}
         <div className="p-6 border-b border-border bg-gradient-to-r from-primary/5 to-transparent">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-primary/10 rounded-lg text-primary">
@@ -55,7 +54,6 @@ const NetworkPage = () => {
             />
           </div>
 
-          {/* Dynamic Description for both components */}
           <p className="text-xs text-muted-foreground mt-4 font-medium italic">
             {tab === "following"
               ? `Exploring ideas with ${counts.following} visionaries`
@@ -63,7 +61,6 @@ const NetworkPage = () => {
           </p>
         </div>
 
-        {/* Conditional List Rendering */}
         <div className="min-h-[300px]">
           {tab === "following" ? <FollowingList /> : <FollowerList />}
         </div>
