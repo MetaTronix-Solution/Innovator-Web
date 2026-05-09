@@ -2,6 +2,13 @@ import React from "react";
 import { Users, Bookmark, Video, Store } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+interface SidebarItemProps {
+  icon: React.ReactNode;
+  label: string;
+  onClick?: () => void;
+  bold?: boolean;
+}
+
 const LeftSidebar = () => {
   const router = useRouter();
 
@@ -37,7 +44,12 @@ const LeftSidebar = () => {
   );
 };
 
-const SidebarItem = ({ icon, label, onClick, bold = false }) => {
+const SidebarItem = ({
+  icon,
+  label,
+  onClick,
+  bold = false,
+}: SidebarItemProps) => {
   return (
     <div
       onClick={onClick}

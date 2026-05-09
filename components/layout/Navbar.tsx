@@ -28,6 +28,12 @@ import UserDropdown from "../UserDropdown";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
+interface NavItemProps {
+  icon: React.ReactElement<{ size?: number; strokeWidth?: number }>;
+  href: string;
+  active?: boolean;
+}
+
 const Navbar = () => {
   const router = useRouter();
   const pathname = usePathname();
@@ -204,9 +210,12 @@ const Navbar = () => {
                       : "hover:bg-accent"
                   }`}
                 >
-                  {React.cloneElement(link.icon as React.ReactElement, {
-                    size: 20,
-                  })}
+                  {React.cloneElement(
+                    link.icon as React.ReactElement<{ size?: number }>,
+                    {
+                      size: 20,
+                    },
+                  )}
                   <span className="font-medium">{link.label}</span>
                 </div>
               ))}
@@ -230,7 +239,7 @@ const Navbar = () => {
   );
 };
 
-const NavItem = ({ icon, href, active = false }) => {
+const NavItem = ({ icon, href, active = false }: NavItemProps) => {
   const router = useRouter();
 
   return (
@@ -250,7 +259,11 @@ const NavItem = ({ icon, href, active = false }) => {
   );
 };
 
-const IconButton = ({ icon }) => (
+interface IconButtonProps {
+  icon: React.ReactElement<{ size?: number }>;
+}
+
+const IconButton = ({ icon }: IconButtonProps) => (
   <div className="flex items-center justify-center w-8 h-8 md:w-10 md:h-10 bg-secondary text-secondary-foreground rounded-full cursor-pointer hover:bg-accent transition-colors border border-transparent active:scale-95">
     {React.cloneElement(icon, { size: 18 })}
   </div>

@@ -5,8 +5,28 @@ import { X, Copy, Send, Search } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
 
-export default function SharePostModal({ isOpen, onClose, post }: any) {
-  const [followers, setFollowers] = useState<any[]>([]);
+interface Follower {
+  id: string | number;
+  username: string;
+  full_name?: string;
+  avatar?: string;
+}
+
+interface SharePostModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  post: {
+    id: string | number;
+    username: string;
+  };
+}
+
+export default function SharePostModal({
+  isOpen,
+  onClose,
+  post,
+}: SharePostModalProps) {
+  const [followers, setFollowers] = useState<Follower[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
 
