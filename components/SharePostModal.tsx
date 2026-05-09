@@ -6,7 +6,7 @@ import Image from "next/image";
 import { toast } from "sonner";
 
 export default function SharePostModal({ isOpen, onClose, post }: any) {
-  const [followers, setFollowers] = useState([]);
+  const [followers, setFollowers] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
 

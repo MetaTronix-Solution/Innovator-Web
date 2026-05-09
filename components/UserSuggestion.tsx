@@ -8,7 +8,7 @@ import {
   Sparkles,
   ChevronDown,
   ChevronUp,
-  User, // Added User icon for fallback
+  User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";

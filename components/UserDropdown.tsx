@@ -18,6 +18,14 @@ interface UserDropdownProps {
   getProfileImage: () => string | null;
 }
 
+interface MenuLinkProps {
+  icon: React.ReactNode;
+  label: string;
+  sublabel?: string;
+  hasArrow?: boolean;
+  onClick?: () => void;
+}
+
 const UserDropdown = ({
   user,
   onLogout,
@@ -66,15 +74,23 @@ const UserDropdown = ({
         />
         <MenuLink icon={<ThemeToggle />} label="Display & accessibility" />
 
-        <div onClick={onLogout}>
-          <MenuLink icon={<LogOut size={20} />} label="Log out" />
-        </div>
+        <MenuLink
+          icon={<LogOut size={20} />}
+          label="Log out"
+          onClick={onLogout}
+        />
       </div>
     </div>
   );
 };
 
-const MenuLink = ({ icon, label, sublabel, hasArrow, onClick }: any) => (
+const MenuLink = ({
+  icon,
+  label,
+  sublabel,
+  hasArrow,
+  onClick,
+}: MenuLinkProps) => (
   <div
     onClick={onClick}
     className="flex items-center justify-between p-2 rounded-lg hover:bg-accent cursor-pointer transition-colors group"
