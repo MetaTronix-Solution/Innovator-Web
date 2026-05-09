@@ -93,11 +93,19 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
 
   const getMediaUrl = (url?: string): string => {
     if (!url || url === "" || url === "null") return "";
-    if (url.startsWith("http")) return url;
-    const cleanPath = url.startsWith("/") ? url : `/${url}`;
-    const result = `${BASE_URL}${cleanPath}`;
-    console.log("getMediaUrl:", { url, BASE_URL, result }); // ← add this
-    return result;
+
+    let fullUrl = url;
+    if (!url.startsWith("http")) {
+      const cleanPath = url.startsWith("/") ? url : `/${url}`;
+      fullUrl = `${BASE_URL}${cleanPath}`;
+    }
+
+    // Proxy HTTP urls through Next.js to avoid mixed content
+    if (fullUrl.startsWith("http://")) {
+      return `/api/media?url=${encodeURIComponent(fullUrl)}`;
+    }
+
+    return fullUrl;
   };
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
