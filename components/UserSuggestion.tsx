@@ -30,6 +30,14 @@ const UserSuggestion = () => {
 
   const INITIAL_LIMIT = 5;
 
+  const getMediaUrl = (url?: string | null): string => {
+    if (!url || url === "null") return "";
+    if (url.startsWith("http://")) {
+      return `/api/media?url=${encodeURIComponent(url)}`;
+    }
+    return url;
+  };
+
   useEffect(() => {
     const loadSuggestions = async () => {
       try {
@@ -91,7 +99,7 @@ const UserSuggestion = () => {
               <div className="relative h-10 w-10 shrink-0 rounded-full bg-muted border border-border flex items-center justify-center overflow-hidden group-hover:border-primary/50 transition-all shadow-sm">
                 {user.avatar && user.avatar !== "null" ? (
                   <Image
-                    src={user.avatar}
+                    src={getMediaUrl(user.avatar)}
                     alt={user.username}
                     fill
                     className="object-cover"

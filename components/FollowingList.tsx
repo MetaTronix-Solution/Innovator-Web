@@ -27,9 +27,16 @@ const FollowingList = () => {
     fetchFollowings();
   }, []);
 
-  const getImageUrl = (path: string) => {
-    if (!path) return "/google.png";
-    return path.startsWith("http") ? path : `${BASE_URL}${path}`;
+  const getImageUrl = (path?: string) => {
+    if (!path || path === "null") return "/google.png";
+
+    const url = path.startsWith("http") ? path : `${BASE_URL}${path}`;
+
+    if (url.startsWith("http://")) {
+      return `/api/media?url=${encodeURIComponent(url)}`;
+    }
+
+    return url;
   };
 
   if (loading)

@@ -17,10 +17,17 @@ const CreatePostBox = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const getProfileImage = () => {
-    if (!user?.profile_image) return null;
-    return user.profile_image.startsWith("http")
+    if (!user?.profile_image || user.profile_image === "null") return null;
+
+    const url = user.profile_image.startsWith("http")
       ? user.profile_image
       : `${BASE_URL}${user.profile_image}`;
+
+    if (url.startsWith("http://")) {
+      return `/api/media?url=${encodeURIComponent(url)}`;
+    }
+
+    return url;
   };
 
   const profileImage = getProfileImage();
