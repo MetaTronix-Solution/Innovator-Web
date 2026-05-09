@@ -13,16 +13,17 @@ export const authOptions: NextAuthOptions = {
     signIn: "/login",
     error: "/login",
   },
+  session: { strategy: "jwt", maxAge: 24 * 60 * 60 },
+  secret: process.env.AUTH_SECRET,
   callbacks: {
     async signIn({ user, account, profile }) {
       if (account?.provider === "google") {
         try {
-          // Controller to prevent the 10s hang you saw in logs
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 5000);
 
           const response = await fetch(
-            `http://182.93.94.220:8010/api/auth/sso/google/`,
+            `${process.env.DJANGO_API_URL}/api/auth/sso/google/`,
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -40,49 +41,52 @@ export const authOptions: NextAuthOptions = {
           clearTimeout(timeoutId);
 
           if (!response.ok) {
-            console.error("Django rejected the Google login.");
+            console.error("Backend rejected Google login:", response.status);
             return false;
           }
 
           const data: LoginResponse = await response.json();
 
-          // Attach backend data to the user object for the JWT callback
           user.accessToken = data.access_token;
           user.refreshToken = data.refresh_token;
-          user.user = data.user;
+          user.tokenType = data.token_type;
+          user.expiresIn = data.expires_in;
+          user.userData = data.user;
+
           return true;
         } catch (error: any) {
           if (error.name === "AbortError") {
-            console.error("Critical: Django backend timed out.");
+            console.error("Backend timed out.");
           } else {
-            console.error("Google OAuth Bridge Error:", error);
+            console.error("Google SSO error:", error);
           }
-          return false; // Triggers AccessDenied
+          return false;
         }
       }
       return true;
     },
 
     async jwt({ token, user }) {
+      // user is only defined on first sign-in
       if (user) {
-        return {
-          ...token,
-          accessToken: user.accessToken,
-          refreshToken: user.refreshToken,
-          user: user.user,
-        };
+        token.accessToken = user.accessToken;
+        token.refreshToken = user.refreshToken;
+        token.tokenType = user.tokenType;
+        token.expiresIn = user.expiresIn;
+        token.userData = user.userData;
+        token.accessTokenExpiry = Date.now() + (user.expiresIn ?? 0) * 1000;
       }
       return token;
     },
 
     async session({ session, token }) {
-      session.user = token.user as any;
-      session.accessToken = token.accessToken as string;
+      if (token.userData) session.user = token.userData as any;
+      if (token.accessToken) session.accessToken = token.accessToken;
+      if (token.tokenType) session.tokenType = token.tokenType;
+      if (token.error) session.error = token.error;
       return session;
     },
   },
-  session: { strategy: "jwt", maxAge: 24 * 60 * 60 },
-  secret: process.env.AUTH_SECRET,
 };
 
 const handler = NextAuth(authOptions);

@@ -1,11 +1,12 @@
-import { User } from "./auth";
+import type { DefaultSession } from "next-auth";
+import type { BackendUser } from "@/types/auth";
 
 declare module "next-auth" {
-  interface Session {
-    user: User;
-    accessToken: string;
-    tokenType: string;
+  interface Session extends DefaultSession {
+    accessToken?: string;
+    tokenType?: string;
     error?: string;
+    user: BackendUser;
   }
 
   interface User {
@@ -13,18 +14,18 @@ declare module "next-auth" {
     refreshToken?: string;
     tokenType?: string;
     expiresIn?: number;
-    user?: User;
+    userData?: BackendUser;
   }
 }
 
 declare module "next-auth/jwt" {
   interface JWT {
-    accessToken: string;
-    refreshToken: string;
-    tokenType: string;
-    expiresIn: number;
-    user: User;
-    accessTokenExpiry: number;
+    accessToken?: string;
+    refreshToken?: string;
+    tokenType?: string;
+    expiresIn?: number;
+    userData?: BackendUser;
+    accessTokenExpiry?: number;
     error?: string;
   }
 }
