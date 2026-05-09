@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, ShieldCheck, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
-export default function VerifyOtpPage() {
+function VerifyOtpForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -28,7 +28,6 @@ export default function VerifyOtpPage() {
       });
 
       const data = await res.json();
-
       if (!res.ok) throw new Error(data.error);
 
       router.push(
@@ -107,5 +106,19 @@ export default function VerifyOtpPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function VerifyOtpPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen flex items-center justify-center bg-background">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </main>
+      }
+    >
+      <VerifyOtpForm />
+    </Suspense>
   );
 }

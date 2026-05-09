@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, Lock, Eye, EyeOff, CheckCircle2 } from "lucide-react";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
-export default function ResetPasswordPage() {
+// Inner component that uses useSearchParams
+function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -41,16 +41,11 @@ export default function ResetPasswordPage() {
       const res = await fetch("/api/auth/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          password: password,
-          confirmPassword: confirmPassword,
-        }),
+        body: JSON.stringify({ password, confirmPassword }),
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-
-      console.log(data);
 
       setIsSuccess(true);
       setTimeout(() => router.push("/login"), 3000);
@@ -147,5 +142,20 @@ export default function ResetPasswordPage() {
         </form>
       </div>
     </main>
+  );
+}
+
+// Outer page wraps with Suspense
+export default function ResetPasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen flex items-center justify-center bg-background">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </main>
+      }
+    >
+      <ResetPasswordForm />
+    </Suspense>
   );
 }
