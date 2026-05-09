@@ -49,8 +49,6 @@ export default function LoginPage() {
         }),
       );
 
-      console.log(data);
-
       document.cookie = `accessToken=${data.access_token}; path='/'; max-age=${60 * 60 * 24}; SameSite=Lax`;
 
       if (rememberMe) {

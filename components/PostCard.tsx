@@ -84,11 +84,20 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
     }
   };
 
+  // const getMediaUrl = (url?: string): string => {
+  //   if (!url || url === "" || url === "null") return "";
+  //   if (url.startsWith("http")) return url;
+  //   const cleanPath = url.startsWith("/") ? url : `/${url}`;
+  //   return `${BASE_URL}${cleanPath}`;
+  // };
+
   const getMediaUrl = (url?: string): string => {
     if (!url || url === "" || url === "null") return "";
     if (url.startsWith("http")) return url;
     const cleanPath = url.startsWith("/") ? url : `/${url}`;
-    return `${BASE_URL}${cleanPath}`;
+    const result = `${BASE_URL}${cleanPath}`;
+    console.log("getMediaUrl:", { url, BASE_URL, result }); // ← add this
+    return result;
   };
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
