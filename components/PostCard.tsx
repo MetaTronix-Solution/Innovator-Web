@@ -22,6 +22,7 @@ import FollowToggle from "./FollowToggle";
 import SharePostModal from "./SharePostModal";
 import { useDispatch } from "react-redux";
 import { togglePostReaction } from "@/lib/store/features/postsSlice";
+import { useRouter } from "next/navigation";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -39,6 +40,7 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const dispatch = useDispatch();
+  const router = useRouter();
 
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
