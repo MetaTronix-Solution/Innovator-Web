@@ -138,3 +138,17 @@
     scrollbar-width: none;
   }
 }
+
+@keyframes ping-once {
+  0% {
+    transform: scale(0.8);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+}
+.animate-ping-once {
+  animation: ping-once 0.5s ease-out forwards;
+}

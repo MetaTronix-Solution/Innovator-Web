@@ -11,6 +11,7 @@ import {
   User,
 } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
+import { useRouter } from "next/navigation";
 
 interface UserDropdownProps {
   user: any;
@@ -32,10 +33,18 @@ const UserDropdown = ({
   getProfileImage,
 }: UserDropdownProps) => {
   const profileImage = getProfileImage();
+  const router = useRouter();
+
+  const handleViewProfile = () => {
+    router.push("/me");
+  };
   return (
     <div className="absolute top-12 right-0 w-[360px] bg-card border border-border shadow-2xl rounded-xl overflow-hidden z-[60] p-4 animate-in fade-in zoom-in-95 duration-200">
       <div className="p-2 mb-2 rounded-lg shadow-md border border-border bg-background/50">
-        <div className="flex items-center gap-3 p-2 hover:bg-accent rounded-md transition-colors cursor-pointer">
+        <div
+          onClick={handleViewProfile}
+          className="flex items-center gap-3 p-2 hover:bg-accent rounded-md transition-colors cursor-pointer"
+        >
           <div className="relative w-10 h-10 rounded-full overflow-hidden border border-border flex items-center justify-center">
             {profileImage ? (
               <Image
@@ -46,21 +55,18 @@ const UserDropdown = ({
                 unoptimized
               />
             ) : (
-              <User size={20} className="text-muted-foreground" />
+              <User
+                size={20}
+                className="bg-secondary text-secondary-foreground"
+              />
             )}
           </div>
           <span className="font-bold text-foreground">
             {user?.full_name || user?.username}
           </span>
         </div>
-        <div className="border-t border-border mt-2 pt-2">
-          <button className="w-full flex items-center justify-center gap-2 py-2 text-sm font-semibold text-foreground/80 hover:bg-primary/10 rounded-md transition-colors">
-            <UserCircle size={18} /> See all profiles
-          </button>
-        </div>
       </div>
 
-      {/* Menu Links */}
       <div className="space-y-1">
         <MenuLink
           icon={<Settings size={20} />}
@@ -96,7 +102,7 @@ const MenuLink = ({
     className="flex items-center justify-between p-2 rounded-lg hover:bg-accent cursor-pointer transition-colors group"
   >
     <div className="flex items-center gap-3">
-      <div className="w-10 h-10 flex items-center justify-center bg-secondary rounded-full group-hover:bg-secondary/80 transition-colors shrink-0">
+      <div className="w-10 h-10 flex items-center justify-center bg-secondary text-secondary-foreground rounded-full group-hover:bg-secondary/80 transition-colors shrink-0">
         {icon}
       </div>
 

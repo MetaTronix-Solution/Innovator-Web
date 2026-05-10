@@ -148,7 +148,7 @@ const Navbar = () => {
             <div ref={dropdownRef} className="relative shrink-0">
               <div
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="relative w-9 h-9 rounded-full bg-muted border border-border cursor-pointer active:scale-95 transition-all flex items-center justify-center overflow-hidden shrink-0 p-0"
+                className="relative w-9 h-9 rounded-full bg-secondary text-secondary-foreground border border-border cursor-pointer active:scale-95 transition-all flex items-center justify-center overflow-hidden shrink-0 p-0"
               >
                 {profileImage ? (
                   <Image
@@ -161,7 +161,7 @@ const Navbar = () => {
                 ) : (
                   <User
                     size={22}
-                    className="text-muted-foreground/60 block leading-none"
+                    className="bg-secondary text-secondary-foreground block leading-none"
                   />
                 )}
 

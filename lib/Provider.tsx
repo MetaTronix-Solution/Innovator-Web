@@ -1,31 +1,52 @@
+// lib/Provider.tsx
 "use client";
 
-import { SessionProvider } from "next-auth/react";
+import { SessionProvider, useSession } from "next-auth/react";
 import React, { useEffect } from "react";
 import { Provider, useDispatch } from "react-redux";
 import { store } from "./store/store";
 import { setCredentials, setInitialized } from "./store/features/authSlice";
 
-// This internal component has access to dispatch
 function AuthHydrator({ children }: { children: React.ReactNode }) {
   const dispatch = useDispatch();
+  const { data: session, status } = useSession();
 
   useEffect(() => {
-    const savedToken = localStorage.getItem("token");
-    const savedUser = localStorage.getItem("user");
+    if (status === "loading") return;
 
-    if (savedToken && savedUser) {
+    console.log("Auth status:", status);
+    console.log("Session data:", session);
+
+    if (status === "authenticated" && session?.accessToken) {
+      console.log("User from session:", session.user);
+      console.log("Access token:", session.accessToken);
+
+      // Coming from Google OAuth — session has the token
       dispatch(
         setCredentials({
-          token: savedToken,
-          user: JSON.parse(savedUser),
+          token: session.accessToken,
+          user: session.user,
         }),
       );
     } else {
-      // Crucial: Tell the app we looked, and there's nobody here.
-      dispatch(setInitialized());
+      // Fall back to localStorage for email/password login
+      const savedToken = localStorage.getItem("token");
+      const savedUser = localStorage.getItem("user");
+      console.log("localStorage token:", savedToken);
+      console.log("localStorage user:", savedUser);
+
+      if (savedToken && savedUser) {
+        dispatch(
+          setCredentials({
+            token: savedToken,
+            user: JSON.parse(savedUser),
+          }),
+        );
+      } else {
+        dispatch(setInitialized());
+      }
     }
-  }, [dispatch]);
+  }, [status, session, dispatch]);
 
   return <>{children}</>;
 }

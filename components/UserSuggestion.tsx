@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import { useSelector } from "react-redux";
 
 interface SuggestedUser {
   user_id: string;
@@ -28,6 +29,8 @@ const UserSuggestion = () => {
   const [displayLimit, setDisplayLimit] = useState(5);
   const router = useRouter();
 
+  const token = useSelector((state: any) => state.auth.token);
+
   const INITIAL_LIMIT = 5;
 
   const getMediaUrl = (url?: string | null): string => {
@@ -39,6 +42,8 @@ const UserSuggestion = () => {
   };
 
   useEffect(() => {
+    if (!token) return; // wait until token is available
+
     const loadSuggestions = async () => {
       try {
         const token = localStorage.getItem("accessToken");
@@ -60,7 +65,7 @@ const UserSuggestion = () => {
       }
     };
     loadSuggestions();
-  }, []);
+  }, [token]);
 
   const visibleUsers = users.slice(0, displayLimit);
   const isFullyExpanded = displayLimit >= users.length;

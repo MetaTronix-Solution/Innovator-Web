@@ -42,26 +42,33 @@ export default function CreatePostModal({
   );
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Fetch categories whenever modal opens
   useEffect(() => {
-    if (isOpen && initialFile) {
-      const fetchCategories = async () => {
-        try {
-          const response = await fetch("/api/categories");
-          if (response.ok) {
-            const data = await response.json();
-            setCategories(Array.isArray(data) ? data : data.results || []);
-          }
-          const url = URL.createObjectURL(initialFile);
+    if (!isOpen) return;
 
-          setMediaFiles([initialFile]);
-          setPreviews([url]);
-        } catch (err) {
-          console.error("Failed to fetch categories", err);
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch("/api/categories");
+        if (response.ok) {
+          const data = await response.json();
+          setCategories(Array.isArray(data) ? data : data.results || []);
         }
-      };
-      fetchCategories();
-    }
+      } catch (err) {
+        console.error("Failed to fetch categories", err);
+      }
+    };
+
+    fetchCategories();
   }, [isOpen]);
+
+  // Handle initialFile separately
+  useEffect(() => {
+    if (!isOpen || !initialFile) return;
+
+    const url = URL.createObjectURL(initialFile);
+    setMediaFiles([initialFile]);
+    setPreviews([url]);
+  }, [isOpen, initialFile]);
 
   useEffect(() => {
     return () => previews.forEach((url) => URL.revokeObjectURL(url));
@@ -110,10 +117,10 @@ export default function CreatePostModal({
     const formData = new FormData();
     formData.append("content", content);
 
-    formData.append("categories", selectedCategoryId);
+    formData.append("category_ids", selectedCategoryId);
 
     mediaFiles.forEach((file) => {
-      formData.append("media", file);
+      formData.append("uploaded_media", file);
     });
 
     try {

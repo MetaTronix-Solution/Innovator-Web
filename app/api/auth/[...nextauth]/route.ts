@@ -16,6 +16,10 @@ export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt", maxAge: 24 * 60 * 60 },
   secret: process.env.AUTH_SECRET,
   callbacks: {
+    async redirect({ url, baseUrl }) {
+      return `${baseUrl}/`;
+    },
+
     async signIn({ user, account, profile }) {
       if (account?.provider === "google") {
         try {
@@ -23,13 +27,13 @@ export const authOptions: NextAuthOptions = {
           const timeoutId = setTimeout(() => controller.abort(), 5000);
 
           const response = await fetch(
-            `${process.env.DJANGO_API_URL}/api/auth/sso/google/`,
+            `${process.env.NEXT_PUBLIC_AUTH_URL}/auth/sso/google/`,
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               signal: controller.signal,
               body: JSON.stringify({
-                token: account.id_token,
+                google_token: account.id_token,
                 access_token: account.access_token,
                 email: profile?.email,
                 name: profile?.name,
@@ -41,7 +45,12 @@ export const authOptions: NextAuthOptions = {
           clearTimeout(timeoutId);
 
           if (!response.ok) {
-            console.error("Backend rejected Google login:", response.status);
+            const errorBody = await response.text();
+            console.error(
+              "Backend rejected Google login:",
+              response.status,
+              errorBody,
+            );
             return false;
           }
 
