@@ -27,7 +27,7 @@ export const authOptions: NextAuthOptions = {
           const timeoutId = setTimeout(() => controller.abort(), 5000);
 
           const response = await fetch(
-            `${process.env.NEXT_PUBLIC_AUTH_URL}/auth/sso/google/`,
+            `${process.env.AUTH_URL}/auth/sso/google/`,
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
