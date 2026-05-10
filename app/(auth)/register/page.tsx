@@ -66,7 +66,7 @@ export default function RegisterPage() {
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_AUTH_URL}/auth/verify-email/`,
+        `${process.env.AUTH_URL}/auth/verify-email/`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

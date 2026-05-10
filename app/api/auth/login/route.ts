@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import type { LoginResponse } from "@/types/auth";
 
-const AUTH_API = process.env.NEXT_PUBLIC_AUTH_URL as string;
+const AUTH_API = process.env.AUTH_URL as string;
 
 export async function POST(request: NextRequest) {
   try {

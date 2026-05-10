@@ -17,13 +17,10 @@ export async function apiClient<T>(
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_AUTH_URL}${endpoint}`,
-    {
-      ...fetchOptions,
-      headers,
-    },
-  );
+  const response = await fetch(`${process.env.AUTH_URL}${endpoint}`, {
+    ...fetchOptions,
+    headers,
+  });
 
   if (!response.ok) {
     const error = await response.json();

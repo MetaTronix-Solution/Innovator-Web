@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     }
 
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_AUTH_URL}/auth/forgot-password/`,
+      `${process.env.AUTH_URL}/auth/forgot-password/`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
