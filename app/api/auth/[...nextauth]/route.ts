@@ -2,6 +2,8 @@ import NextAuth, { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import type { LoginResponse } from "@/types/auth";
 
+const AUTH_API = process.env.NEXT_PUBLIC_AUTH_URL as string;
+
 export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
@@ -26,21 +28,18 @@ export const authOptions: NextAuthOptions = {
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-          const response = await fetch(
-            `${process.env.AUTH_URL}/auth/sso/google/`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              signal: controller.signal,
-              body: JSON.stringify({
-                google_token: account.id_token,
-                access_token: account.access_token,
-                email: profile?.email,
-                name: profile?.name,
-                picture: (profile as any)?.picture,
-              }),
-            },
-          );
+          const response = await fetch(`${AUTH_API}/auth/sso/google/`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            signal: controller.signal,
+            body: JSON.stringify({
+              google_token: account.id_token,
+              access_token: account.access_token,
+              email: profile?.email,
+              name: profile?.name,
+              picture: (profile as any)?.picture,
+            }),
+          });
 
           clearTimeout(timeoutId);
 

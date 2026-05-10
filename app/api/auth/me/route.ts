@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import type { User } from "@/types/auth";
 
-const AUTH_API = process.env.AUTH_URL as string;
+const AUTH_API = process.env.NEXT_PUBLIC_AUTH_URL as string;
 
 export async function GET() {
   const cookieStore = await cookies();
