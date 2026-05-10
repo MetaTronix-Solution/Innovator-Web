@@ -2,7 +2,7 @@ import NextAuth, { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import type { LoginResponse } from "@/types/auth";
 
-const AUTH_API = process.env.NEXT_PUBLIC_AUTH_URL as string;
+const AUTH_API = process.env.AUTH_URL as string;
 
 export const authOptions: NextAuthOptions = {
   providers: [
