@@ -21,7 +21,7 @@ import {
 import { Button } from "../ui/button";
 import { usePathname, useRouter } from "next/navigation";
 import { authService } from "@/lib/services/authService";
-import { clearCredentials, logout } from "@/lib/store/features/authSlice";
+import { clearCredentials } from "@/lib/store/features/authSlice";
 import { ThemeToggle } from "../ThemeToggle";
 import SearchBar from "../SearchBar";
 import UserDropdown from "../UserDropdown";
