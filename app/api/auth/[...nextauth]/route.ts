@@ -23,6 +23,8 @@ export const authOptions: NextAuthOptions = {
     },
 
     async signIn({ user, account, profile }) {
+      console.log("AUTH_API value:", process.env.AUTH_URL);
+
       if (account?.provider === "google") {
         try {
           const controller = new AbortController();
