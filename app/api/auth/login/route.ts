@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     cookieStore.set("accessToken", data.access_token, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: "strict",
+      sameSite: "lax",
       maxAge: expiresIn,
       path: "/",
     });
@@ -49,10 +49,15 @@ export async function POST(request: NextRequest) {
     cookieStore.set("refreshToken", data.refresh_token, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: "strict",
+      sameSite: "lax",
       maxAge: expiresIn,
       path: "/",
     });
+
+    console.log(
+      "Cookie set:",
+      cookieStore.get("accessToken")?.value?.slice(0, 20),
+    ); // ← add this
 
     return NextResponse.json({
       success: true,

@@ -24,6 +24,10 @@ export async function GET() {
     }
 
     const data = await response.json();
+    console.log(
+      "Followers data sample:",
+      JSON.stringify(data[0] || data.followers?.[0]),
+    );
 
     return NextResponse.json(data);
   } catch (error) {

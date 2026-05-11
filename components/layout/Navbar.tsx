@@ -21,10 +21,11 @@ import {
 import { Button } from "../ui/button";
 import { usePathname, useRouter } from "next/navigation";
 import { authService } from "@/lib/services/authService";
-import { logout } from "@/lib/store/features/authSlice";
+import { clearCredentials, logout } from "@/lib/store/features/authSlice";
 import { ThemeToggle } from "../ThemeToggle";
 import SearchBar from "../SearchBar";
 import UserDropdown from "../UserDropdown";
+import { signOut } from "next-auth/react";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -82,13 +83,26 @@ const Navbar = () => {
   };
   const profileImage = getProfileImage();
 
+  // const handleLogout = async () => {
+  //   try {
+  //     await authService.logout();
+  //   } catch (error) {
+  //     console.error("An error occurred during logout:", error);
+  //   } finally {
+  //     dispatch(logout());
+  //     router.push("/login");
+  //     router.refresh();
+  //   }
+  // };
+
   const handleLogout = async () => {
     try {
-      await authService.logout();
+      await authService.logout(); // clears HttpOnly cookie
     } catch (error) {
-      console.error("An error occurred during logout:", error);
+      console.error("Logout error:", error);
     } finally {
-      dispatch(logout());
+      dispatch(clearCredentials()); // clears Redux + persisted storage
+      await signOut({ redirect: false }); // clears NextAuth session (Google users)
       router.push("/login");
       router.refresh();
     }

@@ -1,8 +1,61 @@
+// import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+
+// interface AuthState {
+//   user: any | null;
+//   token: string | null;
+//   isAuthenticated: boolean;
+//   isInitialized: boolean;
+//   loading: boolean;
+// }
+
+// const initialState: AuthState = {
+//   user: null,
+//   token: null,
+//   isAuthenticated: false,
+//   isInitialized: false,
+//   loading: false,
+// };
+
+// const authSlice = createSlice({
+//   name: "auth",
+//   initialState,
+//   reducers: {
+//     setCredentials: (
+//       state,
+//       action: PayloadAction<{ user: any; token: string }>,
+//     ) => {
+//       state.user = action.payload.user;
+//       state.token = action.payload.token;
+//       state.isAuthenticated = true;
+//       state.isInitialized = true;
+//       // Persistence
+//       localStorage.setItem("token", action.payload.token);
+//       localStorage.setItem("user", JSON.stringify(action.payload.user));
+//     },
+//     setInitialized: (state) => {
+//       state.isInitialized = true;
+//     },
+//     logout: (state) => {
+//       state.user = null;
+//       state.token = null;
+//       state.isAuthenticated = false;
+//       localStorage.removeItem("token");
+//       localStorage.removeItem("user");
+//     },
+//     setLoading: (state, action: PayloadAction<boolean>) => {
+//       state.loading = action.payload;
+//     },
+//   },
+// });
+
+// export const { setCredentials, logout, setLoading, setInitialized } =
+//   authSlice.actions;
+// export default authSlice.reducer;
+
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface AuthState {
   user: any | null;
-  token: string | null;
   isAuthenticated: boolean;
   isInitialized: boolean;
   loading: boolean;
@@ -10,9 +63,8 @@ interface AuthState {
 
 const initialState: AuthState = {
   user: null,
-  token: null,
   isAuthenticated: false,
-  isInitialized: false,
+  isInitialized: true,
   loading: false,
 };
 
@@ -20,34 +72,49 @@ const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-    setCredentials: (
-      state,
-      action: PayloadAction<{ user: any; token: string }>,
-    ) => {
+    setCredentials: (state, action: PayloadAction<{ user: any }>) => {
       state.user = action.payload.user;
-      state.token = action.payload.token;
       state.isAuthenticated = true;
       state.isInitialized = true;
-      // Persistence
-      localStorage.setItem("token", action.payload.token);
-      localStorage.setItem("user", JSON.stringify(action.payload.user));
     },
     setInitialized: (state) => {
       state.isInitialized = true;
     },
-    logout: (state) => {
+    clearCredentials: (state) => {
       state.user = null;
-      state.token = null;
       state.isAuthenticated = false;
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
+      state.isInitialized = true;
     },
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload;
     },
+    updateFollowing: (
+      state,
+      action: PayloadAction<{ username: string; isFollowing: boolean }>,
+    ) => {
+      if (!state.user) return;
+      const { username, isFollowing } = action.payload;
+      const list: string[] = state.user.following_usernames ?? [];
+
+      if (isFollowing) {
+        // Add to following list if not already there
+        if (!list.includes(username)) {
+          state.user.following_usernames = [...list, username];
+        }
+      } else {
+        // Remove from following list
+        state.user.following_usernames = list.filter((u) => u !== username);
+      }
+    },
   },
 });
 
-export const { setCredentials, logout, setLoading, setInitialized } =
-  authSlice.actions;
+export const {
+  setCredentials,
+  clearCredentials,
+  setLoading,
+  setInitialized,
+  updateFollowing,
+} = authSlice.actions;
+
 export default authSlice.reducer;

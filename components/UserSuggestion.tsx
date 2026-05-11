@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
+import FollowButton from "./FollowButton";
 
 interface SuggestedUser {
   user_id: string;
@@ -26,10 +27,12 @@ interface SuggestedUser {
 const UserSuggestion = () => {
   const [users, setUsers] = useState<SuggestedUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [followedIds, setFollowedIds] = useState<Set<string>>(new Set());
   const [displayLimit, setDisplayLimit] = useState(5);
   const router = useRouter();
 
-  const token = useSelector((state: any) => state.auth.token);
+  // const token = useSelector((state: any) => state.auth.token);
+  const { isAuthenticated } = useSelector((state: any) => state.auth);
 
   const INITIAL_LIMIT = 5;
 
@@ -41,21 +44,39 @@ const UserSuggestion = () => {
     return url;
   };
 
+  // useEffect(() => {
+  //   if (!token) return; // wait until token is available
+
+  //   const loadSuggestions = async () => {
+  //     try {
+  //       const token = localStorage.getItem("accessToken");
+  //       const res = await fetch("/api/suggestions", {
+  //         method: "GET",
+  //         headers: {
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       });
+
+  //       if (!res.ok) throw new Error("Failed to fetch");
+
+  //       const data = await res.json();
+  //       setUsers(data);
+  //     } catch (err) {
+  //       console.error("Fetch error:", err);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+  //   loadSuggestions();
+  // }, [token]);
+
   useEffect(() => {
-    if (!token) return; // wait until token is available
+    if (!isAuthenticated) return;
 
     const loadSuggestions = async () => {
       try {
-        const token = localStorage.getItem("accessToken");
-        const res = await fetch("/api/suggestions", {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
+        const res = await fetch("/api/suggestions"); // cookie sent automatically
         if (!res.ok) throw new Error("Failed to fetch");
-
         const data = await res.json();
         setUsers(data);
       } catch (err) {
@@ -64,8 +85,23 @@ const UserSuggestion = () => {
         setLoading(false);
       }
     };
+
     loadSuggestions();
-  }, [token]);
+  }, [isAuthenticated]);
+
+  const handleFollow = async (e: React.MouseEvent, userId: string) => {
+    e.stopPropagation();
+    try {
+      const res = await fetch(`/api/users/${userId}/follow/`, {
+        method: "POST",
+      });
+      if (res.ok) {
+        setFollowedIds((prev) => new Set(prev).add(userId));
+      }
+    } catch (err) {
+      console.error("Follow error:", err);
+    }
+  };
 
   const visibleUsers = users.slice(0, displayLimit);
   const isFullyExpanded = displayLimit >= users.length;
@@ -131,17 +167,27 @@ const UserSuggestion = () => {
               </div>
             </div>
 
-            <Button
+            {/* <Button
               size="sm"
               variant="outline"
               className="h-8 px-3 rounded-full border-primary/20 hover:border-primary hover:bg-primary hover:text-white transition-all active:scale-95 shadow-sm"
-              onClick={(e) => {
-                e.stopPropagation();
-              }}
+              // onClick={(e) => {
+              //   e.stopPropagation();
+              // }}
+              onClick={(e) => handleFollow(e, user.user_id)}
             >
               <UserPlus size={14} className="mr-1.5" />
               <span className="text-xs font-bold">Follow</span>
-            </Button>
+            </Button> */}
+            <FollowButton
+              userId={user.user_id}
+              initialIsFollowed={false}
+              onFollowChange={(isFollowed) => {
+                console.log(
+                  `${user.username} is now ${isFollowed ? "followed" : "unfollowed"}`,
+                );
+              }}
+            />
           </div>
         ))}
       </div>

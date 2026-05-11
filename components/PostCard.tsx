@@ -292,61 +292,100 @@ LazyVideo.displayName = "LazyVideo";
 const MediaCarousel = memo(
   ({ media, thumbnail }: { media: any[]; thumbnail?: string }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
+    const [isExpanded, setIsExpanded] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
 
-    const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-      const { scrollLeft, offsetWidth } = e.currentTarget;
-      setCurrentIndex(Math.round(scrollLeft / offsetWidth));
-    }, []);
+    // Sync scroll position when currentIndex changes or modal opens
+    useEffect(() => {
+      if (isExpanded && scrollRef.current) {
+        const container = scrollRef.current;
+        container.scrollLeft = currentIndex * container.offsetWidth;
+      }
+    }, [isExpanded]);
+
+    const handleScroll = useCallback(
+      (e: React.UIEvent<HTMLDivElement>) => {
+        if (!isExpanded) return;
+        const { scrollLeft, offsetWidth } = e.currentTarget;
+        // Use a small buffer to avoid jittery index switching
+        const newIndex = Math.round(scrollLeft / offsetWidth);
+        if (newIndex !== currentIndex) setCurrentIndex(newIndex);
+      },
+      [isExpanded, currentIndex],
+    );
 
     const scrollTo = useCallback((dir: "prev" | "next") => {
       if (!scrollRef.current) return;
-      const delta =
-        dir === "next"
-          ? scrollRef.current.offsetWidth
-          : -scrollRef.current.offsetWidth;
-      scrollRef.current.scrollLeft += delta;
+      const container = scrollRef.current;
+      const offset =
+        dir === "next" ? container.offsetWidth : -container.offsetWidth;
+      container.scrollTo({
+        left: container.scrollLeft + offset,
+        behavior: "smooth",
+      });
     }, []);
 
-    return (
-      <div className="w-full bg-muted/20 relative border-y border-border/40 group">
-        <div
-          ref={scrollRef}
-          onScroll={handleScroll}
-          className="flex w-full overflow-x-auto snap-x snap-mandatory hide-scrollbar scroll-smooth min-h-[350px]"
-          style={{ scrollbarWidth: "none" }}
-        >
-          {media.map((item: any, idx: number) => {
-            const fileUrl = getMediaUrl(item.file);
-            const isVideo =
-              item.media_type === "video" ||
-              fileUrl
-                .toLowerCase()
-                .split(/[?#]/)[0]
-                .match(/\.(mp4|webm|mov|m4v|m3u8)$/);
+    const openModal = (index: number) => {
+      setCurrentIndex(index);
+      setIsExpanded(true);
+      // Prevent background scrolling when modal is open
+      document.body.style.overflow = "hidden";
+    };
 
+    const closeModal = () => {
+      setIsExpanded(false);
+      document.body.style.overflow = "unset";
+    };
+
+    // 1. Solo Media Layout (Previous Logic)
+    if (media.length === 1) {
+      const fileUrl = getMediaUrl(media[0].file);
+      return (
+        <div
+          className="w-full bg-muted/20 border-y border-border/40 cursor-pointer"
+          onClick={() => openModal(0)}
+        >
+          <div className="relative w-full h-[400px]">
+            <Image
+              src={fileUrl}
+              alt="Post"
+              fill
+              className="object-contain"
+              unoptimized
+            />
+          </div>
+        </div>
+      );
+    }
+
+    // 2. Multi-Media Grid Layout
+    return (
+      <div className="w-full bg-muted/20 border-y border-border/40 p-1">
+        <div className="grid grid-cols-2 gap-1.5 rounded-xl overflow-hidden">
+          {media.slice(0, 4).map((item, idx) => {
+            const isFullWidthRow = media.length === 3 && idx === 0;
             return (
               <div
                 key={item.id || idx}
-                className="w-full shrink-0 snap-center flex items-center justify-center bg-black/5 relative min-h-[350px]"
+                onClick={() => openModal(idx)}
+                className={`relative cursor-pointer bg-black/5 overflow-hidden group 
+                  ${isFullWidthRow ? "col-span-2 aspect-[16/9]" : "aspect-square"}`}
               >
-                {isVideo ? (
-                  <LazyVideo
-                    src={fileUrl}
-                    poster={getMediaUrl(thumbnail)}
-                    className="w-full max-h-[500px] object-contain"
-                  />
-                ) : (
-                  <div className="relative w-full h-[400px]">
-                    <Image
-                      src={fileUrl}
-                      alt={`Media ${idx}`}
-                      fill
-                      sizes="(max-width: 768px) 100vw, 600px"
-                      className="object-contain"
-                      loading={idx === 0 ? "eager" : "lazy"}
-                      unoptimized
-                    />
+                <Image
+                  src={getMediaUrl(item.file)}
+                  alt="preview"
+                  fill
+                  className="object-cover transition-transform group-hover:scale-105"
+                  unoptimized
+                />
+                {idx === 3 && media.length > 4 && (
+                  <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center text-white">
+                    <span className="text-xl font-bold">
+                      +{media.length - 4}
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest">
+                      See More
+                    </span>
                   </div>
                 )}
               </div>
@@ -354,38 +393,86 @@ const MediaCarousel = memo(
           })}
         </div>
 
-        {media.length > 1 && (
-          <>
-            <div className="absolute top-4 right-4 z-10 bg-black/60 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded-full border border-white/10">
-              {currentIndex + 1} / {media.length}
-            </div>
+        {/* --- BIG MODAL OVERLAY --- */}
+        {isExpanded && (
+          <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/95 animate-in fade-in duration-200">
+            {/* Close Overlay Area */}
+            <div className="absolute inset-0" onClick={closeModal} />
+
+            {/* Close Button */}
             <button
-              onClick={() => scrollTo("prev")}
-              className={`absolute left-2 top-1/2 -translate-y-1/2 bg-background/80 p-1.5 rounded-full shadow-md transition-opacity ${currentIndex === 0 ? "opacity-0 pointer-events-none" : "opacity-100"}`}
+              onClick={closeModal}
+              className="absolute top-6 left-6 z-[1000] p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors"
             >
-              <ChevronLeft size={18} />
-            </button>
-            <button
-              onClick={() => scrollTo("next")}
-              className={`absolute right-2 top-1/2 -translate-y-1/2 bg-background/80 p-1.5 rounded-full shadow-md transition-opacity ${currentIndex === media.length - 1 ? "opacity-0 pointer-events-none" : "opacity-100"}`}
-            >
-              <ChevronRight size={18} />
+              <X size={24} />
             </button>
 
-            {/* Dot indicators */}
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-              {media.map((_, i) => (
-                <div
-                  key={i}
-                  className={`rounded-full transition-all duration-300 ${
-                    i === currentIndex
-                      ? "w-4 h-1.5 bg-white"
-                      : "w-1.5 h-1.5 bg-white/50"
-                  }`}
-                />
-              ))}
+            {/* Counter */}
+            <div className="absolute top-7 right-7 z-[1000] text-white/80 font-mono text-sm">
+              {currentIndex + 1} / {media.length}
             </div>
-          </>
+
+            {/* Modal Content / Carousel */}
+            <div className="relative w-full max-w-6xl h-[85vh] flex items-center justify-center pointer-events-none">
+              <div
+                ref={scrollRef}
+                onScroll={handleScroll}
+                className="flex w-full h-full overflow-x-auto snap-x snap-mandatory hide-scrollbar pointer-events-auto"
+                style={{ scrollbarWidth: "none" }}
+              >
+                {media.map((item, idx) => {
+                  const fileUrl = getMediaUrl(item.file);
+                  const isVideo =
+                    item.media_type === "video" ||
+                    fileUrl.toLowerCase().match(/\.(mp4|webm|mov|m4v)$/);
+
+                  return (
+                    <div
+                      key={idx}
+                      className="w-full h-full shrink-0 snap-center flex items-center justify-center px-4"
+                    >
+                      {isVideo ? (
+                        <LazyVideo
+                          src={fileUrl}
+                          className="max-h-full max-w-full rounded-lg"
+                        />
+                      ) : (
+                        <div className="relative w-full h-full">
+                          <Image
+                            src={fileUrl}
+                            alt="Full View"
+                            fill
+                            className="object-contain"
+                            unoptimized
+                          />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Navigation Arrows */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  scrollTo("prev");
+                }}
+                className={`absolute left-0 pointer-events-auto bg-white/10 p-3 rounded-full text-white transition-opacity ${currentIndex === 0 ? "opacity-0" : "opacity-100"}`}
+              >
+                <ChevronLeft size={32} />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  scrollTo("next");
+                }}
+                className={`absolute right-0 pointer-events-auto bg-white/10 p-3 rounded-full text-white transition-opacity ${currentIndex === media.length - 1 ? "opacity-0" : "opacity-100"}`}
+              >
+                <ChevronRight size={32} />
+              </button>
+            </div>
+          </div>
         )}
       </div>
     );
