@@ -127,10 +127,9 @@ const LazyVideo = memo(
       setCurrentTime((pct / 100) * duration);
     };
 
-    const handleSeekCommit = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleSeekCommit = () => {
       if (!videoRef.current) return;
-      videoRef.current.currentTime =
-        (parseFloat(e.target.value) / 100) * duration;
+      videoRef.current.currentTime = (progress / 100) * duration;
       setIsSeeking(false);
     };
 
