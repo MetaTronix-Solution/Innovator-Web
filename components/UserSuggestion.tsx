@@ -44,32 +44,6 @@ const UserSuggestion = () => {
     return url;
   };
 
-  // useEffect(() => {
-  //   if (!token) return; // wait until token is available
-
-  //   const loadSuggestions = async () => {
-  //     try {
-  //       const token = localStorage.getItem("accessToken");
-  //       const res = await fetch("/api/suggestions", {
-  //         method: "GET",
-  //         headers: {
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //       });
-
-  //       if (!res.ok) throw new Error("Failed to fetch");
-
-  //       const data = await res.json();
-  //       setUsers(data);
-  //     } catch (err) {
-  //       console.error("Fetch error:", err);
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-  //   loadSuggestions();
-  // }, [token]);
-
   useEffect(() => {
     if (!isAuthenticated) return;
 
@@ -88,20 +62,6 @@ const UserSuggestion = () => {
 
     loadSuggestions();
   }, [isAuthenticated]);
-
-  const handleFollow = async (e: React.MouseEvent, userId: string) => {
-    e.stopPropagation();
-    try {
-      const res = await fetch(`/api/users/${userId}/follow/`, {
-        method: "POST",
-      });
-      if (res.ok) {
-        setFollowedIds((prev) => new Set(prev).add(userId));
-      }
-    } catch (err) {
-      console.error("Follow error:", err);
-    }
-  };
 
   const visibleUsers = users.slice(0, displayLimit);
   const isFullyExpanded = displayLimit >= users.length;
@@ -167,18 +127,6 @@ const UserSuggestion = () => {
               </div>
             </div>
 
-            {/* <Button
-              size="sm"
-              variant="outline"
-              className="h-8 px-3 rounded-full border-primary/20 hover:border-primary hover:bg-primary hover:text-white transition-all active:scale-95 shadow-sm"
-              // onClick={(e) => {
-              //   e.stopPropagation();
-              // }}
-              onClick={(e) => handleFollow(e, user.user_id)}
-            >
-              <UserPlus size={14} className="mr-1.5" />
-              <span className="text-xs font-bold">Follow</span>
-            </Button> */}
             <FollowButton
               userId={user.user_id}
               initialIsFollowed={false}

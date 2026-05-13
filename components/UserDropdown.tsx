@@ -2,14 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
-import {
-  Settings,
-  HelpCircle,
-  LogOut,
-  ChevronRight,
-  UserCircle,
-  User,
-} from "lucide-react";
+import { Settings, HelpCircle, LogOut, ChevronRight, User } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { useRouter } from "next/navigation";
 

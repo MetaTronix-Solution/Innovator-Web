@@ -83,18 +83,6 @@ const Navbar = () => {
   };
   const profileImage = getProfileImage();
 
-  // const handleLogout = async () => {
-  //   try {
-  //     await authService.logout();
-  //   } catch (error) {
-  //     console.error("An error occurred during logout:", error);
-  //   } finally {
-  //     dispatch(logout());
-  //     router.push("/login");
-  //     router.refresh();
-  //   }
-  // };
-
   const handleLogout = async () => {
     try {
       await authService.logout(); // clears HttpOnly cookie
@@ -126,11 +114,11 @@ const Navbar = () => {
       )}
 
       <nav className="sticky top-0 z-50 w-full bg-card border-b border-border shadow-sm">
-        <div className="max-w-[1440px] mx-auto px-4 md:px-8 flex items-center justify-between h-14">
+        <div className="max-w-[1440px] mx-auto px-4 md:px-8 flex items-center justify-between h-16">
           <div className="flex items-center flex-1 gap-2">
             <div
               onClick={() => router.push("/")}
-              className="flex items-center justify-center w-9 h-9 text-xl font-bold text-primary-foreground bg-primary rounded-full cursor-pointer hover:opacity-90 shrink-0"
+              className="flex items-center justify-center w-10 h-10 text-xl font-bold text-primary-foreground bg-primary rounded-full cursor-pointer hover:opacity-90 shrink-0"
             >
               I
             </div>
@@ -162,7 +150,7 @@ const Navbar = () => {
             <div ref={dropdownRef} className="relative shrink-0">
               <div
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="relative w-9 h-9 rounded-full bg-secondary text-secondary-foreground border border-border cursor-pointer active:scale-95 transition-all flex items-center justify-center overflow-hidden shrink-0 p-0"
+                className="relative w-10 h-10 rounded-full bg-secondary text-secondary-foreground border border-border cursor-pointer active:scale-95 transition-all flex items-center justify-center overflow-hidden shrink-0 p-0"
               >
                 {profileImage ? (
                   <Image
@@ -268,7 +256,7 @@ const NavItem = ({ icon, href, active = false }: NavItemProps) => {
         }
       `}
     >
-      {React.cloneElement(icon, { size: 22, strokeWidth: active ? 2.5 : 2 })}
+      {React.cloneElement(icon, { size: 28, strokeWidth: active ? 2.5 : 2 })}
     </div>
   );
 };
@@ -279,7 +267,7 @@ interface IconButtonProps {
 
 const IconButton = ({ icon }: IconButtonProps) => (
   <div className="flex items-center justify-center w-8 h-8 md:w-10 md:h-10 bg-secondary text-secondary-foreground rounded-full cursor-pointer hover:bg-accent transition-colors border border-transparent active:scale-95">
-    {React.cloneElement(icon, { size: 18 })}
+    {React.cloneElement(icon, { size: 28 })}
   </div>
 );
 
