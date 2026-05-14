@@ -1,0 +1,130 @@
+"use client";
+
+import React, { memo } from "react";
+import Image from "next/image";
+import {
+  ThumbsUp,
+  MessageCircle,
+  Share2,
+  MoreHorizontal,
+  UserPlus,
+  Music2,
+  Send,
+} from "lucide-react";
+import { getMediaUrl } from "@/lib/utils/getMediaUrl";
+import ReelVideo from "./ReelVideo";
+
+interface ReelCardProps {
+  reel: any;
+}
+
+const ReelCard = ({ reel }: ReelCardProps) => {
+  const videoSrc = getMediaUrl(reel.video_file || reel.video);
+  const posterSrc = getMediaUrl(
+    reel.thumbnail || reel.cover_image || reel.poster,
+  );
+  const avatarSrc = getMediaUrl(reel.avatar);
+
+  return (
+    <div className="relative w-[400px] h-full rounded-3xl overflow-hidden">
+      <div className="absolute inset-0 z-0">
+        {videoSrc ? (
+          <ReelVideo
+            src={videoSrc}
+            poster={posterSrc}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full bg-neutral-900 animate-pulse" />
+        )}
+      </div>
+
+      <div className="absolute right-3 bottom-8 z-20 flex flex-col items-center gap-5">
+        <ActionBtn
+          icon={<ThumbsUp size={26} strokeWidth={1.8} />}
+          label={formatCount(reel.like_count)}
+        />
+        <ActionBtn
+          icon={<MessageCircle size={26} strokeWidth={1.8} />}
+          label={formatCount(reel.comments_count)}
+        />
+        <ActionBtn icon={<Send size={26} strokeWidth={1.8} />} label="Share" />
+        <button className="flex flex-col items-center gap-1 opacity-70 hover:opacity-100 transition-opacity">
+          <MoreHorizontal
+            size={26}
+            strokeWidth={1.8}
+            className="text-white drop-shadow-lg"
+          />
+        </button>
+      </div>
+
+      {/* Bottom info overlay */}
+      <div className="absolute bottom-0 left-0 right-0 z-10 px-4 pt-16 pb-6 bg-gradient-to-t from-black/90 via-black/40 to-transparent">
+        {/* Username + follow */}
+        <div className="flex items-center gap-2.5 mb-2">
+          <div className="w-10 h-10 rounded-full border-2 border-white/80 overflow-hidden relative shrink-0 shadow-lg">
+            {avatarSrc ? (
+              <Image
+                src={avatarSrc}
+                alt={reel.username ?? "user"}
+                fill
+                className="object-cover"
+                unoptimized
+              />
+            ) : (
+              <div className="bg-neutral-700 w-full h-full flex items-center justify-center">
+                <UserPlus size={16} className="text-white" />
+              </div>
+            )}
+          </div>
+          <span className="text-white font-semibold text-[15px] drop-shadow">
+            {reel.username}
+          </span>
+          <button className="text-[11px] font-bold border border-white text-white px-3 py-0.5 rounded-full hover:bg-white hover:text-black transition-colors">
+            Follow
+          </button>
+        </div>
+
+        {/* Caption */}
+        {reel.caption && (
+          <p className="text-white/90 text-sm leading-relaxed max-w-[75%] line-clamp-2">
+            {reel.caption}
+          </p>
+        )}
+
+        {/* Audio label */}
+        {reel.audio_name && (
+          <div className="flex items-center gap-1.5 mt-2">
+            <Music2 size={12} className="text-white/70 shrink-0" />
+            <p className="text-white/70 text-xs truncate max-w-[60%]">
+              {reel.audio_name}
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+function formatCount(val?: number | string): string {
+  const n = Number(val ?? 0);
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
+  return String(n);
+}
+
+function ActionBtn({ icon, label }: { icon: React.ReactNode; label?: string }) {
+  return (
+    <button className="flex flex-col items-center gap-1 group">
+      <span className="text-white drop-shadow-lg group-hover:scale-110 transition-transform">
+        {icon}
+      </span>
+      {label && (
+        <span className="text-white text-xs font-semibold drop-shadow">
+          {label}
+        </span>
+      )}
+    </button>
+  );
+}
+
+export default memo(ReelCard);

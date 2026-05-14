@@ -15,7 +15,7 @@ import { repostPost } from "@/lib/services/postService";
 import { getComments, postComment } from "@/lib/services/commentService";
 import FollowToggle from "../FollowToggle";
 import SharePostModal from "../SharePostModal";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import {
   addPostToTop,
   togglePostReaction,
@@ -30,6 +30,9 @@ import ActionButton from "./ActionButton";
 import CommentSection from "./CommentSection";
 import RepostModal from "./RepostModal";
 import RepostCard from "./RepostCard";
+import ReactionsModal from "./ReactionsModal";
+import ReactionButton from "./ReactionButton";
+import { RootState } from "@/lib/store/store";
 
 const renderedPosts = new Set<string>();
 
@@ -46,6 +49,8 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const wasRendered = renderedPosts.has(post.id);
   const [isVisible, setIsVisible] = useState(wasRendered);
+  const [showReactionsModal, setShowReactionsModal] = useState(false);
+  const [localCount, setLocalCount] = useState<number>(post.like_count ?? 0);
 
   const cardRef = useRef<HTMLDivElement>(null);
   const dispatch = useDispatch();
@@ -124,33 +129,76 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
     [newComment, post.id, post.type],
   );
 
-  const handleLike = useCallback(async () => {
-    const isUnliking = post.current_user_reaction === "like";
-    dispatch(
-      togglePostReaction({
-        postId: post.id,
-        reactionType: isUnliking ? null : "like",
-      }),
-    );
+  const currentUser = useSelector((state: RootState) => state.auth.user);
+
+  const fetchReactionCount = useCallback(async () => {
     try {
-      const res = await fetch("/api/reactions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ postId: post.id, type: "like" }),
-      });
-      if (!res.ok) {
-        if (res.status === 401) router.push("/login");
-        throw new Error("Failed to sync reaction");
-      }
-    } catch {
+      const res = await fetch(`/api/posts/${post.id}/reactions-list/`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const reactions = Array.isArray(data) ? data : (data.results ?? []);
+
+      setLocalCount(reactions.length);
+
+      const myReaction = reactions.find((r: any) => r.user === currentUser?.id);
       dispatch(
         togglePostReaction({
           postId: post.id,
-          reactionType: isUnliking ? "like" : null,
+          reactionType: myReaction?.type ?? null,
         }),
       );
-    }
-  }, [post.id, post.current_user_reaction, dispatch, router]);
+    } catch {}
+  }, [post.id, currentUser?.id, dispatch]);
+
+  // Only on mount — not after every reaction
+  useEffect(() => {
+    if (isVisible) fetchReactionCount();
+  }, [isVisible]); // ← intentionally omit fetchReactionCount from deps
+
+  const handleReact = useCallback(
+    async (reactionType: string) => {
+      const prevReaction = post.current_user_reaction;
+      const isSameReaction = prevReaction === reactionType;
+      const nextReaction = isSameReaction ? null : reactionType;
+
+      const delta =
+        !prevReaction && nextReaction
+          ? 1
+          : prevReaction && !nextReaction
+            ? -1
+            : 0;
+
+      // Optimistic update — instant, no network wait
+      dispatch(
+        togglePostReaction({ postId: post.id, reactionType: nextReaction }),
+      );
+      setLocalCount((c) => Math.max(0, c + delta));
+
+      try {
+        const res = await fetch("/api/reactions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            postId: post.id,
+            type: reactionType,
+            contentType: post.type,
+          }),
+        });
+        if (!res.ok) {
+          if (res.status === 401) router.push("/login");
+          throw new Error("Failed to sync reaction");
+        }
+        // ← No fetchReactionCount() here anymore
+      } catch {
+        // Rollback on failure
+        dispatch(
+          togglePostReaction({ postId: post.id, reactionType: prevReaction }),
+        );
+        setLocalCount((c) => Math.max(0, c - delta));
+      }
+    },
+    [post.id, post.current_user_reaction, dispatch, router],
+  );
 
   const handleShare = useCallback(async () => {
     setIsShareModalOpen(true);
@@ -311,18 +359,14 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
 
         {/* Footer */}
         <div className="px-4 py-2 flex items-center justify-between border-t border-border/50">
-          <div className="flex gap-2">
-            <ActionButton
-              icon={
-                <ThumbsUp
-                  size={18}
-                  fill={liked ? "currentColor" : "none"}
-                  className={`transition-colors duration-200 ${liked ? "text-primary" : ""}`}
-                />
-              }
-              label={post.like_count ?? 0}
-              onClick={handleLike}
-              active={liked}
+          <div className="flex gap-1">
+            <ReactionButton
+              currentReaction={post.current_user_reaction ?? null}
+              count={localCount}
+              onReact={handleReact}
+              onCountClick={() => {
+                if (localCount > 0) setShowReactionsModal(true); // ← localCount
+              }}
             />
             <ActionButton
               icon={
@@ -341,6 +385,7 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
               onClick={() => setIsRepostModalOpen(true)}
             />
           </div>
+
           <button
             onClick={handleShare}
             className="p-2 hover:bg-accent rounded-full text-muted-foreground transition-all"
@@ -367,6 +412,15 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
           />
         )}
       </div>
+
+      {/* Reactions Modal */}
+      {showReactionsModal && (
+        <ReactionsModal
+          postId={post.id}
+          contentType={post.type}
+          onClose={() => setShowReactionsModal(false)}
+        />
+      )}
 
       {/* Repost Modal */}
       {isRepostModalOpen && (

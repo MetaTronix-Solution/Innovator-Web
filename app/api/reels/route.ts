@@ -1,16 +1,32 @@
+import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-// GET: Fetch all reels
 export async function GET(request: NextRequest) {
   try {
-    const response = await fetch(`${BACKEND_URL}/api/reels/`, {
+    const { searchParams } = new URL(request.url);
+    const cursor = searchParams.get("cursor"); // Get cursor from frontend query
+
+    const cookieStore = await cookies();
+    const token = cookieStore.get("accessToken")?.value;
+
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // If cursor exists, we append it to the backend request.
+    // Django Rest Framework usually provides the full 'next' URL,
+    // or you just pass the cursor param.
+    const backendUrl = cursor ? cursor : `${BACKEND_URL}/api/reels/`;
+
+    const response = await fetch(backendUrl, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
-      cache: "no-store", // or 'force-cache' for caching
+      cache: "no-store",
     });
 
     if (!response.ok) {
@@ -23,7 +39,6 @@ export async function GET(request: NextRequest) {
     const data = await response.json();
     return NextResponse.json(data, { status: 200 });
   } catch (error) {
-    console.error("Error fetching reels:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
@@ -39,7 +54,6 @@ export async function POST(request: NextRequest) {
     const response = await fetch(`${BACKEND_URL}/api/reels/`, {
       method: "POST",
       body: formData,
-      // Don't set Content-Type header - browser will set it with boundary for FormData
     });
 
     if (!response.ok) {

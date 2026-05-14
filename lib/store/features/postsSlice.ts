@@ -80,25 +80,16 @@ const postsSlice = createSlice({
 
     resetPosts: () => initialState,
 
+    // In your togglePostReaction reducer, ensure it handles the count correctly:
     togglePostReaction: (
       state,
       action: PayloadAction<{ postId: string; reactionType: string | null }>,
     ) => {
-      const { postId, reactionType } = action.payload;
-      const post = state.items.find((p) => p.id === postId);
+      const post = state.items.find((p) => p.id === action.payload.postId);
+      if (!post) return;
 
-      if (post) {
-        if (reactionType === null) {
-          if (post.current_user_reaction === "like") {
-            post.like_count = Math.max(0, post.like_count - 1);
-          }
-        } else if (reactionType === "like") {
-          if (post.current_user_reaction !== "like") {
-            post.like_count += 1;
-          }
-        }
-        post.current_user_reaction = reactionType;
-      }
+      // Only update the reaction type — don't touch like_count
+      post.current_user_reaction = action.payload.reactionType;
     },
   },
 });

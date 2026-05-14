@@ -45,7 +45,6 @@ export default function LoginPage() {
       dispatch(
         setCredentials({
           user: data.user,
-          // token: data.access_token,
         }),
       );
 
@@ -58,9 +57,8 @@ export default function LoginPage() {
         localStorage.removeItem("rememberedEmail");
         localStorage.removeItem("rememberedPassword");
       }
-      console.log(data);
 
-      router.push("/");
+      router.replace("/");
       router.refresh();
     } catch (err: any) {
       console.error("Login Submission Error:", err);

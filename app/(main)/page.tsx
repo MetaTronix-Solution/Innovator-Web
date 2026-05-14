@@ -3,7 +3,6 @@
 import React from "react";
 import CreatePostBox from "@/components/Home/CreatePostBox";
 import PostFeed from "@/components/Home/PostFeed";
-import { Edit2 } from "lucide-react";
 
 const Page = () => {
   return (

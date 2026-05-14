@@ -79,7 +79,7 @@ const UserSuggestion = () => {
       <div className="flex flex-col items-center justify-center p-8 gap-2">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
         <span className="text-xs text-muted-foreground font-medium italic">
-          Scanning the network...
+          Loading...
         </span>
       </div>
     );
