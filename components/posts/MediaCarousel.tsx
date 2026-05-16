@@ -82,7 +82,7 @@ const MediaCarousel = memo(
                   ${isFullWidthRow ? "col-span-2 aspect-[16/9]" : "aspect-square"}`}
               >
                 <Image
-                  src={getMediaUrl(item.file)}
+                  src={getMediaUrl(item.file) || ""}
                   alt="preview"
                   fill
                   className="object-cover transition-transform group-hover:scale-105"
