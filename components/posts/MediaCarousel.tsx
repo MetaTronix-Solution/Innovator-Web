@@ -126,7 +126,7 @@ const MediaCarousel = memo(
                 style={{ scrollbarWidth: "none" }}
               >
                 {media.map((item, idx) => {
-                  const fileUrl = getMediaUrl(item.file);
+                  const fileUrl = getMediaUrl(item.file) || "";
                   const isVideo =
                     item.media_type === "video" ||
                     fileUrl.toLowerCase().match(/\.(mp4|webm|mov|m4v)$/);
