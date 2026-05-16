@@ -20,7 +20,7 @@ import ReactionButton from "../posts/ReactionButton";
 
 interface ReelCardProps {
   reel: any;
-  post: any;
+  post?: any;
 }
 
 const ReelCard = ({ reel, post }: ReelCardProps) => {
@@ -118,7 +118,7 @@ const ReelCard = ({ reel, post }: ReelCardProps) => {
         <SharePostModal
           isOpen={isShareModalOpen}
           onClose={() => setIsShareModalOpen(false)}
-          post={post || reel}
+          post={post ?? reel}
         />
         <button className="flex flex-col items-center gap-1 opacity-70 hover:opacity-100 transition-opacity">
           <MoreHorizontal
