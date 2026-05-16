@@ -15,7 +15,7 @@ const CommentItem = memo(
       <div className="w-8 h-8 rounded-full bg-muted border border-border flex items-center justify-center overflow-hidden shrink-0 relative">
         {comment.user_avatar ? (
           <Image
-            src={getMediaUrl(comment.user_avatar)}
+            src={getMediaUrl(comment.user_avatar) || ""}
             alt="user"
             fill
             className="object-cover"
