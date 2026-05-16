@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
-        [contentKey]: postId, // ← "post": id  OR  "reel": id
+        [contentKey]: postId,
         type: type || "like",
       }),
     });

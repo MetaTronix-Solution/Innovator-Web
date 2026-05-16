@@ -1,4 +1,3 @@
-// src/app/api/auth/login/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import type { LoginResponse } from "@/types/auth";

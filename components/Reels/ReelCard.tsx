@@ -1,11 +1,145 @@
+// "use client";
+
+// import React, { memo } from "react";
+// import Image from "next/image";
+// import {
+//   ThumbsUp,
+//   MessageCircle,
+//   MoreHorizontal,
+//   UserPlus,
+//   Music2,
+//   Send,
+// } from "lucide-react";
+// import { getMediaUrl } from "@/lib/utils/getMediaUrl";
+// import ReelVideo from "./ReelVideo";
+// import FollowToggle from "@/components/FollowToggle"; // adjust path if needed
+
+// interface ReelCardProps {
+//   reel: any;
+// }
+
+// const ReelCard = ({ reel }: ReelCardProps) => {
+//   const videoSrc = getMediaUrl(reel.video_file || reel.video);
+//   const posterSrc = getMediaUrl(
+//     reel.thumbnail || reel.cover_image || reel.poster,
+//   );
+//   const avatarSrc = getMediaUrl(reel.avatar);
+
+//   return (
+//     <div className="relative w-[400px] h-full rounded-3xl overflow-hidden">
+//       <div className="absolute inset-0 z-0">
+//         {videoSrc ? (
+//           <ReelVideo
+//             src={videoSrc}
+//             poster={posterSrc}
+//             className="w-full h-full object-cover"
+//           />
+//         ) : (
+//           <div className="w-full h-full bg-neutral-900 animate-pulse" />
+//         )}
+//       </div>
+
+//       <div className="absolute right-3 bottom-8 z-20 flex flex-col items-center gap-5">
+//         <ActionBtn
+//           icon={<ThumbsUp size={26} strokeWidth={1.8} />}
+//           label={formatCount(reel.like_count)}
+//         />
+//         <ActionBtn
+//           icon={<MessageCircle size={26} strokeWidth={1.8} />}
+//           label={formatCount(reel.comments_count)}
+//         />
+//         <ActionBtn icon={<Send size={26} strokeWidth={1.8} />} label="Share" />
+//         <button className="flex flex-col items-center gap-1 opacity-70 hover:opacity-100 transition-opacity">
+//           <MoreHorizontal
+//             size={26}
+//             strokeWidth={1.8}
+//             className="text-white drop-shadow-lg"
+//           />
+//         </button>
+//       </div>
+
+//       {/* Bottom info overlay */}
+//       <div className="absolute bottom-0 left-0 right-0 z-10 px-4 pt-16 pb-6 bg-gradient-to-t from-black/90 via-black/40 to-transparent">
+//         <div className="flex items-center gap-2.5 mb-2">
+//           <div className="w-10 h-10 rounded-full border-2 border-white/80 overflow-hidden relative shrink-0 shadow-lg">
+//             {avatarSrc ? (
+//               <Image
+//                 src={avatarSrc}
+//                 alt={reel.username ?? "user"}
+//                 fill
+//                 className="object-cover"
+//                 unoptimized
+//               />
+//             ) : (
+//               <div className="bg-neutral-700 w-full h-full flex items-center justify-center">
+//                 <UserPlus size={16} className="text-white" />
+//               </div>
+//             )}
+//           </div>
+//           <span className="text-white font-semibold text-[15px] drop-shadow">
+//             {reel.username}
+//           </span>
+
+//           {/* Reuse existing FollowToggle with a custom reel style override */}
+//           <div className="[&>button]:text-[11px] [&>button]:font-bold [&>button]:px-3 [&>button]:py-0.5 [&>button]:rounded-full [&>button]:border [&>button]:border-white [&>button]:text-white [&>button]:bg-transparent [&>button]:hover:bg-white [&>button]:hover:text-black [&>button]:transition-colors [&>button]:shadow-none [&>button]:scale-100 [&>button]:hover:scale-100">
+//             <FollowToggle
+//               key={reel.id}
+//               userId={reel.user_id}
+//               initialIsFollowed={reel.is_followed ?? false}
+//               username={reel.username}
+//               variant="reels"
+//             />
+//           </div>
+//         </div>
+
+//         {reel.caption && (
+//           <p className="text-white/90 text-sm leading-relaxed max-w-[75%] line-clamp-2">
+//             {reel.caption}
+//           </p>
+//         )}
+
+//         {reel.audio_name && (
+//           <div className="flex items-center gap-1.5 mt-2">
+//             <Music2 size={12} className="text-white/70 shrink-0" />
+//             <p className="text-white/70 text-xs truncate max-w-[60%]">
+//               {reel.audio_name}
+//             </p>
+//           </div>
+//         )}
+//       </div>
+//     </div>
+//   );
+// };
+
+// function formatCount(val?: number | string): string {
+//   const n = Number(val ?? 0);
+//   if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
+//   return String(n);
+// }
+
+// function ActionBtn({ icon, label }: { icon: React.ReactNode; label?: string }) {
+//   return (
+//     <button className="flex flex-col items-center gap-1 group">
+//       <span className="text-white drop-shadow-lg group-hover:scale-110 transition-transform">
+//         {icon}
+//       </span>
+//       {label && (
+//         <span className="text-white text-xs font-semibold drop-shadow">
+//           {label}
+//         </span>
+//       )}
+//     </button>
+//   );
+// }
+
+// export default memo(ReelCard);
+
 "use client";
 
-import React, { memo } from "react";
+import React, { memo, useState, useCallback } from "react";
 import Image from "next/image";
 import {
-  ThumbsUp,
   MessageCircle,
-  Share2,
   MoreHorizontal,
   UserPlus,
   Music2,
@@ -13,17 +147,79 @@ import {
 } from "lucide-react";
 import { getMediaUrl } from "@/lib/utils/getMediaUrl";
 import ReelVideo from "./ReelVideo";
+import FollowToggle from "@/components/FollowToggle";
+import ReactionButton from "@/components/Posts/ReactionButton";
+import { useDispatch } from "react-redux";
+import { toggleReelReaction } from "@/lib/store/features/reelsSlice";
+import { useRouter } from "next/navigation";
+import SharePostModal from "../SharePostModal";
 
 interface ReelCardProps {
   reel: any;
+  post: any;
 }
 
-const ReelCard = ({ reel }: ReelCardProps) => {
+const ReelCard = ({ reel, post }: ReelCardProps) => {
   const videoSrc = getMediaUrl(reel.video_file || reel.video);
   const posterSrc = getMediaUrl(
     reel.thumbnail || reel.cover_image || reel.poster,
   );
   const avatarSrc = getMediaUrl(reel.avatar);
+
+  const dispatch = useDispatch();
+  const router = useRouter();
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+
+  const [localCount, setLocalCount] = useState<number>(
+    reel.reactions_count ?? reel.like_count ?? 0,
+  );
+
+  const handleReact = useCallback(
+    async (reactionType: string) => {
+      const prevReaction = reel.current_user_reaction;
+      const isSame = prevReaction === reactionType;
+      const nextReaction = isSame ? null : reactionType;
+      const delta =
+        !prevReaction && nextReaction
+          ? 1
+          : prevReaction && !nextReaction
+            ? -1
+            : 0;
+
+      // Optimistic update
+      dispatch(
+        toggleReelReaction({ reelId: reel.id, reactionType: nextReaction }),
+      );
+      setLocalCount((c) => Math.max(0, c + delta));
+
+      try {
+        const res = await fetch("/api/reactions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            postId: reel.id,
+            type: reactionType,
+            contentType: "reel",
+          }),
+        });
+        if (!res.ok) {
+          if (res.status === 401) router.push("/login");
+          throw new Error();
+        }
+      } catch {
+        // Rollback
+        dispatch(
+          toggleReelReaction({ reelId: reel.id, reactionType: prevReaction }),
+        );
+        setLocalCount((c) => Math.max(0, c - delta));
+      }
+    },
+    [reel.id, reel.current_user_reaction, dispatch, router],
+  );
+
+  const handleShare = useCallback(async () => {
+    setIsShareModalOpen(true);
+  }, []);
 
   return (
     <div className="relative w-[400px] h-full rounded-3xl overflow-hidden">
@@ -32,23 +228,36 @@ const ReelCard = ({ reel }: ReelCardProps) => {
           <ReelVideo
             src={videoSrc}
             poster={posterSrc}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain"
           />
         ) : (
           <div className="w-full h-full bg-neutral-900 animate-pulse" />
         )}
       </div>
 
-      <div className="absolute right-3 bottom-8 z-20 flex flex-col items-center gap-5">
-        <ActionBtn
-          icon={<ThumbsUp size={26} strokeWidth={1.8} />}
-          label={formatCount(reel.like_count)}
+      {/* Right-side action buttons */}
+      <div className="absolute right-3 bottom-10 z-20 flex flex-col items-center gap-5">
+        <ReactionButton
+          currentReaction={reel.current_user_reaction ?? null}
+          count={localCount}
+          onReact={handleReact}
+          variant="reels"
         />
         <ActionBtn
           icon={<MessageCircle size={26} strokeWidth={1.8} />}
           label={formatCount(reel.comments_count)}
         />
-        <ActionBtn icon={<Send size={26} strokeWidth={1.8} />} label="Share" />
+        <button
+          onClick={handleShare}
+          className="p-2  rounded-full cursor-pointer text-muted-foreground transition-all hover:scale-110"
+        >
+          <Send size={22} className="text-white" />
+        </button>
+        <SharePostModal
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          post={post || reel}
+        />
         <button className="flex flex-col items-center gap-1 opacity-70 hover:opacity-100 transition-opacity">
           <MoreHorizontal
             size={26}
@@ -60,7 +269,6 @@ const ReelCard = ({ reel }: ReelCardProps) => {
 
       {/* Bottom info overlay */}
       <div className="absolute bottom-0 left-0 right-0 z-10 px-4 pt-16 pb-6 bg-gradient-to-t from-black/90 via-black/40 to-transparent">
-        {/* Username + follow */}
         <div className="flex items-center gap-2.5 mb-2">
           <div className="w-10 h-10 rounded-full border-2 border-white/80 overflow-hidden relative shrink-0 shadow-lg">
             {avatarSrc ? (
@@ -80,19 +288,21 @@ const ReelCard = ({ reel }: ReelCardProps) => {
           <span className="text-white font-semibold text-[15px] drop-shadow">
             {reel.username}
           </span>
-          <button className="text-[11px] font-bold border border-white text-white px-3 py-0.5 rounded-full hover:bg-white hover:text-black transition-colors">
-            Follow
-          </button>
+          <FollowToggle
+            key={reel.id}
+            userId={reel.user_id}
+            initialIsFollowed={reel.is_followed ?? false}
+            username={reel.username}
+            variant="reels"
+          />
         </div>
 
-        {/* Caption */}
         {reel.caption && (
           <p className="text-white/90 text-sm leading-relaxed max-w-[75%] line-clamp-2">
             {reel.caption}
           </p>
         )}
 
-        {/* Audio label */}
         {reel.audio_name && (
           <div className="flex items-center gap-1.5 mt-2">
             <Music2 size={12} className="text-white/70 shrink-0" />
@@ -118,7 +328,7 @@ function ActionBtn({ icon, label }: { icon: React.ReactNode; label?: string }) {
       <span className="text-white drop-shadow-lg group-hover:scale-110 transition-transform">
         {icon}
       </span>
-      {label && (
+      {label !== undefined && (
         <span className="text-white text-xs font-semibold drop-shadow">
           {label}
         </span>

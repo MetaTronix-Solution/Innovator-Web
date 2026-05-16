@@ -20,6 +20,7 @@ import storage from "redux-persist/lib/storage";
 import authReducer from "./features/authSlice";
 import themeReducer from "./features/themeSlice";
 import postsReducer from "./features/postsSlice";
+import reelsReducer from "./features/reelsSlice";
 
 const persistConfig = {
   key: "root",
@@ -31,6 +32,7 @@ const rootReducer = combineReducers({
   auth: authReducer,
   theme: themeReducer,
   posts: postsReducer,
+  reels: reelsReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

@@ -48,7 +48,10 @@ export default function LoginPage() {
         }),
       );
 
-      document.cookie = `accessToken=${data.access_token}; path='/'; max-age=${60 * 60 * 24}; SameSite=Lax`;
+      // 2. Set flag BEFORE navigation triggers layout evaluation
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("just_logged_in", "true");
+      }
 
       if (rememberMe) {
         localStorage.setItem("rememberedEmail", email);
@@ -59,7 +62,9 @@ export default function LoginPage() {
       }
 
       router.replace("/");
-      router.refresh();
+      setTimeout(() => {
+        router.refresh();
+      }, 100);
     } catch (err: any) {
       console.error("Login Submission Error:", err);
 
@@ -103,9 +108,7 @@ export default function LoginPage() {
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                Email
-              </label>
+              <label className="text-sm font-medium leading-none">Email</label>
               <input
                 type="email"
                 value={email}
@@ -143,14 +146,13 @@ export default function LoginPage() {
                   required
                 />
 
-                {/* <Button /> */}
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {showPassword ? (
-                    <EyeOffIcon className="h-4 w-4" /> // Use Lucide-react or similar icons
+                    <EyeOffIcon className="h-4 w-4" />
                   ) : (
                     <EyeIcon className="h-4 w-4" />
                   )}

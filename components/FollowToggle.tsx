@@ -9,7 +9,7 @@ interface FollowToggleProps {
   userId: string;
   initialIsFollowed: boolean;
   username: string;
-  variant?: "text" | "button";
+  variant?: "text" | "button" | "reels";
   onStatusChange?: (newStatus: boolean) => void;
 }
 
@@ -30,17 +30,13 @@ const FollowToggle = ({
   const handleToggle = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-
     if (isLoading) return;
-
     setIsLoading(true);
     try {
       await toggleFollowUser(userId, isFollowed);
       const newStatus = !isFollowed;
-
       setIsFollowed(newStatus);
       if (onStatusChange) onStatusChange(newStatus);
-
       toast.success(
         newStatus ? `Following ${username}` : `Unfollowed ${username}`,
       );
@@ -52,7 +48,6 @@ const FollowToggle = ({
   };
 
   const getLabel = () => {
-    if (isLoading) return null;
     if (isFollowed) return "Following";
     return "Follow";
   };
@@ -76,6 +71,32 @@ const FollowToggle = ({
     );
   }
 
+  if (variant === "reels") {
+    return (
+      <button
+        onClick={handleToggle}
+        disabled={isLoading}
+        className={`
+          text-[11px] font-bold px-3 py-0.5 rounded-full border transition-colors
+          flex items-center justify-center gap-1 min-w-[64px]
+          disabled:opacity-50 disabled:cursor-not-allowed
+          ${
+            isFollowed
+              ? "bg-white/20 border-white/40 text-white hover:bg-white/10"
+              : "border-white text-white hover:bg-white hover:text-black"
+          }
+        `}
+      >
+        {isLoading ? (
+          <Loader2 size={11} className="animate-spin" />
+        ) : (
+          getLabel()
+        )}
+      </button>
+    );
+  }
+
+  // variant === "button"
   return (
     <button
       onClick={handleToggle}

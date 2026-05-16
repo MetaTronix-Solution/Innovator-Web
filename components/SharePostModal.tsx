@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Copy, Send, Search } from "lucide-react";
+import { X, Copy, Send, Search, User } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
+import { getMediaUrl } from "@/lib/utils/getMediaUrl";
 
 interface Follower {
   id: string | number;
@@ -30,7 +31,7 @@ export default function SharePostModal({
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const postUrl = `${window.location.origin}/post/${post.id}`;
+  const postUrl = post?.id ? `${window.location.origin}/post/${post.id}` : "";
   const shareText = encodeURIComponent(
     `Check out this post by ${post.username} on Innovator!`,
   );
@@ -121,50 +122,62 @@ export default function SharePostModal({
           </div>
         </div>
 
-        {/* Followers List */}
         {/* Replace your previous list logic with this */}
         <div className="flex-1 overflow-y-auto p-2 min-h-[200px]">
           {loading ? (
             <div className="flex justify-center p-4 text-sm text-muted-foreground">
               Loading followers...
             </div>
-          ) : // Add Array.isArray check here as a safety net
-          Array.isArray(followers) ? (
+          ) : Array.isArray(followers) ? (
             followers
               .filter((f: any) =>
                 f.username?.toLowerCase().includes(searchQuery.toLowerCase()),
               )
-              .map((follower: any) => (
-                <div
-                  key={follower.id}
-                  className="flex items-center justify-between p-2 hover:bg-accent rounded-xl"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="relative w-10 h-10 rounded-full overflow-hidden border">
-                      <Image
-                        src={follower.avatar || "/default-avatar.png"}
-                        fill
-                        alt="user"
-                        className="object-cover"
-                      />
+              .map((follower: any) => {
+                // Generate URL using your helper
+                const avatarSrc = getMediaUrl(follower.profile?.avatar);
+
+                return (
+                  <div
+                    key={follower.id}
+                    className="flex items-center justify-between p-2 hover:bg-accent rounded-xl transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      {/* Avatar Container: Styled exactly like CreatePostBox */}
+                      <div className="w-10 h-10 relative rounded-full border-2 border-primary/20 flex items-center justify-center bg-muted overflow-hidden shrink-0">
+                        {avatarSrc ? (
+                          <Image
+                            src={avatarSrc}
+                            alt={follower.username}
+                            fill
+                            className="object-cover"
+                            unoptimized
+                          />
+                        ) : (
+                          <User
+                            size={20}
+                            className="text-muted-foreground/60"
+                          />
+                        )}
+                      </div>
+
+                      <div className="overflow-hidden">
+                        <p className="text-sm font-semibold truncate">
+                          {follower.username}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {follower.full_name || follower.username}
+                        </p>
+                      </div>
                     </div>
 
-                    <div>
-                      <p className="text-sm font-semibold">
-                        {follower.username}
-                      </p>
-
-                      <p className="text-xs text-muted-foreground">
-                        {follower.full_name}
-                      </p>
-                    </div>
+                    {/* Updated button color to match your screenshots */}
+                    <button className="bg-[#ff6b00] hover:bg-[#e66000] text-white px-4 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95">
+                      Send
+                    </button>
                   </div>
-
-                  <button className="bg-primary text-primary-foreground px-4 py-1.5 rounded-lg text-xs font-bold hover:opacity-90">
-                    Send
-                  </button>
-                </div>
-              ))
+                );
+              })
           ) : (
             <div className="text-center p-4 text-xs text-muted-foreground">
               No followers found.

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { X, User } from "lucide-react";
 import { getMediaUrl } from "@/lib/utils/getMediaUrl";
 
@@ -68,7 +69,6 @@ export default function ReactionsModal({
     if (e.target === e.currentTarget) onClose();
   };
 
-  // Close on Escape
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -151,15 +151,21 @@ export default function ReactionsModal({
               No reactions yet
             </p>
           ) : (
-            // 4. Fix the list item — key, emoji lookup, avatar
             filtered.map((reaction) => {
               const avatarUrl = getMediaUrl(reaction.avatar ?? "");
               return (
                 <div
-                  key={reaction.id} // ← use unique "id" field
-                  className="flex items-center gap-3 p-2 rounded-xl hover:bg-accent/50 transition-colors"
+                  key={reaction.id}
+                  className="flex items-center gap-3 p-2 rounded-xl hover:bg-accent/50 transition-colors relative group"
                 >
-                  <div className="relative w-10 h-10 shrink-0">
+                  <Link
+                    href={`/${reaction.user}`}
+                    onClick={onClose}
+                    className="absolute inset-0 z-0"
+                    aria-label={`View ${reaction.full_name || reaction.username}'s profile`}
+                  />
+
+                  <div className="relative w-10 h-10 shrink-0 z-10 pointer-events-none">
                     <div className="w-10 h-10 rounded-full bg-muted border border-border flex items-center justify-center overflow-hidden">
                       {avatarUrl ? (
                         <Image
@@ -178,7 +184,8 @@ export default function ReactionsModal({
                       {REACTION_EMOJI[reaction.type] ?? "👍"}
                     </span>
                   </div>
-                  <div className="flex-1 min-w-0">
+
+                  <div className="flex-1 min-w-0 z-10 pointer-events-none">
                     <p className="font-semibold text-sm text-foreground truncate">
                       {reaction.full_name || reaction.username}
                     </p>

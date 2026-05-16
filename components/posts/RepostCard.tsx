@@ -17,7 +17,6 @@ const RepostCard = ({ post, formatRelativeTime }: RepostCardProps) => {
   // Reposter's comment — what they wrote when reposting
   const repostCaption = post.content || post.caption || "";
 
-  // Original post content
   const originalCaption = shared?.content || shared?.caption || "";
 
   const renderSharedMedia = () => {
@@ -35,8 +34,8 @@ const RepostCard = ({ post, formatRelativeTime }: RepostCardProps) => {
       return (
         <div className="rounded-b-xl overflow-hidden">
           <LazyVideo
-            src={getMediaUrl(shared.video)}
-            poster={getMediaUrl(shared.thumbnail)}
+            src={getMediaUrl(shared.video) || ""}
+            poster={getMediaUrl(shared.thumbnail) || undefined}
             className="w-full max-h-[360px] object-contain"
           />
         </div>
@@ -56,7 +55,7 @@ const RepostCard = ({ post, formatRelativeTime }: RepostCardProps) => {
         <div className="rounded-b-xl overflow-hidden">
           <LazyVideo
             src={singleUrl}
-            poster={getMediaUrl(shared.thumbnail)}
+            poster={getMediaUrl(shared.thumbnail) || undefined}
             className="w-full max-h-[360px] object-contain"
           />
         </div>
@@ -101,7 +100,7 @@ const RepostCard = ({ post, formatRelativeTime }: RepostCardProps) => {
             <div className="w-7 h-7 rounded-full bg-muted border border-border relative overflow-hidden shrink-0 flex items-center justify-center">
               {shared.avatar ? (
                 <Image
-                  src={getMediaUrl(shared.avatar)}
+                  src={getMediaUrl(shared.avatar) || ""}
                   alt={shared.username || "user"}
                   fill
                   className="object-cover"

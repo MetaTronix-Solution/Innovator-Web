@@ -15,34 +15,40 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const backendPayload = {
+      email,
+      password,
+      full_name,
+      username: username || email.split("@")[0],
+      phone_number: phone_no, // Match model standard string keys
+      date_of_birth: dob || null,
+      gender: gender || "male",
+    };
+
     const response = await fetch(`${AUTH_API}/auth/register/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email,
-        password,
-        full_name: full_name,
-        username: username || email.split("@")[0],
-        phone_no,
-        dob,
-        gender,
-      }),
+      body: JSON.stringify(backendPayload),
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.error("DEBUG: Backend rejected request:", errorData);
-      return NextResponse.json(
-        {
-          error:
-            errorData.message || errorData.detail || JSON.stringify(errorData),
-        },
-        { status: 400 },
-      );
+      console.error("DEBUG: Backend rejected registration request:", errorData);
+
+      let customError = "Registration failed";
+      if (typeof errorData === "object") {
+        const firstKey = Object.keys(errorData)[0];
+        const prospectiveError = errorData[firstKey];
+        customError = Array.isArray(prospectiveError)
+          ? prospectiveError[0]
+          : errorData.message || errorData.detail || JSON.stringify(errorData);
+      }
+
+      return NextResponse.json({ error: customError }, { status: 400 });
     }
 
     const data = await response.json();
-    console.log(data);
+    console.log("Registration API Success Log:", data);
 
     return NextResponse.json({
       success: true,
@@ -50,7 +56,7 @@ export async function POST(request: NextRequest) {
       user: data.user,
     });
   } catch (error) {
-    console.error("Registration error:", error);
+    console.error("Registration error route handler wrapper:", error);
     return NextResponse.json({ error: "Registration failed" }, { status: 500 });
   }
 }

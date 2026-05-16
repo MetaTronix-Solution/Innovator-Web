@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState, useRef } from "react"; // Added useRef
+import React, { useState, useRef } from "react";
 import { Video, ImageIcon, Smile, User } from "lucide-react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/store/store";
 import Image from "next/image";
 import CreatePostModal from "./CreatePostModal";
-
-const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+import Link from "next/link";
+import { getMediaUrl } from "@/lib/utils/getMediaUrl";
 
 const CreatePostBox = () => {
   const { user } = useSelector((state: RootState) => state.auth);
@@ -17,19 +17,14 @@ const CreatePostBox = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const getProfileImage = () => {
-    if (!user?.profile_image || user.profile_image === "null") return null;
+    const rawAvatarPath = user?.profile?.avatar || user?.profile_image;
 
-    const url = user.profile_image.startsWith("http")
-      ? user.profile_image
-      : `${BASE_URL}${user.profile_image}`;
+    if (!rawAvatarPath || rawAvatarPath === "null") return null;
 
-    if (url.startsWith("http://")) {
-      return `/api/media?url=${encodeURIComponent(url)}`;
-    }
-
-    return url;
+    return getMediaUrl(rawAvatarPath);
   };
 
+  const userId = user?.id || user?.user_id;
   const profileImage = getProfileImage();
   const firstName =
     user?.full_name?.split(" ")[0] || user?.username || "Innovator";
@@ -60,14 +55,17 @@ const CreatePostBox = () => {
       />
 
       <div className="flex items-center gap-2 md:gap-3 pb-3 border-b border-border">
-        <div className="flex-shrink-0 relative">
+        <Link
+          href={`/${userId}`}
+          className="flex-shrink-0 relative transition-transform active:scale-95"
+        >
           <div className="w-12 h-12 relative rounded-full border-2 border-primary/20 p-0 flex items-center justify-center bg-muted overflow-hidden shrink-0">
             {profileImage ? (
               <Image
                 src={profileImage}
                 alt={user?.username || "User profile"}
                 fill
-                className="rounded-full object-cover cursor-pointer hover:opacity-90"
+                className="rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
                 priority
                 unoptimized
               />
@@ -75,7 +73,7 @@ const CreatePostBox = () => {
               <User size={26} className="text-muted-foreground/60" />
             )}
           </div>
-        </div>
+        </Link>
 
         <button
           onClick={() => setIsOpen(true)}
@@ -91,7 +89,7 @@ const CreatePostBox = () => {
             setSelectedFile(null);
           }}
           user={user}
-          profileImage={getProfileImage()}
+          profileImage={profileImage}
           initialFile={selectedFile}
         />
       </div>

@@ -5,7 +5,6 @@ import Image from "next/image";
 import {
   EllipsisVertical,
   MessageCircle,
-  ThumbsUp,
   Repeat2,
   User,
   Send,
@@ -33,6 +32,7 @@ import RepostCard from "./RepostCard";
 import ReactionsModal from "./ReactionsModal";
 import ReactionButton from "./ReactionButton";
 import { RootState } from "@/lib/store/store";
+import Link from "next/link";
 
 const renderedPosts = new Set<string>();
 
@@ -168,7 +168,6 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
             ? -1
             : 0;
 
-      // Optimistic update — instant, no network wait
       dispatch(
         togglePostReaction({ postId: post.id, reactionType: nextReaction }),
       );
@@ -188,7 +187,6 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
           if (res.status === 401) router.push("/login");
           throw new Error("Failed to sync reaction");
         }
-        // ← No fetchReactionCount() here anymore
       } catch {
         // Rollback on failure
         dispatch(
@@ -293,25 +291,35 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
         {/* Header */}
         <div className="p-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-full bg-muted border border-border flex items-center justify-center overflow-hidden shrink-0 relative">
-              {avatarUrl ? (
-                <Image
-                  src={avatarUrl}
-                  alt={post.username || "avatar"}
-                  fill
-                  sizes="44px"
-                  className="object-cover"
-                  unoptimized
-                />
-              ) : (
-                <User size={24} className="text-muted-foreground/60" />
-              )}
-            </div>
+            <Link
+              href={`/${post.user_id}`}
+              className="group transition-transform active:scale-95"
+            >
+              <div className="w-11 h-11 rounded-full bg-muted border-2 border-primary/20 flex items-center justify-center overflow-hidden shrink-0 relative group-hover:border-primary transition-colors">
+                {avatarUrl ? (
+                  <Image
+                    src={avatarUrl}
+                    alt={post.username || "avatar"}
+                    fill
+                    sizes="44px"
+                    className="object-cover"
+                    unoptimized
+                  />
+                ) : (
+                  <User size={24} className="text-muted-foreground/60" />
+                )}
+              </div>
+            </Link>
             <div>
               <div className="flex items-center gap-2">
-                <p className="font-bold text-foreground text-sm">
-                  {post.full_name || post.username}
-                </p>
+                <Link
+                  href={`/${post.user_id}`}
+                  className="hover:underline decoration-[#ff6b00] underline-offset-2 transition-all"
+                >
+                  <p className="font-bold text-foreground text-sm">
+                    {post.full_name || post.username}
+                  </p>
+                </Link>
                 <FollowToggle
                   userId={post.user_id}
                   initialIsFollowed={post.is_followed}
@@ -365,7 +373,7 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
               count={localCount}
               onReact={handleReact}
               onCountClick={() => {
-                if (localCount > 0) setShowReactionsModal(true); // ← localCount
+                if (localCount > 0) setShowReactionsModal(true);
               }}
             />
             <ActionButton
@@ -388,7 +396,7 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
 
           <button
             onClick={handleShare}
-            className="p-2 hover:bg-accent rounded-full text-muted-foreground transition-all"
+            className="p-2 hover:bg-accent rounded-full cursor-pointer text-muted-foreground transition-all"
           >
             <Send size={18} />
           </button>

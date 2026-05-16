@@ -17,7 +17,6 @@ const ReelVideo = memo(({ src, poster, className }: ReelVideoProps) => {
   const [showHeart, setShowHeart] = useState(false);
   const [isMuted, setIsMuted] = useState(false); // Reels usually start unmuted or follow system
 
-  // Facebook Style: Intersection Observer to Auto-play/Pause
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -32,14 +31,13 @@ const ReelVideo = memo(({ src, poster, className }: ReelVideoProps) => {
           videoRef.current.pause();
         }
       },
-      { threshold: 0.6 }, // Play when 60% of the reel is visible
+      { threshold: 0.6 },
     );
 
     if (containerRef.current) observer.observe(containerRef.current);
     return () => observer.disconnect();
   }, []);
 
-  // Handle Play/Pause Toggle
   const togglePlay = useCallback(() => {
     if (!videoRef.current) return;
     if (videoRef.current.paused) {
@@ -49,7 +47,6 @@ const ReelVideo = memo(({ src, poster, className }: ReelVideoProps) => {
     }
   }, []);
 
-  // Facebook Style: Double Tap to Like
   const lastTap = useRef<number>(0);
   const handleTouch = () => {
     const now = Date.now();
@@ -72,7 +69,6 @@ const ReelVideo = memo(({ src, poster, className }: ReelVideoProps) => {
         ref={videoRef}
         src={src}
         poster={poster}
-        loop
         playsInline
         autoPlay
         muted={isMuted}

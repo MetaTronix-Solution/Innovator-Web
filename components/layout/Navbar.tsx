@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/lib/store/store";
 import Image from "next/image";
+import Link from "next/link";
 import {
   Home,
   PlaySquare,
@@ -26,8 +27,7 @@ import { ThemeToggle } from "../ThemeToggle";
 import SearchBar from "../SearchBar";
 import UserDropdown from "../UserDropdown";
 import { signOut } from "next-auth/react";
-
-const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+import { getMediaUrl } from "@/lib/utils/getMediaUrl";
 
 interface NavItemProps {
   icon: React.ReactElement<{ size?: number; strokeWidth?: number }>;
@@ -63,7 +63,7 @@ const Navbar = () => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
+        dropdownRef.current.contains(event.target as Node) === false
       ) {
         setIsDropdownOpen(false);
       }
@@ -76,21 +76,22 @@ const Navbar = () => {
   const { user } = useSelector((state: RootState) => state.auth);
 
   const getProfileImage = () => {
-    if (!user?.profile_image || user?.profile_image === "null") return null;
-    return user.profile_image.startsWith("http")
-      ? user.profile_image
-      : `${BASE_URL}${user.profile_image}`;
+    const rawAvatarPath = user?.profile?.avatar || user?.profile_image;
+
+    if (!rawAvatarPath || rawAvatarPath === "null") return null;
+
+    return getMediaUrl(rawAvatarPath);
   };
   const profileImage = getProfileImage();
 
   const handleLogout = async () => {
     try {
-      await authService.logout(); // clears HttpOnly cookie
+      await authService.logout();
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
-      dispatch(clearCredentials()); // clears Redux + persisted storage
-      await signOut({ redirect: false }); // clears NextAuth session (Google users)
+      dispatch(clearCredentials());
+      await signOut({ redirect: false });
       router.push("/login");
       router.refresh();
     }
@@ -116,15 +117,15 @@ const Navbar = () => {
       <nav className="sticky top-0 z-50 w-full bg-card border-b border-border shadow-sm">
         <div className="max-w-[1440px] mx-auto px-4 md:px-8 flex items-center justify-between h-16">
           <div className="flex items-center flex-1 gap-2">
-            <div
-              onClick={() => router.push("/")}
-              className="flex items-center justify-center w-10 h-10 text-xl font-bold text-primary-foreground bg-primary rounded-full cursor-pointer hover:opacity-90 shrink-0"
+            {/* 2. Converted Branding Identity Logo to use Link instead of router.push */}
+            <Link
+              href="/"
+              className="flex items-center justify-center w-10 h-10 text-xl font-bold text-primary-foreground bg-primary rounded-full hover:opacity-90 shrink-0 select-none"
             >
               I
-            </div>
+            </Link>
           </div>
 
-          {/* Center: Desktop Navigation */}
           <div className="hidden md:flex items-center justify-center flex-[1.5] h-full gap-1">
             {navLinks.map((link) => (
               <NavItem
@@ -177,6 +178,7 @@ const Navbar = () => {
                   user={user}
                   onLogout={handleLogout}
                   getProfileImage={getProfileImage}
+                  onClose={() => setIsDropdownOpen(false)}
                 />
               )}
             </div>
@@ -190,6 +192,7 @@ const Navbar = () => {
           </div>
         </div>
 
+        {/* Mobile Dropdown Menu Container Context */}
         {isMobileMenuOpen && (
           <div
             ref={menuRef}
@@ -200,12 +203,10 @@ const Navbar = () => {
             </div>
             <div className="grid grid-cols-1 gap-2">
               {navLinks.map((link) => (
-                <div
+                <Link
                   key={link.href}
-                  onClick={() => {
-                    router.push(link.href);
-                    setIsMobileMenuOpen(false);
-                  }}
+                  href={link.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
                   className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
                     pathname === link.href
                       ? "bg-primary/10 text-primary"
@@ -219,7 +220,7 @@ const Navbar = () => {
                     },
                   )}
                   <span className="font-medium">{link.label}</span>
-                </div>
+                </Link>
               ))}
               <hr className="border-border my-2" />
               <div className="flex items-center justify-between px-2">
@@ -242,11 +243,9 @@ const Navbar = () => {
 };
 
 const NavItem = ({ icon, href, active = false }: NavItemProps) => {
-  const router = useRouter();
-
   return (
-    <div
-      onClick={() => router.push(href)}
+    <Link
+      href={href}
       className={`
         flex items-center justify-center w-16 lg:w-24 h-full cursor-pointer border-b-4 transition-all
         ${
@@ -257,7 +256,7 @@ const NavItem = ({ icon, href, active = false }: NavItemProps) => {
       `}
     >
       {React.cloneElement(icon, { size: 28, strokeWidth: active ? 2.5 : 2 })}
-    </div>
+    </Link>
   );
 };
 
