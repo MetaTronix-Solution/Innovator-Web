@@ -291,7 +291,7 @@ const ReplyItem = memo(
     reply: Reply;
     formatTime: (date: string) => string;
   }) => {
-    const avatarUrl = getMediaUrl(reply.avatar);
+    const avatarUrl = getMediaUrl(reply.avatar) || "";
 
     return (
       <div className="flex gap-2 pl-2 py-1">

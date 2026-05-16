@@ -71,7 +71,7 @@ const RepostModal = ({
               <div className="w-8 h-8 rounded-full bg-muted border border-border relative overflow-hidden shrink-0 flex items-center justify-center">
                 {post.avatar ? (
                   <Image
-                    src={getMediaUrl(post.avatar)}
+                    src={getMediaUrl(post.avatar) || ""}
                     alt={post.username}
                     fill
                     className="object-cover"

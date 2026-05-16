@@ -106,7 +106,7 @@ const ReactionButton = memo(
       return (
         <>
           <div
-            className="relative" // Container for picker logic
+            className="relative"
             onMouseEnter={() => {
               clearLeave();
               holdTimer.current = setTimeout(openPicker, 500);
@@ -208,7 +208,6 @@ const ReactionButton = memo(
       );
     }
 
-    // ── Default variant (PostCard) ──
     return (
       <div
         className="relative flex items-center"

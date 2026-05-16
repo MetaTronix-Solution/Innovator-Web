@@ -77,7 +77,6 @@ const RepostCard = ({ post, formatRelativeTime }: RepostCardProps) => {
 
   return (
     <div className="w-full">
-      {/* Reposter's comment — shown above the quoted card */}
       {repostCaption ? (
         <div className="px-4 pb-3">
           <p className="text-[15px] text-foreground/90 leading-relaxed">
@@ -85,14 +84,12 @@ const RepostCard = ({ post, formatRelativeTime }: RepostCardProps) => {
           </p>
         </div>
       ) : (
-        // If no caption, show a subtle repost indicator
         <div className="flex items-center gap-1.5 px-4 pb-2 text-muted-foreground">
           <Repeat2 size={13} />
           <span className="text-xs">Reposted</span>
         </div>
       )}
 
-      {/* Quoted original post card */}
       {shared && (
         <div className="mx-4 mb-3 border border-border/70 rounded-2xl overflow-hidden bg-muted/10 hover:bg-muted/20 transition-colors cursor-pointer">
           {/* Original post header */}

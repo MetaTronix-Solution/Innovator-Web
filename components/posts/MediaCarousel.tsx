@@ -58,7 +58,7 @@ const MediaCarousel = memo(
         >
           <div className="relative w-full h-[400px]">
             <Image
-              src={fileUrl}
+              src={fileUrl || ""}
               alt="Post"
               fill
               className="object-contain"

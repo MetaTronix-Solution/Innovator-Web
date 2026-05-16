@@ -241,8 +241,8 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
       return (
         <div className="w-full bg-black flex items-center justify-center min-h-[350px] relative border-y border-border/40">
           <LazyVideo
-            src={getMediaUrl(post.video)}
-            poster={getMediaUrl(post.thumbnail)}
+            src={getMediaUrl(post.video) || ""}
+            poster={getMediaUrl(post.thumbnail) || ""}
             className="w-full max-h-[600px] object-contain"
           />
         </div>

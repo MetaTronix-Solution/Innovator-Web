@@ -2,6 +2,7 @@
 
 import React, { memo, useState, useCallback } from "react";
 import Image from "next/image";
+import Link from "next/link"; // Ensure next/link is used for clean client-side transitions
 import {
   MessageCircle,
   MoreHorizontal,
@@ -37,6 +38,9 @@ const ReelCard = ({ reel, post }: ReelCardProps) => {
   const [localCount, setLocalCount] = useState<number>(
     reel.reactions_count ?? reel.like_count ?? 0,
   );
+
+  // Safely resolve the author's database ID exactly like CreatePostBox
+  const userId = reel.user_id || reel.user?.id || reel.id;
 
   const handleReact = useCallback(
     async (reactionType: string) => {
@@ -88,7 +92,7 @@ const ReelCard = ({ reel, post }: ReelCardProps) => {
       <div className="absolute inset-0 z-0">
         {videoSrc ? (
           <ReelVideo
-            src={videoSrc}
+            src={videoSrc || ""}
             poster={posterSrc || ""}
             className="w-full h-full object-contain"
           />
@@ -111,7 +115,7 @@ const ReelCard = ({ reel, post }: ReelCardProps) => {
         />
         <button
           onClick={handleShare}
-          className="p-2  rounded-full cursor-pointer text-muted-foreground transition-all hover:scale-110"
+          className="p-2 rounded-full cursor-pointer text-muted-foreground transition-all hover:scale-110"
         >
           <Send size={22} className="text-white" />
         </button>
@@ -129,30 +133,35 @@ const ReelCard = ({ reel, post }: ReelCardProps) => {
         </button>
       </div>
 
-      {/* Bottom info overlay */}
       <div className="absolute bottom-0 left-0 right-0 z-10 px-4 pt-16 pb-6 bg-gradient-to-t from-black/90 via-black/40 to-transparent">
         <div className="flex items-center gap-2.5 mb-2">
-          <div className="w-10 h-10 rounded-full border-2 border-white/80 overflow-hidden relative shrink-0 shadow-lg">
-            {avatarSrc ? (
-              <Image
-                src={avatarSrc}
-                alt={reel.username ?? "user"}
-                fill
-                className="object-cover"
-                unoptimized
-              />
-            ) : (
-              <div className="bg-neutral-700 w-full h-full flex items-center justify-center">
-                <UserPlus size={16} className="text-white" />
-              </div>
-            )}
-          </div>
-          <span className="text-white font-semibold text-[15px] drop-shadow">
-            {reel.username}
-          </span>
+          <Link
+            href={`/${userId || ""}`}
+            className="flex items-center gap-2.5 group cursor-pointer transition-transform active:scale-95"
+          >
+            <div className="w-10 h-10 rounded-full border-2 border-white/80 overflow-hidden relative shrink-0 shadow-lg group-hover:border-white transition-colors">
+              {avatarSrc ? (
+                <Image
+                  src={avatarSrc || ""}
+                  alt={reel.username ?? "user"}
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+              ) : (
+                <div className="bg-neutral-700 w-full h-full flex items-center justify-center">
+                  <UserPlus size={16} className="text-white" />
+                </div>
+              )}
+            </div>
+            <span className="text-white font-semibold text-[15px] drop-shadow group-hover:underline decoration-white/70">
+              {reel.username}
+            </span>
+          </Link>
+
           <FollowToggle
             key={reel.id}
-            userId={reel.user_id}
+            userId={userId}
             initialIsFollowed={reel.is_followed ?? false}
             username={reel.username}
             variant="reels"
