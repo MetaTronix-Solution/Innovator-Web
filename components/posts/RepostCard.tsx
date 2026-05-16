@@ -14,7 +14,6 @@ interface RepostCardProps {
 const RepostCard = ({ post, formatRelativeTime }: RepostCardProps) => {
   const shared = post.shared_post_details;
 
-  // Reposter's comment — what they wrote when reposting
   const repostCaption = post.content || post.caption || "";
 
   const originalCaption = shared?.content || shared?.caption || "";

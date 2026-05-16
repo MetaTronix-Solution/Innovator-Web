@@ -39,7 +39,6 @@ const ReelCard = ({ reel, post }: ReelCardProps) => {
     reel.reactions_count ?? reel.like_count ?? 0,
   );
 
-  // Safely resolve the author's database ID exactly like CreatePostBox
   const userId = reel.user_id || reel.user?.id || reel.id;
 
   const handleReact = useCallback(
@@ -93,7 +92,7 @@ const ReelCard = ({ reel, post }: ReelCardProps) => {
         {videoSrc ? (
           <ReelVideo
             src={videoSrc || ""}
-            poster={posterSrc || ""}
+            poster={posterSrc || undefined}
             className="w-full h-full object-contain"
           />
         ) : (

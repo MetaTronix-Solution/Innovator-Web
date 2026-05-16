@@ -153,7 +153,7 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
   // Only on mount — not after every reaction
   useEffect(() => {
     if (isVisible) fetchReactionCount();
-  }, [isVisible]); // ← intentionally omit fetchReactionCount from deps
+  }, [isVisible]);
 
   const handleReact = useCallback(
     async (reactionType: string) => {
@@ -188,7 +188,6 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
           throw new Error("Failed to sync reaction");
         }
       } catch {
-        // Rollback on failure
         dispatch(
           togglePostReaction({ postId: post.id, reactionType: prevReaction }),
         );
@@ -242,7 +241,7 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
         <div className="w-full bg-black flex items-center justify-center min-h-[350px] relative border-y border-border/40">
           <LazyVideo
             src={getMediaUrl(post.video) || ""}
-            poster={getMediaUrl(post.thumbnail) || ""}
+            poster={getMediaUrl(post.thumbnail) || undefined}
             className="w-full max-h-[600px] object-contain"
           />
         </div>
@@ -262,7 +261,7 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
         {isVideo ? (
           <LazyVideo
             src={singleUrl}
-            poster={getMediaUrl(post.thumbnail)}
+            poster={getMediaUrl(post.thumbnail) || undefined}
             className="w-full max-h-[600px] object-contain"
           />
         ) : (
