@@ -33,6 +33,7 @@ import { NotificationFeed } from "@/components/NotificationFeed";
 
 import { NotificationService } from "@/lib/services/notificationService";
 import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
+import { NotificationItem } from "@/types/notification";
 
 interface NavItemProps {
   icon: React.ReactElement<{ size?: number; strokeWidth?: number }>;
@@ -47,7 +48,9 @@ const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [initialNotifications, setInitialNotifications] = useState([]);
+  const [initialNotifications, setInitialNotifications] = useState<
+    NotificationItem[]
+  >([]);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
