@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useSelector } from "react-redux";
 import Image from "next/image";
@@ -17,6 +17,8 @@ import { getMediaUrl } from "@/lib/utils/getMediaUrl";
 import CreatePostBox from "@/components/Home/CreatePostBox";
 import FollowToggle from "@/components/FollowToggle";
 import PostCard from "@/components/posts/PostCard";
+import EditProfileModal from "@/components/profile/EditProfileModal";
+import ReelCard from "@/components/Reels/ReelCard";
 
 const ProfilePage = () => {
   const params = useParams();
@@ -25,6 +27,10 @@ const ProfilePage = () => {
 
   const [profileData, setProfileData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [userReels, setUserReels] = useState<any[]>(profileData?.reels || []);
+  const [reelsLoading, setReelsLoading] = useState(false);
+  const [reelsFetched, setReelsFetched] = useState(false);
 
   const [activeTab, setActiveTab] = useState<"posts" | "reels">("posts");
 
@@ -37,7 +43,6 @@ const ProfilePage = () => {
         setLoading(true);
         const userRes = await fetch(`/api/users/${targetId}`);
         const userData = await userRes.json();
-        console.log(userData);
         if (userRes.ok) setProfileData(userData);
       } catch (err) {
         console.error("Failed to load profile data:", err);
@@ -47,6 +52,39 @@ const ProfilePage = () => {
     };
     loadData();
   }, [targetId]);
+
+  const fetchReels = useCallback(async () => {
+    if (reelsFetched || !targetId) return;
+    setReelsLoading(true);
+    try {
+      const res = await fetch(`/api/reels?user=${targetId}`);
+      const data = await res.json();
+      if (res.ok) {
+        setUserReels(Array.isArray(data) ? data : (data.results ?? []));
+        setReelsFetched(true);
+      }
+    } catch (err) {
+      console.error("Failed to fetch reels:", err);
+    } finally {
+      setReelsLoading(false);
+    }
+  }, [targetId, reelsFetched]);
+
+  const handleTabChange = (tab: "posts" | "reels") => {
+    setActiveTab(tab);
+    if (tab === "reels") fetchReels();
+  };
+
+  const handleProfileUpdated = (updated: any) => {
+    setProfileData((prev: any) => ({
+      ...prev,
+      full_name: updated.full_name ?? prev.full_name,
+      profile: {
+        ...prev.profile,
+        ...updated,
+      },
+    }));
+  };
 
   if (loading) {
     return (
@@ -62,7 +100,6 @@ const ProfilePage = () => {
     );
 
   const userPosts = profileData.posts || [];
-  const userReels = profileData.reels || []; // Assuming reels are in the response
   const avatarUrl = getMediaUrl(
     profileData?.profile?.avatar || profileData?.profile_image,
   );
@@ -99,9 +136,17 @@ const ProfilePage = () => {
 
           <div className="pt-4">
             {isOwnProfile ? (
-              <button className="p-2 text-slate-400 hover:bg-slate-100 rounded-full">
-                <MoreHorizontal size={26} />
-              </button>
+              <div className="pt-4 flex items-center gap-2">
+                <button
+                  onClick={() => setShowEditModal(true)}
+                  className="border border-slate-200 text-slate-700 px-5 py-2 rounded-full font-bold text-sm hover:bg-slate-50 transition-colors"
+                >
+                  Edit profile
+                </button>
+                <button className="p-2 text-slate-400 hover:bg-slate-100 rounded-full">
+                  <MoreHorizontal size={26} />
+                </button>
+              </div>
             ) : (
               <div className="flex gap-2">
                 <button className="bg-[#ff6b00] text-white px-6 py-2 rounded-full font-bold text-sm shadow-md flex items-center gap-2">
@@ -115,6 +160,13 @@ const ProfilePage = () => {
                 />
               </div>
             )}
+
+            {showEditModal && (
+              <EditProfileModal
+                onClose={() => setShowEditModal(false)}
+                onUpdated={handleProfileUpdated}
+              />
+            )}
           </div>
         </div>
 
@@ -123,7 +175,7 @@ const ProfilePage = () => {
             {profileData?.full_name || profileData?.username}
           </h1>
           <p className="text-sm text-slate-500 font-medium">
-            {profileData?.email || `@${profileData?.username}`}
+            {`@${profileData?.username}` || profileData?.email}
           </p>
         </div>
 
@@ -151,9 +203,8 @@ const ProfilePage = () => {
         )}
 
         <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-0 px-1">
-          {/* Left Side */}
           <button
-            onClick={() => setActiveTab("posts")}
+            onClick={() => handleTabChange("posts")}
             className={`flex items-center gap-2 pb-2 transition-all ${
               activeTab === "posts"
                 ? "border-b-2 border-[#ff6b00] text-slate-900"
@@ -166,9 +217,8 @@ const ProfilePage = () => {
             </span>
           </button>
 
-          {/* Right Side */}
           <button
-            onClick={() => setActiveTab("reels")}
+            onClick={() => handleTabChange("reels")}
             className={`flex items-center gap-2 pb-2 transition-all ${
               activeTab === "reels"
                 ? "border-b-2 border-[#ff6b00] text-slate-900"
@@ -182,7 +232,6 @@ const ProfilePage = () => {
           </button>
         </div>
 
-        {/* Content Display */}
         <div className="grid grid-cols-1 gap-4">
           {activeTab === "posts" ? (
             userPosts.length > 0 ? (
@@ -192,23 +241,26 @@ const ProfilePage = () => {
             ) : (
               <EmptyState message="No posts to show yet." />
             )
-          ) : (
-            // Placeholder for Reels Grid (usually 3 columns)
-            <div className="grid grid-cols-3 gap-2">
-              {userReels.length > 0 ? (
-                userReels.map((reel: any) => (
-                  <div
-                    key={reel.id}
-                    className="aspect-[9/16] bg-slate-200 rounded-lg animate-pulse"
-                  />
-                ))
-              ) : (
-                <div className="col-span-3 py-20 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-white/50">
-                  <p className="text-slate-400 text-sm font-medium">
-                    No reels to show yet.
-                  </p>
+          ) : reelsLoading ? (
+            <div className="flex justify-center py-20">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#ff6b00] border-t-transparent" />
+            </div>
+          ) : userReels.length > 0 ? (
+            <div className="flex flex-col gap-6 items-center">
+              {userReels.map((reel: any) => (
+                <div
+                  key={reel.id}
+                  className="w-full max-w-[400px] h-[700px] rounded-3xl overflow-hidden"
+                >
+                  <ReelCard reel={reel} />
                 </div>
-              )}
+              ))}
+            </div>
+          ) : (
+            <div className="py-20 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-white/50">
+              <p className="text-slate-400 text-sm font-medium">
+                No reels to show yet.
+              </p>
             </div>
           )}
         </div>
@@ -217,7 +269,6 @@ const ProfilePage = () => {
   );
 };
 
-// Sub-components for cleaner code
 const StatItem = ({
   count,
   label,

@@ -29,6 +29,11 @@ import UserDropdown from "../UserDropdown";
 import { signOut } from "next-auth/react";
 import { getMediaUrl } from "@/lib/utils/getMediaUrl";
 
+import { NotificationFeed } from "@/components/NotificationFeed";
+
+import { NotificationService } from "@/lib/services/notificationService";
+import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
+
 interface NavItemProps {
   icon: React.ReactElement<{ size?: number; strokeWidth?: number }>;
   href: string;
@@ -41,8 +46,31 @@ const Navbar = () => {
   const dispatch = useDispatch();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [initialNotifications, setInitialNotifications] = useState([]);
+
   const dropdownRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const { user } = useSelector((state: RootState) => state.auth);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchInitialNotifications = async () => {
+      try {
+        const data = await NotificationService.getNotifications();
+        setInitialNotifications(data);
+
+        const unread = data.filter((n: any) => !n.is_read).length;
+        setUnreadCount(unread);
+      } catch (err) {
+        console.error("Failed loading initial notification metrics:", err);
+      }
+    };
+
+    fetchInitialNotifications();
+  }, [user]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -73,13 +101,9 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isDropdownOpen]);
 
-  const { user } = useSelector((state: RootState) => state.auth);
-
   const getProfileImage = () => {
     const rawAvatarPath = user?.profile?.avatar || user?.profile_image;
-
     if (!rawAvatarPath || rawAvatarPath === "null") return null;
-
     return getMediaUrl(rawAvatarPath);
   };
   const profileImage = getProfileImage();
@@ -96,6 +120,21 @@ const Navbar = () => {
       router.refresh();
     }
   };
+
+  const [notifOpen, setNotifOpen] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setNotifOpen(false);
+      }
+    };
+    if (notifOpen) document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [notifOpen]);
+
+  const isMobile = useMediaQuery("(max-width: 640px)");
 
   const navLinks = [
     { icon: <Home />, href: "/", label: "Home", exact: true },
@@ -117,7 +156,6 @@ const Navbar = () => {
       <nav className="sticky top-0 z-50 w-full bg-card border-b border-border shadow-sm">
         <div className="max-w-[1440px] mx-auto px-4 md:px-8 flex items-center justify-between h-16">
           <div className="flex items-center flex-1 gap-2">
-            {/* 2. Converted Branding Identity Logo to use Link instead of router.push */}
             <Link
               href="/"
               className="flex items-center justify-center w-10 h-10 text-xl font-bold text-primary-foreground bg-primary rounded-full hover:opacity-90 shrink-0 select-none"
@@ -145,7 +183,32 @@ const Navbar = () => {
             <div className="hidden sm:flex items-center gap-1 md:gap-2">
               <SearchBar />
               <IconButton icon={<MessageCircle />} />
-              <IconButton icon={<Bell />} />
+
+              <div className="relative" ref={notifRef}>
+                <div
+                  onClick={() => setNotifOpen((o) => !o)}
+                  className="relative flex items-center justify-center w-8 h-8 md:w-10 md:h-10 bg-secondary text-secondary-foreground rounded-full cursor-pointer hover:bg-accent transition-colors border border-transparent active:scale-95"
+                >
+                  <Bell size={28} />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground flex items-center justify-center border border-card shadow animate-pulse">
+                      {unreadCount}
+                    </span>
+                  )}
+                </div>
+
+                {notifOpen && (
+                  <div className="fixed top-[70px] right-32 w-[320px] 2xl:w-[380px] h-[calc(100vh-72px)] z-40 bg-card border-l border-border rounded-3xl shadow-xl overflow-y-auto no-scrollbar">
+                    <div className="p-4">
+                      <NotificationFeed
+                        initialNotifications={initialNotifications}
+                        userId={user?.id || user?.uuid || ""}
+                        token={user?.accessToken ?? undefined}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div ref={dropdownRef} className="relative shrink-0">
@@ -192,7 +255,6 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* Mobile Dropdown Menu Container Context */}
         {isMobileMenuOpen && (
           <div
             ref={menuRef}
@@ -222,11 +284,30 @@ const Navbar = () => {
                   <span className="font-medium">{link.label}</span>
                 </Link>
               ))}
+
               <hr className="border-border my-2" />
-              <div className="flex items-center justify-between px-2">
+
+              <Link
+                href="/notifications"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center justify-between p-3 rounded-lg hover:bg-accent text-foreground"
+              >
+                <div className="flex items-center gap-3">
+                  <Bell size={20} />
+                  <span className="font-medium">Notifications</span>
+                </div>
+                {unreadCount > 0 && (
+                  <span className="px-2 py-0.5 rounded-full bg-destructive text-xs font-bold text-destructive-foreground">
+                    {unreadCount} new
+                  </span>
+                )}
+              </Link>
+
+              <div className="flex items-center justify-between px-2 py-1">
                 <span className="text-sm font-medium">Theme</span>
                 <ThemeToggle />
               </div>
+
               <Button
                 variant="destructive"
                 className="w-full mt-2 gap-2"

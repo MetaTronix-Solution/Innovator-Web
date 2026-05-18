@@ -29,13 +29,13 @@ export async function PATCH(
   { params }: { params: Promise<{ postId: string }> },
 ) {
   try {
-    const { postId } = await params;
     const cookieStore = await cookies();
     const token = cookieStore.get("accessToken")?.value;
 
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const { postId } = await params;
 
     const formData = await request.formData();
 
@@ -68,13 +68,13 @@ export async function DELETE(
   { params }: { params: Promise<{ postId: string }> },
 ) {
   try {
-    const { postId } = await params;
     const cookieStore = await cookies();
     const token = cookieStore.get("accessToken")?.value;
 
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const { postId } = await params;
 
     const response = await fetch(`${BACKEND_URL}/api/posts/${postId}/`, {
       method: "DELETE",

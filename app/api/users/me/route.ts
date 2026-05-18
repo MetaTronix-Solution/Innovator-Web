@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
     });
 
     const data = await response.json();
+    console.log(data);
     console.log("USER DATA:", JSON.stringify(data, null, 2));
     return NextResponse.json(data, { status: response.status });
   } catch (error) {

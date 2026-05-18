@@ -125,21 +125,12 @@ export default function MainLayout({
     }
   }, [sessionStatus, session, dispatch]);
 
-  // Redirect to login if not authenticated
-  // useEffect(() => {
-  //   if (sessionStatus === "loading") return;
-  //   if (sessionStatus === "authenticated") return;
-
-  //   if (isInitialized && !isAuthenticated) {
-  //     router.replace("/login");
-  //   }
-  // }, [isInitialized, isAuthenticated, sessionStatus, router]);
   useEffect(() => {
     if (sessionStatus === "loading") return;
-    if (sessionStatus === "authenticated") return; // NextAuth session = valid, don't redirect
+    if (sessionStatus === "authenticated") return;
 
     if (!isAuthenticated) {
-      router.replace("/login"); // Only redirect if truly not authenticated
+      router.replace("/login");
     }
   }, [isAuthenticated, sessionStatus, router]);
 

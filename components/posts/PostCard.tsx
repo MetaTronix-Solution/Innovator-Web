@@ -2,15 +2,9 @@
 
 import React, { useState, useEffect, useRef, useCallback, memo } from "react";
 import Image from "next/image";
-import {
-  EllipsisVertical,
-  MessageCircle,
-  Repeat2,
-  User,
-  Send,
-} from "lucide-react";
+import { MessageCircle, Repeat2, User, Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { repostPost } from "@/lib/services/postService";
+import { repostPost, updatePost } from "@/lib/services/postService";
 import { getComments, postComment } from "@/lib/services/commentService";
 import FollowToggle from "../FollowToggle";
 import SharePostModal from "../SharePostModal";
@@ -18,10 +12,10 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   addPostToTop,
   togglePostReaction,
+  removePost,
 } from "@/lib/store/features/postsSlice";
 import { useRouter } from "next/navigation";
 import { getMediaUrl } from "@/lib/utils/getMediaUrl";
-
 import PostCardSkeleton from "./PostCardSkeleton";
 import LazyVideo from "./LazyVideo";
 import MediaCarousel from "./MediaCarousel";
@@ -31,6 +25,7 @@ import RepostModal from "./RepostModal";
 import RepostCard from "./RepostCard";
 import ReactionsModal from "./ReactionsModal";
 import ReactionButton from "./ReactionButton";
+import PostCardMenu from "./PostCardMenu";
 import { RootState } from "@/lib/store/store";
 import Link from "next/link";
 
@@ -52,15 +47,24 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
   const [showReactionsModal, setShowReactionsModal] = useState(false);
   const [localCount, setLocalCount] = useState<number>(post.like_count ?? 0);
 
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(
+    post.content || post.caption || "",
+  );
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+
   const cardRef = useRef<HTMLDivElement>(null);
   const dispatch = useDispatch();
   const router = useRouter();
 
+  const currentUser = useSelector((state: RootState) => state.auth.user);
+  const isOwnPost = currentUser?.id === post.user_id;
   const isRepost = !!post.shared_post_details;
+  const caption = post.caption || post.content || "";
+  const avatarUrl = getMediaUrl(post.avatar);
 
   useEffect(() => {
     if (wasRendered) return;
-
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -129,17 +133,13 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
     [newComment, post.id, post.type],
   );
 
-  const currentUser = useSelector((state: RootState) => state.auth.user);
-
   const fetchReactionCount = useCallback(async () => {
     try {
       const res = await fetch(`/api/posts/${post.id}/reactions-list/`);
       if (!res.ok) return;
       const data = await res.json();
       const reactions = Array.isArray(data) ? data : (data.results ?? []);
-
       setLocalCount(reactions.length);
-
       const myReaction = reactions.find((r: any) => r.user === currentUser?.id);
       dispatch(
         togglePostReaction({
@@ -150,7 +150,6 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
     } catch {}
   }, [post.id, currentUser?.id, dispatch]);
 
-  // Only on mount — not after every reaction
   useEffect(() => {
     if (isVisible) fetchReactionCount();
   }, [isVisible]);
@@ -160,19 +159,16 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
       const prevReaction = post.current_user_reaction;
       const isSameReaction = prevReaction === reactionType;
       const nextReaction = isSameReaction ? null : reactionType;
-
       const delta =
         !prevReaction && nextReaction
           ? 1
           : prevReaction && !nextReaction
             ? -1
             : 0;
-
       dispatch(
         togglePostReaction({ postId: post.id, reactionType: nextReaction }),
       );
       setLocalCount((c) => Math.max(0, c + delta));
-
       try {
         const res = await fetch("/api/reactions", {
           method: "POST",
@@ -197,10 +193,6 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
     [post.id, post.current_user_reaction, dispatch, router],
   );
 
-  const handleShare = useCallback(async () => {
-    setIsShareModalOpen(true);
-  }, []);
-
   const handleRepostSubmit = useCallback(async () => {
     if (!repostCaption.trim()) return;
     setIsSubmitting(true);
@@ -217,9 +209,23 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
     }
   }, [repostCaption, post.id]);
 
-  const liked = post.current_user_reaction === "like";
-  const avatarUrl = getMediaUrl(post.avatar);
-  const caption = post.caption || post.content || "";
+  const handleEditSave = useCallback(async () => {
+    if (!editContent.trim()) return;
+    setIsSavingEdit(true);
+    try {
+      await updatePost(post.id, { content: editContent });
+      toast.success("Post updated!");
+      setIsEditing(false);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update post");
+    } finally {
+      setIsSavingEdit(false);
+    }
+  }, [editContent, post.id]);
+
+  const handleDeleted = useCallback(() => {
+    dispatch(removePost(post.id));
+  }, [dispatch, post.id]);
 
   if (!isVisible) {
     return (
@@ -231,11 +237,9 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
 
   const renderMedia = () => {
     if (isRepost) return null;
-
     if (post.media?.length > 0) {
       return <MediaCarousel media={post.media} thumbnail={post.thumbnail} />;
     }
-
     if (post.video) {
       return (
         <div className="w-full bg-black flex items-center justify-center min-h-[350px] relative border-y border-border/40">
@@ -247,15 +251,12 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
         </div>
       );
     }
-
     const singleUrl = getMediaUrl(post.file || post.image_url);
     if (!singleUrl) return null;
-
     const isVideo = singleUrl
       .toLowerCase()
       .split(/[?#]/)[0]
       .match(/\.(mp4|webm|mov|m4v|m3u8)$/);
-
     return (
       <div className="w-full bg-muted/20 flex items-center justify-center min-h-[350px] relative border-y border-border/40">
         {isVideo ? (
@@ -331,9 +332,17 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
               </p>
             </div>
           </div>
-          <button className="p-2 hover:bg-accent rounded-full text-muted-foreground transition-colors">
-            <EllipsisVertical size={18} />
-          </button>
+
+          <PostCardMenu
+            postId={post.id}
+            isOwnPost={isOwnPost}
+            content={caption}
+            onDeleted={handleDeleted}
+            onEditClick={() => {
+              setEditContent(caption);
+              setIsEditing(true);
+            }}
+          />
         </div>
 
         {/* Content */}
@@ -341,26 +350,57 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
           <RepostCard post={post} formatRelativeTime={formatRelativeTime} />
         ) : (
           <>
-            {caption && (
+            {/* Inline edit mode */}
+            {isEditing ? (
               <div className="px-4 pb-3">
-                <p
-                  className={`text-[15px] text-foreground/90 leading-relaxed whitespace-pre-wrap transition-all duration-300 ${
-                    !isExpanded ? "line-clamp-2" : ""
-                  }`}
-                >
-                  {caption}
-                </p>
-                {caption.length > 100 && (
+                <textarea
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  rows={3}
+                  autoFocus
+                  className="w-full bg-muted/40 border border-border rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30 resize-none transition-all"
+                />
+                <div className="flex gap-2 mt-2 justify-end">
                   <button
-                    onClick={() => setIsExpanded((v) => !v)}
-                    className="text-primary hover:text-primary/80 text-sm font-semibold mt-1 transition-colors"
+                    onClick={() => setIsEditing(false)}
+                    className="text-sm text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-lg transition-colors"
                   >
-                    {isExpanded ? "Show less" : "more"}
+                    Cancel
                   </button>
-                )}
+                  <button
+                    onClick={handleEditSave}
+                    disabled={isSavingEdit || !editContent.trim()}
+                    className="flex items-center gap-1.5 text-sm bg-primary text-primary-foreground px-4 py-1.5 rounded-lg disabled:opacity-50 hover:bg-primary/90 transition-colors"
+                  >
+                    {isSavingEdit && (
+                      <Loader2 size={13} className="animate-spin" />
+                    )}
+                    Save
+                  </button>
+                </div>
               </div>
+            ) : (
+              caption && (
+                <div className="px-4 pb-3">
+                  <p
+                    className={`text-[15px] text-foreground/90 leading-relaxed whitespace-pre-wrap transition-all duration-300 ${
+                      !isExpanded ? "line-clamp-2" : ""
+                    }`}
+                  >
+                    {caption}
+                  </p>
+                  {caption.length > 100 && (
+                    <button
+                      onClick={() => setIsExpanded((v) => !v)}
+                      className="text-primary hover:text-primary/80 text-sm font-semibold mt-1 transition-colors"
+                    >
+                      {isExpanded ? "Show less" : "more"}
+                    </button>
+                  )}
+                </div>
+              )
             )}
-            {renderMedia()}
+            {!isEditing && renderMedia()}
           </>
         )}
 
@@ -394,7 +434,7 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
           </div>
 
           <button
-            onClick={handleShare}
+            onClick={() => setIsShareModalOpen(true)}
             className="p-2 hover:bg-accent rounded-full cursor-pointer text-muted-foreground transition-all"
           >
             <Send size={18} />
@@ -420,7 +460,6 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
         )}
       </div>
 
-      {/* Reactions Modal */}
       {showReactionsModal && (
         <ReactionsModal
           postId={post.id}
@@ -429,7 +468,6 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
         />
       )}
 
-      {/* Repost Modal */}
       {isRepostModalOpen && (
         <RepostModal
           post={post}

@@ -1,43 +1,47 @@
-// export const repostPost = async (
-//   postId: string,
-//   caption: string,
-//   originalData: any,
-// ) => {
-//   const response = await fetch(`/api/posts/${postId}/repost`, {
-//     method: "POST",
-//     headers: {
-//       "Content-Type": "application/json",
-//     },
-//     body: JSON.stringify({
-//       caption,
-//       originalPostId: postId,
-//       originalContent: originalData.content || originalData.caption,
-//       originalMedia: originalData.mediaFile,
-//       originalAuthor: originalData.username,
-//     }),
-//   });
-
-//   const result = await response.json();
-
-//   if (!response.ok) {
-//     throw new Error(result.error || "Failed to repost");
-//   }
-
-//   return result;
-// };
-
 export const repostPost = async (postId: string, caption: string) => {
   const response = await fetch(`/api/posts/${postId}/repost`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ caption }), // ← only caption needed
+    body: JSON.stringify({ caption }),
   });
 
   const result = await response.json();
+  if (!response.ok) throw new Error(result.error || "Failed to repost");
+  return result;
+};
 
-  if (!response.ok) {
-    throw new Error(result.error || "Failed to repost");
+export const updatePost = async (
+  postId: string,
+  payload: { content?: string; media?: File[] },
+) => {
+  const formData = new FormData();
+
+  if (payload.content !== undefined) {
+    formData.append("content", payload.content);
   }
 
+  if (payload.media?.length) {
+    payload.media.forEach((file) => formData.append("media", file));
+  }
+
+  const response = await fetch(`/api/posts/${postId}`, {
+    method: "PATCH",
+    body: formData,
+  });
+
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error || "Failed to update post");
+  return result;
+};
+
+export const deletePost = async (postId: string) => {
+  const response = await fetch(`/api/posts/${postId}`, {
+    method: "DELETE",
+  });
+
+  if (response.status === 204) return null;
+
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error || "Failed to delete post");
   return result;
 };

@@ -3,15 +3,16 @@ import { NextRequest, NextResponse } from "next/server";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const { id } = await params;
-  console.log(id);
+export async function GET(req: NextRequest) {
+  // 1. Get '?q=' from the frontend URL
+  const { searchParams } = new URL(req.url);
+  const query = searchParams.get("q");
 
-  if (!id || id === "undefined") {
-    return NextResponse.json({ error: "Invalid User ID" }, { status: 400 });
+  if (!query || query.trim() === "") {
+    return NextResponse.json(
+      { error: "Search query is required" },
+      { status: 400 },
+    );
   }
 
   const cookieStore = await cookies();
@@ -22,7 +23,7 @@ export async function GET(
   }
 
   try {
-    const backendUrl = `${BASE_URL}/api/users/${id}/`;
+    const backendUrl = `${BASE_URL}/api/users/?full_name=${encodeURIComponent(query.trim())}`;
 
     const response = await fetch(backendUrl, {
       method: "GET",
@@ -30,21 +31,24 @@ export async function GET(
         "Content-Type": "application/json",
         Authorization: `Bearer ${accessToken}`,
       },
-      next: { revalidate: 30 },
+      next: { revalidate: 0 },
     });
 
     if (!response.ok) {
       return NextResponse.json(
-        { error: "User not found or access denied" },
+        { error: "Failed to fetch search results from backend" },
         { status: response.status },
       );
     }
 
     const data = await response.json();
-    console.log(data);
-    return NextResponse.json(data);
+
+    // Handle either direct array or standard paginated results array
+    const usersList = Array.isArray(data) ? data : data.results || [];
+
+    return NextResponse.json(usersList);
   } catch (error) {
-    console.error("Backend fetch error:", error);
+    console.error("Backend search fetch error:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 },

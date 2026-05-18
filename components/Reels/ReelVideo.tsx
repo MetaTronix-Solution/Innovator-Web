@@ -78,7 +78,6 @@ const ReelVideo = memo(({ src, poster, className }: ReelVideoProps) => {
         onPause={() => setIsPlaying(false)}
       />
 
-      {/* Play/Pause Center Indicator (Briefly appears on toggle) */}
       {!isPlaying && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
           <div className="bg-black/20 backdrop-blur-sm p-5 rounded-full">
@@ -87,7 +86,6 @@ const ReelVideo = memo(({ src, poster, className }: ReelVideoProps) => {
         </div>
       )}
 
-      {/* Double Tap Heart Animation */}
       {showHeart && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
           <Heart
@@ -97,7 +95,6 @@ const ReelVideo = memo(({ src, poster, className }: ReelVideoProps) => {
         </div>
       )}
 
-      {/* Bottom Subtle Progress Line (Facebook Style) */}
       <div className="absolute bottom-0 left-0 w-full h-[2px] bg-white/20 z-20">
         <div
           className="h-full bg-white/60 transition-all duration-100 ease-linear"

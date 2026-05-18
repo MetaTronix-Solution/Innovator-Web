@@ -23,7 +23,6 @@ const RepostModal = ({
 }: RepostModalProps) => {
   const caption = post.caption || post.content || "";
 
-  // Resolve media preview URL — image takes priority, then video thumbnail
   const mediaPreviewUrl = (() => {
     if (post.media?.length > 0) return getMediaUrl(post.media[0].file);
     if (post.thumbnail) return getMediaUrl(post.thumbnail);
@@ -50,7 +49,6 @@ const RepostModal = ({
         </div>
 
         <div className="p-6 space-y-5">
-          {/* Current user caption input */}
           <div className="flex gap-4">
             <div className="w-10 h-10 relative rounded-full bg-muted border border-border overflow-hidden shrink-0 flex items-center justify-center">
               <User size={20} className="text-muted-foreground" />
@@ -66,7 +64,6 @@ const RepostModal = ({
 
           {/* Original post preview */}
           <div className="border border-border/60 rounded-2xl overflow-hidden bg-muted/20">
-            {/* Original post author */}
             <div className="flex items-center gap-2.5 px-4 pt-3 pb-2">
               <div className="w-8 h-8 rounded-full bg-muted border border-border relative overflow-hidden shrink-0 flex items-center justify-center">
                 {post.avatar ? (

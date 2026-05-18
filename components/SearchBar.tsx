@@ -1,16 +1,24 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Search } from "lucide-react";
+import { Input } from "@/components/ui/input"; // Adjust path based on your components directory
 
 const SearchBar = () => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const [query, setQuery] = useState(searchParams.get("q") || "");
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Synchronize state with screen size
+  useEffect(() => {
+    setQuery(searchParams.get("q") || "");
+  }, [searchParams]);
+
   useEffect(() => {
     const handleResize = () => {
-      // If screen is lg (1024px) or larger, keep it open
       if (window.innerWidth >= 1024) {
         setIsOpen(true);
       } else {
@@ -18,16 +26,13 @@ const SearchBar = () => {
       }
     };
 
-    // Set initial state
     handleResize();
-
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      // Only close on click outside if we are on a mobile/tablet device (< 1024px)
       if (
         window.innerWidth < 1024 &&
         containerRef.current &&
@@ -40,9 +45,17 @@ const SearchBar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (query.trim()) {
+      router.push(`/search?q=${encodeURIComponent(query.trim())}`);
+    }
+  };
+
   return (
     <div ref={containerRef} className="flex items-center h-10">
-      <div
+      <form
+        onSubmit={handleSubmit}
         onClick={() => {
           if (window.innerWidth < 1024) setIsOpen(true);
         }}
@@ -56,29 +69,34 @@ const SearchBar = () => {
           lg:w-64 lg:bg-muted lg:px-3 lg:cursor-default
         `}
       >
-        <Search
-          size={18}
-          className={`shrink-0 transition-colors ${
-            isOpen ? "text-muted-foreground" : "text-foreground"
-          } lg:text-muted-foreground`}
-        />
+        <button
+          type="submit"
+          disabled={!isOpen && window.innerWidth < 1024}
+          className="p-0 bg-transparent border-none outline-none flex items-center justify-center cursor-pointer disabled:cursor-default"
+        >
+          <Search
+            size={18}
+            className={`shrink-0 transition-colors ${
+              isOpen ? "text-muted-foreground" : "text-foreground"
+            } lg:text-muted-foreground`}
+          />
+        </button>
 
-        <input
+        <Input
           type="text"
-          placeholder="Search"
-          className={`
-            ml-2 bg-transparent border-none outline-none text-sm text-foreground placeholder:text-muted-foreground
-            transition-all duration-300 ease-in-out
-            ${
-              isOpen
-                ? "w-full opacity-100"
-                : "w-0 opacity-0 pointer-events-none"
-            }
-            lg:w-full lg:opacity-100 lg:pointer-events-auto
-          `}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search name or username"
           autoFocus={isOpen && window.innerWidth < 1024}
+          className={`
+            ml-1 h-full bg-transparent border-none outline-none text-sm text-foreground 
+            placeholder:text-muted-foreground shadow-none focus-visible:ring-0 focus-visible:ring-offset-0
+            transition-all duration-300 ease-in-out w-full
+            ${isOpen ? "opacity-100" : "opacity-0 pointer-events-none"}
+            lg:opacity-100 lg:pointer-events-auto
+          `}
         />
-      </div>
+      </form>
     </div>
   );
 };
