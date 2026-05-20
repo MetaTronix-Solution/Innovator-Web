@@ -515,13 +515,17 @@ const Navbar = () => {
       )}
 
       <nav className="sticky top-0 z-50 w-full bg-card border-b border-border shadow-sm">
-        <div className="max-w-[1440px] mx-auto px-4 md:px-8 flex items-center justify-between h-16">
-          <div className="flex items-center flex-1 gap-2">
-            <Link
-              href="/"
-              className="flex items-center justify-center w-10 h-10 text-xl font-bold text-primary-foreground bg-primary rounded-full hover:opacity-90 shrink-0 select-none"
-            >
-              I
+        <div className="max-w-[1440px] mx-auto px-2 md:px-6 flex items-center justify-between h-16">
+          <div className="flex items-center cursor-pointer flex-1 gap-2">
+            <Link href="/" className="shrink-0 flex items-center gap-1">
+              <Image
+                src="/logo1.png"
+                alt="Innovator"
+                width={40}
+                height={40}
+                className="rounded-full"
+              />
+              <p className="text-primary text-2xl font-medium">Innovator</p>
             </Link>
           </div>
 
@@ -544,7 +548,6 @@ const Navbar = () => {
             <div className="hidden sm:flex items-center gap-1 md:gap-2">
               <SearchBar />
 
-              {/* Desktop Message Link Icon Trigger */}
               <Link href="/messages" aria-label="Open chats selection panel">
                 <IconButton
                   icon={<MessageCircle />}
@@ -557,7 +560,7 @@ const Navbar = () => {
                   onClick={() => setNotifOpen((o) => !o)}
                   className="relative flex items-center justify-center w-8 h-8 md:w-10 md:h-10 bg-secondary text-secondary-foreground rounded-full cursor-pointer hover:bg-accent transition-colors border border-transparent active:scale-95"
                 >
-                  <Bell size={28} />
+                  <Bell size={24} />
                   {unreadCount > 0 && (
                     <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground flex items-center justify-center border border-card shadow animate-pulse">
                       {unreadCount}
@@ -724,7 +727,7 @@ const NavItem = ({ icon, href, active = false }: NavItemProps) => {
         }
       `}
     >
-      {React.cloneElement(icon, { size: 28, strokeWidth: active ? 2.5 : 2 })}
+      {React.cloneElement(icon, { size: 24, strokeWidth: active ? 2.5 : 2 })}
     </Link>
   );
 };
@@ -734,7 +737,6 @@ interface IconButtonProps {
   active?: boolean;
 }
 
-// Updated IconButton component template mapping active link configurations
 const IconButton = ({ icon, active = false }: IconButtonProps) => (
   <div
     className={`flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full cursor-pointer transition-all border border-transparent active:scale-95 ${
@@ -743,7 +745,7 @@ const IconButton = ({ icon, active = false }: IconButtonProps) => (
         : "bg-secondary text-secondary-foreground hover:bg-accent"
     }`}
   >
-    {React.cloneElement(icon, { size: 28 })}
+    {React.cloneElement(icon, { size: 24 })}
   </div>
 );
 
