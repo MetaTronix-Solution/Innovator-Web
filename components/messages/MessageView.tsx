@@ -133,7 +133,7 @@ export default function MessagesView({
     if (!activeChatId || !stableToken) return;
 
     const chat = conversations.find(
-      (c) => String(c.id) === String(activeChatId),
+      (c: ActiveChatUser) => String(c.id) === String(activeChatId),
     );
     const roomId = chat?.conversation_id || activeChatId;
 
@@ -173,7 +173,6 @@ export default function MessagesView({
     };
 
     ws.onclose = (event) => {
-      console.error("🔴 Closed. Code:", event.code, "Reason:", event.reason);
       socketRef.current = null;
     };
 
@@ -206,7 +205,6 @@ export default function MessagesView({
 
     ws.send(JSON.stringify(payload));
 
-    // Optimistically render the sent message immediately
     setMessages((prev) => [
       ...prev,
       {
@@ -267,7 +265,7 @@ export default function MessagesView({
                   Active Users ({activeUsers.length})
                 </h3>
                 <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar">
-                  {activeUsers.map((chatUser) => {
+                  {activeUsers.map((chatUser: ActiveChatUser) => {
                     const resolvedAvatar = getMediaUrl(getChatAvatar(chatUser));
                     const displayName = getChatName(chatUser);
                     return (
@@ -310,7 +308,7 @@ export default function MessagesView({
                 </p>
               ) : (
                 <div className="divide-y divide-border/40">
-                  {conversations.map((chat) => {
+                  {conversations.map((chat: ActiveChatUser) => {
                     const resolvedAvatar = getMediaUrl(getChatAvatar(chat));
                     const displayName = getChatName(chat);
                     return (
@@ -364,7 +362,7 @@ export default function MessagesView({
         ) : (
           /* CONDENSED SIDEBAR SPLIT COLUMN VIEW */
           <div className="flex-1 overflow-y-auto divide-y divide-border/10 no-scrollbar">
-            {conversations.map((chat) => {
+            {conversations.map((chat: ActiveChatUser) => {
               const resolvedAvatar = getMediaUrl(getChatAvatar(chat));
               const displayName = getChatName(chat);
               return (
