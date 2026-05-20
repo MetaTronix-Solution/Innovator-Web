@@ -28,8 +28,10 @@ import ReactionButton from "./ReactionButton";
 import PostCardMenu from "./PostCardMenu";
 import { RootState } from "@/lib/store/store";
 import Link from "next/link";
+import CommentButton from "./CommentButton";
+import RepostButton from "./RepostButton";
 
-const renderedPosts = new Set<string>();
+export const renderedPosts = new Set<string>();
 
 const PostCard = ({ post, index }: { post: any; index?: number }) => {
   const [isRepostModalOpen, setIsRepostModalOpen] = useState(false);
@@ -345,12 +347,10 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
           />
         </div>
 
-        {/* Content */}
         {isRepost ? (
           <RepostCard post={post} formatRelativeTime={formatRelativeTime} />
         ) : (
           <>
-            {/* Inline edit mode */}
             {isEditing ? (
               <div className="px-4 pb-3">
                 <textarea
@@ -415,20 +415,13 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
                 if (localCount > 0) setShowReactionsModal(true);
               }}
             />
-            <ActionButton
-              icon={
-                <MessageCircle
-                  size={18}
-                  className={showComments ? "text-primary fill-primary/10" : ""}
-                />
-              }
-              label={post.comments_count || 0}
-              onClick={() => setShowComments((v) => !v)}
+            <CommentButton
+              count={post.comments_count || 0}
               active={showComments}
+              onClick={() => setShowComments((v) => !v)}
             />
-            <ActionButton
-              icon={<Repeat2 size={18} />}
-              label="Repost"
+            <RepostButton
+              count={post.repost_count}
               onClick={() => setIsRepostModalOpen(true)}
             />
           </div>

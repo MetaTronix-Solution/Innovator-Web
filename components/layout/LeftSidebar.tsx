@@ -1,5 +1,5 @@
 import React from "react";
-import { Users, Bookmark, Video, Store } from "lucide-react";
+import { Users, Bookmark, Video, Store, Calendar } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface SidebarItemProps {
@@ -14,7 +14,6 @@ const LeftSidebar = () => {
 
   return (
     <aside className="h-[calc(100vh-56px)] sticky top-14 p-2">
-      {/* Primary Navigation Section */}
       <div className="space-y-1 pb-4 border-b border-border">
         <SidebarItem
           icon={<Users size={24} className="text-primary" />}
@@ -25,19 +24,24 @@ const LeftSidebar = () => {
         <SidebarItem
           icon={<Bookmark size={24} className="text-primary" />}
           label="Saved"
-          onClick={() => router.push("/following")}
+          onClick={() => router.push("/saved")}
         />
 
         <SidebarItem
           icon={<Video size={24} className="text-primary" />}
           label="Reels"
-          onClick={() => router.push("/following")}
+          onClick={() => router.push("/reels")}
         />
 
         <SidebarItem
           icon={<Store size={24} className="text-primary" />}
           label="Shop"
-          onClick={() => router.push("/following")}
+          onClick={() => router.push("/ecommerce")}
+        />
+        <SidebarItem
+          icon={<Calendar size={24} className="text-primary" />}
+          label="Events"
+          onClick={() => router.push("/events")}
         />
       </div>
     </aside>

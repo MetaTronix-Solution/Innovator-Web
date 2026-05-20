@@ -1,7 +1,6 @@
 const API_BASE = "/api/reels";
 
 export const reelsService = {
-  // Fetch all reels
   getAllReels: async () => {
     const res = await fetch(API_BASE, {
       method: "GET",
@@ -15,7 +14,6 @@ export const reelsService = {
     return res.json();
   },
 
-  // Fetch single reel
   getReelById: async (reel_id: string) => {
     const res = await fetch(`${API_BASE}/${reel_id}`, {
       method: "GET",
@@ -29,7 +27,6 @@ export const reelsService = {
     return res.json();
   },
 
-  // Create new reel
   createReel: async (formData: FormData) => {
     const res = await fetch(API_BASE, {
       method: "POST",

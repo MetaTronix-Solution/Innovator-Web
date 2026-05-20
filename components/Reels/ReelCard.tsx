@@ -18,6 +18,8 @@ import { toggleReelReaction } from "@/lib/store/features/reelsSlice";
 import { useRouter } from "next/navigation";
 import SharePostModal from "@/components/SharePostModal";
 import ReactionButton from "../posts/ReactionButton";
+import ReelCommentsDrawer from "./ReelCommentDrawer";
+import ReelReactionsDrawer from "./ReelReactonsDrawer";
 
 interface ReelCardProps {
   reel: any;
@@ -34,6 +36,8 @@ const ReelCard = ({ reel, post }: ReelCardProps) => {
   const dispatch = useDispatch();
   const router = useRouter();
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [showReactions, setShowReactions] = useState(false);
 
   const [localCount, setLocalCount] = useState<number>(
     reel.reactions_count ?? reel.like_count ?? 0,
@@ -106,11 +110,15 @@ const ReelCard = ({ reel, post }: ReelCardProps) => {
           currentReaction={reel.current_user_reaction ?? null}
           count={localCount}
           onReact={handleReact}
+          onCountClick={() => {
+            if (localCount > 0) setShowReactions(true);
+          }}
           variant="reels"
         />
         <ActionBtn
           icon={<MessageCircle size={26} strokeWidth={1.8} />}
           label={formatCount(reel.comments_count)}
+          onClick={() => setShowComments(true)} // add onClick to ActionBtn
         />
         <button
           onClick={handleShare}
@@ -130,6 +138,19 @@ const ReelCard = ({ reel, post }: ReelCardProps) => {
             className="text-white drop-shadow-lg"
           />
         </button>
+        {showComments && (
+          <ReelCommentsDrawer
+            reelId={reel.id}
+            commentsCount={reel.comments_count ?? 0}
+            onClose={() => setShowComments(false)}
+          />
+        )}
+        {showReactions && (
+          <ReelReactionsDrawer
+            reelId={reel.id}
+            onClose={() => setShowReactions(false)}
+          />
+        )}
       </div>
 
       <div className="absolute bottom-0 left-0 right-0 z-10 px-4 pt-16 pb-6 bg-gradient-to-t from-black/90 via-black/40 to-transparent">
@@ -192,9 +213,20 @@ function formatCount(val?: number | string): string {
   return String(n);
 }
 
-function ActionBtn({ icon, label }: { icon: React.ReactNode; label?: string }) {
+function ActionBtn({
+  icon,
+  label,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label?: string;
+  onClick?: () => void;
+}) {
   return (
-    <button className="flex flex-col items-center gap-1 group">
+    <button
+      onClick={onClick}
+      className="flex flex-col items-center gap-1 group"
+    >
       <span className="text-white drop-shadow-lg group-hover:scale-110 transition-transform">
         {icon}
       </span>

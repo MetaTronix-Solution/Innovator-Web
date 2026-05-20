@@ -45,3 +45,13 @@ export const deletePost = async (postId: string) => {
   if (!response.ok) throw new Error(result.error || "Failed to delete post");
   return result;
 };
+
+export const getPostById = async (postId: string) => {
+  const response = await fetch(`/api/posts/${postId}`, {
+    method: "GET",
+  });
+
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error || "Failed to fetch post");
+  return result.data ?? result;
+};

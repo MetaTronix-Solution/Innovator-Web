@@ -13,7 +13,6 @@ export default function NotificationsPage() {
   const { user } = useSelector((state: RootState) => state.auth);
 
   useEffect(() => {
-    // Wait for user to be available from Redux
     if (!user) return;
 
     setLoading(true);
@@ -21,7 +20,7 @@ export default function NotificationsPage() {
       .then(setNotifications)
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [user]); // re-run when user hydrates
+  }, [user]);
 
   if (loading) {
     return (

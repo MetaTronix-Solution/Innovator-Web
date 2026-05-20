@@ -98,3 +98,40 @@ export async function DELETE(
     );
   }
 }
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ postId: string }> },
+) {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("accessToken")?.value;
+
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const { postId } = await params;
+
+    const response = await fetch(`${BACKEND_URL}/api/posts/${postId}/`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const result = await parseBackendResponse(response);
+    console.log(result);
+
+    if (result?.error) {
+      return NextResponse.json(result.details, { status: result.status });
+    }
+
+    return NextResponse.json(result?.data, { status: 200 });
+  } catch (error) {
+    console.error(`[GET_POST_ERROR]:`, error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
+  }
+}

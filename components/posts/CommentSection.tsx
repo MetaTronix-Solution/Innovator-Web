@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, memo } from "react";
 import Image from "next/image";
-import { User, Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import { User, Loader2, ChevronDown, ChevronUp, Send } from "lucide-react";
 import { getMediaUrl } from "@/lib/utils/getMediaUrl";
 import { toast } from "sonner";
 
@@ -67,7 +67,7 @@ const CommentSection = ({
           {isSubmittingComment ? (
             <Loader2 size={16} className="animate-spin" />
           ) : (
-            "Post"
+            <Send size={16} className="text-foreground" />
           )}
         </button>
       </form>
@@ -236,7 +236,7 @@ const CommentItem = memo(
                   onChange={(e) => setReplyText(e.target.value)}
                   placeholder={`Reply to ${comment.username}…`}
                   autoFocus
-                  className="flex-1 bg-muted/40 rounded-full px-3 py-1.5 text-xs outline-none focus:ring-1 focus:ring-primary/30 placeholder:text-muted-foreground"
+                  className="flex-1 bg-muted/40 rounded-full px-4 py-2 text-xs outline-none focus:ring-1 focus:ring-primary/30 placeholder:text-muted-foreground"
                 />
                 <button
                   type="submit"
@@ -246,7 +246,7 @@ const CommentItem = memo(
                   {isSubmitting ? (
                     <Loader2 size={13} className="animate-spin" />
                   ) : (
-                    "Post"
+                    <Send size={13} className="text-foreground" />
                   )}
                 </button>
                 <button

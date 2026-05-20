@@ -1,0 +1,123 @@
+"use client";
+
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useSelector } from "react-redux";
+import MessagesView, {
+  ActiveChatUser,
+} from "@/components/messages/MessageView";
+
+export default function MessagesPage() {
+  const router = useRouter();
+  const [fetchedChatThreads, setFetchedChatThreads] = useState<
+    ActiveChatUser[]
+  >([]);
+  const [token, setToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const { user } = useSelector((state: any) => state.auth);
+  const currentUserId = user?.id
+    ? String(user.id)
+    : "b86914b5-14b0-4ea4-a102-42cc7eb6f447";
+
+  useEffect(() => {
+    const initializeChatWorkspace = async () => {
+      try {
+        const response = await fetch("/api/chats");
+        if (response.ok) {
+          const rawData = await response.json();
+
+          console.log("RAW /api/chats:", JSON.stringify(rawData, null, 2));
+
+          let messagesArray: any[] = [];
+
+          if (rawData && typeof rawData === "object" && "messages" in rawData) {
+            setToken(typeof rawData.token === "string" ? rawData.token : null);
+            messagesArray = Array.isArray(rawData.messages)
+              ? rawData.messages
+              : [];
+          } else if (Array.isArray(rawData)) {
+            messagesArray = rawData;
+          }
+
+          const threadsMap: Record<string, any> = {};
+
+          messagesArray.forEach((msg: any) => {
+            const isMeSender = String(msg.sender) === currentUserId;
+            const targetId = isMeSender ? msg.receiver : msg.sender;
+
+            const targetUsername = isMeSender
+              ? msg.receiver_username
+              : msg.sender_username;
+            const targetFullName = isMeSender
+              ? msg.receiver_full_name
+              : msg.sender_full_name;
+            const targetAvatar = isMeSender
+              ? msg.receiver_avatar
+              : msg.sender_avatar;
+
+            const msgTime = new Date(msg.created_at);
+
+            if (
+              !threadsMap[targetId] ||
+              new Date(threadsMap[targetId].rawTime) < msgTime
+            ) {
+              threadsMap[targetId] = {
+                id: targetId,
+                conversation_id: msg.conversation_id || msg.room_id || null,
+                name: targetFullName || targetUsername || "User",
+                active: false,
+                time: isNaN(msgTime.getTime())
+                  ? ""
+                  : msgTime.toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    }),
+                rawTime: msg.created_at,
+                lastMsg:
+                  msg.message || msg.text || msg.body || msg.content || "",
+                unread: !msg.is_read && !isMeSender ? 1 : 0,
+                avatar: targetAvatar || null,
+              };
+            } else if (!msg.is_read && !isMeSender) {
+              threadsMap[targetId].unread += 1;
+            }
+          });
+
+          const sortedThreads: ActiveChatUser[] = Object.values(
+            threadsMap,
+          ).sort(
+            (a: any, b: any) =>
+              new Date(b.rawTime).getTime() - new Date(a.rawTime).getTime(),
+          );
+
+          setFetchedChatThreads(sortedThreads);
+        }
+      } catch (error) {
+        console.error("Failed compiling message workspace datasets:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (currentUserId) {
+      initializeChatWorkspace();
+    }
+  }, [currentUserId]);
+
+  if (loading) {
+    return (
+      <div className="flex h-[calc(100vh-72px)] w-full items-center justify-center bg-background">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-orange-500 border-t-transparent" />
+      </div>
+    );
+  }
+
+  return (
+    <MessagesView
+      conversations={fetchedChatThreads}
+      token={token}
+      onClose={() => router.push("/")}
+    />
+  );
+}

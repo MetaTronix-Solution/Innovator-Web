@@ -1,31 +1,3 @@
-// import { NotificationItem } from "@/types/notification";
-
-// export class NotificationService {
-//   static async getNotifications(): Promise<NotificationItem[]> {
-//     try {
-//       const response = await fetch("/api/notifications", {
-//         method: "GET",
-//         headers: {
-//           "Content-Type": "application/json",
-//         },
-//         cache: "no-store", // Keeps data fresh for real-time dashboards
-//       });
-
-//       if (!response.ok) {
-//         const errorData = await response.json();
-//         throw new Error(
-//           errorData.error || `HTTP error! Status: ${response.status}`,
-//         );
-//       }
-
-//       return await response.json();
-//     } catch (error) {
-//       console.error("Error inside client NotificationService:", error);
-//       throw error;
-//     }
-//   }
-// }
-
 import { NotificationItem } from "@/types/notification";
 
 export class NotificationService {

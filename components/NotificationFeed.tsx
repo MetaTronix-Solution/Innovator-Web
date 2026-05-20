@@ -1,9 +1,12 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { NotificationItem } from "@/types/notification";
 import { NotificationService } from "@/lib/services/notificationService";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
+import { Button } from "./ui/button";
+import { Check } from "lucide-react";
 
 interface NotificationFeedProps {
   initialNotifications: NotificationItem[];
@@ -71,7 +74,22 @@ export function NotificationFeed({
   const router = useRouter();
   const MAX_RECONNECT = 5;
 
-  // Close dropdown on  click
+  const formatRelativeTime = useCallback((dateString: string) => {
+    if (!dateString) return "Just now";
+    const date = new Date(dateString);
+    const diffInSeconds = Math.floor((Date.now() - date.getTime()) / 1000);
+
+    if (diffInSeconds < 60) return "Just now";
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400)
+      return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    if (diffInSeconds < 604800) {
+      const days = Math.floor(diffInSeconds / 86400);
+      return `${days}${days === 1 ? " day" : " days"} ago`;
+    }
+    return date.toLocaleDateString();
+  }, []);
+
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -82,7 +100,6 @@ export function NotificationFeed({
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // WebSocket
   useEffect(() => {
     if (!userId) {
       setLiveStatus("offline");
@@ -175,18 +192,15 @@ export function NotificationFeed({
     try {
       await NotificationService.markAsRead(item.id);
     } catch (err) {
-      console.error("Failed to mark notification as read:", err);
       setNotifications((prev) =>
         prev.map((n) => (n.id === item.id ? { ...n, is_read: false } : n)),
       );
     }
 
-    if (item.sender) {
-      router.push(`/${item.sender}`);
-    }
-
     if (item.related_post_id) {
-      router.push(`/post/${item.related_post_id}`);
+      router.push(`/posts/${item.related_post_id}`);
+    } else if (item.sender) {
+      router.push(`/${item.sender}`);
     }
   };
 
@@ -243,28 +257,21 @@ export function NotificationFeed({
                 onClick={markAllRead}
                 className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors text-left"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M2 12l5 5L22 4" />
-                  <path d="M16 4l-6 6" />
-                </svg>
+                <Check size={16} />
                 Mark all as read
               </button>
+              <Button
+                variant="secondary"
+                className="w-full p-2"
+                onClick={() => router.push("/notifications")}
+              >
+                View all
+              </Button>
             </div>
           )}
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="flex items-center gap-2 mb-5">
         {(["all", "unread"] as Tab[]).map((t) => (
           <button
@@ -286,7 +293,6 @@ export function NotificationFeed({
         ))}
       </div>
 
-      {/* List */}
       <div className="flex flex-col gap-2 pb-4 no-scrollbar">
         {filtered.length === 0 ? (
           <div className="text-center py-16 rounded-xl border border-dashed border-border text-muted-foreground text-sm">
@@ -305,19 +311,23 @@ export function NotificationFeed({
                     : "bg-blue-50/60 border-blue-200 dark:bg-blue-950/20 dark:border-blue-900 hover:bg-muted/50"
                 }`}
               >
-                <div className="relative flex-shrink-0">
+                <div className="relative w-10 h-10 flex-shrink-0">
                   {item.sender_avatar ? (
-                    <img
-                      src={item.sender_avatar}
-                      alt={item.sender_username}
-                      className="w-10 h-10 rounded-full object-cover border border-border"
-                    />
+                    <div className="w-10 h-10 rounded-full overflow-hidden border border-border relative">
+                      <Image
+                        src={item.sender_avatar}
+                        alt={item.sender_username ?? "Sender avatar"}
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                    </div>
                   ) : (
                     <div className="w-10 h-10 rounded-full bg-muted border border-border flex items-center justify-center text-sm font-semibold text-foreground">
                       {initials(item.sender_username ?? "?")}
                     </div>
                   )}
-                  <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-card border border-border flex items-center justify-center text-[11px]">
+                  <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-card border border-border flex items-center justify-center text-[11px] z-10">
                     {meta.icon}
                   </span>
                 </div>
@@ -330,10 +340,7 @@ export function NotificationFeed({
                       {meta.label}
                     </span>
                     <span className="text-[11px] text-muted-foreground shrink-0">
-                      {new Date(item.created_at).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                      {formatRelativeTime(item.created_at)}
                     </span>
                   </div>
                   <p className="text-sm font-medium text-foreground leading-snug">
