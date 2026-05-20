@@ -79,9 +79,11 @@ export default function MessagesView({
   const getChatLastMsg = (chat: ActiveChatUser) =>
     chat.lastMsg || chat.last_message || "";
 
-  const activeUsers = conversations.filter((chat) => getChatActiveStatus(chat));
+  const activeUsers = conversations.filter((chat: ActiveChatUser) =>
+    getChatActiveStatus(chat),
+  );
   const currentChat = conversations.find(
-    (chat) => String(chat.id) === String(activeChatId),
+    (chat: ActiveChatUser) => String(chat.id) === String(activeChatId),
   );
 
   useEffect(() => {
