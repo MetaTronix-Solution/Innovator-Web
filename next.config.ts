@@ -15,6 +15,12 @@ const nextConfig: NextConfig = {
         port: "8004",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "36.253.137.34",
+        port: "8004",
+        pathname: "/**",
+      },
     ],
   },
 };

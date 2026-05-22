@@ -525,7 +525,9 @@ const Navbar = () => {
                 height={40}
                 className="rounded-full"
               />
-              <p className="text-primary text-2xl font-medium">Innovator</p>
+              <p className="hidden md:block text-primary text-2xl font-medium">
+                Innovator
+              </p>
             </Link>
           </div>
 
