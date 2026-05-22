@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-// GET: Fetch single reel
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> },
@@ -36,7 +35,6 @@ export async function GET(
   }
 }
 
-// PUT: Update reel
 export async function PUT(
   request: NextRequest,
   context: { params: Promise<{ id: string }> },
@@ -69,7 +67,6 @@ export async function PUT(
   }
 }
 
-// PATCH: Partial update (optional)
 export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ id: string }> },
@@ -105,7 +102,6 @@ export async function PATCH(
   }
 }
 
-// DELETE: Remove reel
 export async function DELETE(
   request: NextRequest,
   context: { params: Promise<{ id: string }> },

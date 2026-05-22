@@ -23,7 +23,6 @@ export async function GET(request: NextRequest) {
     const contentRange = upstream.headers.get("content-range");
 
     return new NextResponse(upstream.body, {
-      // ✅ stream directly, no buffering
       status: upstream.status,
       headers: {
         "Content-Type": contentType,

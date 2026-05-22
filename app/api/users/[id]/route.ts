@@ -41,7 +41,6 @@ export async function GET(
     }
 
     const data = await response.json();
-    console.log(data);
     return NextResponse.json(data);
   } catch (error) {
     console.error("Backend fetch error:", error);

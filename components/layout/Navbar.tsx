@@ -500,8 +500,8 @@ const Navbar = () => {
   const navLinks = [
     { icon: <Home />, href: "/", label: "Home", exact: true },
     { icon: <PlaySquare />, href: "/reels", label: "Reels" },
-    { icon: <Store />, href: "/ecommerce", label: "Market" },
-    { icon: <GraduationCap />, href: "/elearning", label: "Academy" },
+    { icon: <Store />, href: "/products", label: "Market" },
+    { icon: <GraduationCap />, href: "/courses", label: "Academy" },
     { icon: <BookOpen />, href: "/research", label: "Library" },
   ];
 

@@ -15,27 +15,40 @@ const ReelVideo = memo(({ src, poster, className }: ReelVideoProps) => {
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [showHeart, setShowHeart] = useState(false);
-  const [isMuted, setIsMuted] = useState(false); // Reels usually start unmuted or follow system
+  const [isMuted, setIsMuted] = useState(false);
 
   useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
     const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!videoRef.current) return;
+      async ([entry]) => {
         if (entry.isIntersecting) {
-          videoRef.current.play().catch(() => {
-            // Fallback for browsers that block auto-play with sound
-            if (videoRef.current) videoRef.current.muted = true;
-            videoRef.current?.play();
-          });
+          try {
+            await video.play();
+          } catch (err) {
+            // Ignore AbortError, it's expected when play() is interrupted
+            if (err instanceof Error && err.name !== "AbortError") {
+              // If it's a permission error, try forcing muted
+              if (!video.muted) {
+                video.muted = true;
+                await video.play();
+              }
+            }
+          }
         } else {
-          videoRef.current.pause();
+          video.pause();
         }
       },
       { threshold: 0.6 },
     );
 
     if (containerRef.current) observer.observe(containerRef.current);
-    return () => observer.disconnect();
+
+    return () => {
+      observer.disconnect();
+      if (video) video.pause();
+    };
   }, []);
 
   const togglePlay = useCallback(() => {

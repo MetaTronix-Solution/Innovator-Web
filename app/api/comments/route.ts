@@ -15,17 +15,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "ID required" }, { status: 400 });
     }
 
-    // 2. Build the query based on content type
-    // Note: Added the trailing slash before '?' for Django compatibility
     const queryParam = type === "reel" ? `reel=${id}` : `post=${id}`;
     const targetUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/comments/?${queryParam}`;
 
-    // 3. Fetch from backend with the Bearer token
     const response = await fetch(targetUrl, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        // Only add the Authorization header if the token exists
         ...(token && { Authorization: `Bearer ${token}` }),
       },
       cache: "no-store",
@@ -50,7 +46,6 @@ export async function POST(request: NextRequest) {
     const cookieStore = await cookies();
     const token = cookieStore.get("accessToken")?.value;
 
-    // Ensure these fields match what your service is sending
     const { id, content, type } = await request.json();
 
     if (!token) {

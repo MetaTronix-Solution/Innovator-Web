@@ -3,8 +3,6 @@ import { cookies } from "next/headers";
 
 export async function GET() {
   const cookieStore = await cookies();
-  const allCookies = cookieStore.getAll();
-  // console.log("All cookies received:", allCookies); // ← add this
 
   const accessToken = cookieStore.get("accessToken")?.value;
 
@@ -24,12 +22,10 @@ export async function GET() {
     });
 
     if (!response.ok) {
-      const errorBody = await response.text();
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
 
     const user = await response.json();
-    // console.log("Django user returned:", user);
     return NextResponse.json({ user });
   } catch (error) {
     console.error("Fetch error:", error); // ← network error

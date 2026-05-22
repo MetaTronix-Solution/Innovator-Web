@@ -32,7 +32,6 @@ export async function POST(request: NextRequest) {
 
     const data: LoginResponse = await response.json();
 
-    // Set cookies
     const cookieStore = await cookies();
     const expiresIn = data.expires_in || 2592000;
     const isProduction = process.env.NODE_ENV === "production";
@@ -52,11 +51,6 @@ export async function POST(request: NextRequest) {
       maxAge: expiresIn,
       path: "/",
     });
-
-    console.log(
-      "Cookie set:",
-      cookieStore.get("accessToken")?.value?.slice(0, 20),
-    ); // ← add this
 
     return NextResponse.json({
       success: true,

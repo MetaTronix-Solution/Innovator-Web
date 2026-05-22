@@ -113,7 +113,6 @@ export default function RegisterPage() {
           )}
 
           {!showOTP ? (
-            /* REGISTRATION FORM */
             <form
               onSubmit={handleRegister}
               className="grid grid-cols-1 md:grid-cols-2 gap-4"

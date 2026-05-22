@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSelector } from "react-redux";
 import Image from "next/image";
 import { X, Plus, Image as ImageIcon, Smile, Send } from "lucide-react";
 import { getMediaUrl } from "@/lib/utils/getMediaUrl";
+import { useChatBridge } from "@/lib/hooks/useChatBridge";
+import { MutualUser } from "@/app/(main)/messages/page";
 
 interface ChatMessage {
   id: string;
@@ -37,6 +39,7 @@ export interface ActiveChatUser {
 
 interface MessagesViewProps {
   conversations: ActiveChatUser[];
+  mutualUsers: MutualUser[];
   token: string | null;
   onClose: () => void;
 }
@@ -46,11 +49,8 @@ export default function MessagesView({
   token,
   onClose,
 }: MessagesViewProps) {
-  console.log("MessagesView render — token:", token, "type:", typeof token);
-
   const stableToken = typeof token === "string" ? token : null;
 
-  console.log("stableToken:", stableToken);
   const conversations = Array.isArray(rawConversations)
     ? rawConversations
     : (rawConversations as any)?.messages &&
@@ -60,6 +60,10 @@ export default function MessagesView({
 
   const { user } = useSelector((state: any) => state.auth);
   const currentUserId = user?.id || "";
+  const currentUserIdRef = useRef(currentUserId);
+  useEffect(() => {
+    currentUserIdRef.current = currentUserId;
+  }, [currentUserId]);
 
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -67,8 +71,8 @@ export default function MessagesView({
   const [loading, setLoading] = useState(false);
   const [autoDelete24h, setAutoDelete24h] = useState(false);
 
-  const socketRef = useRef<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const getChatName = (chat: ActiveChatUser) =>
     chat.name || chat.full_name || chat.username || "User";
@@ -79,11 +83,40 @@ export default function MessagesView({
   const getChatLastMsg = (chat: ActiveChatUser) =>
     chat.lastMsg || chat.last_message || "";
 
-  const activeUsers = conversations.filter((chat: ActiveChatUser) =>
+  const mutualUsers = conversations.filter((chat: ActiveChatUser) =>
     getChatActiveStatus(chat),
   );
+
   const currentChat = conversations.find(
     (chat: ActiveChatUser) => String(chat.id) === String(activeChatId),
+  );
+
+  const activeRoomId = currentChat?.conversation_id || activeChatId;
+
+  const handleIncomingMessage = useCallback((data: any) => {
+    if (data.type !== "chat_message") return;
+    if (String(data.sender) === String(currentUserIdRef.current)) return;
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: data.id || String(Date.now()),
+        sender: data.sender,
+        sender_username: data.sender_username,
+        sender_full_name: data.sender_full_name,
+        sender_avatar: data.sender_avatar ?? null,
+        message: data.message || "",
+        created_at: data.created_at || new Date().toISOString(),
+      },
+    ]);
+  }, []);
+
+  const { sendMessage, isSendReady } = useChatBridge(
+    activeRoomId,
+    activeRoomId,
+    stableToken,
+    stableToken,
+    handleIncomingMessage,
   );
 
   useEffect(() => {
@@ -129,72 +162,9 @@ export default function MessagesView({
     fetchChatHistory();
   }, [activeChatId]);
 
-  useEffect(() => {
-    if (!activeChatId || !stableToken) return;
-
-    const chat = conversations.find(
-      (c: ActiveChatUser) => String(c.id) === String(activeChatId),
-    );
-    const roomId = chat?.conversation_id || activeChatId;
-
-    console.log(
-      "🔌 Connecting WS. roomId:",
-      roomId,
-      "token:",
-      stableToken.slice(0, 12) + "...",
-    );
-
-    const ws = new WebSocket(
-      `ws://36.253.137.34:8005/ws/chat/${roomId}/?token=${stableToken}`,
-    );
-
-    socketRef.current = ws;
-
-    ws.onopen = () => console.log("✅ Socket Open");
-
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: data.id || String(Date.now()),
-            sender: data.sender_id ?? data.sender,
-            sender_username: data.sender_username,
-            sender_full_name: data.sender_full_name,
-            sender_avatar: data.sender_avatar ?? null,
-            message: data.message,
-            created_at: data.created_at || new Date().toISOString(),
-          },
-        ]);
-      } catch (err) {
-        console.error("Failed to parse WS message:", err);
-      }
-    };
-
-    ws.onclose = (event) => {
-      socketRef.current = null;
-    };
-
-    ws.onerror = (err) => console.error("❌ WS Error:", err);
-
-    return () => {
-      ws.close();
-      socketRef.current = null;
-    };
-  }, [activeChatId, stableToken]);
-
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!typeMessage.trim() || !activeChatId) return;
-
-    const ws = socketRef.current;
-    console.log("🔍 WS ref:", ws, "readyState:", ws?.readyState);
-
-    if (!ws || ws.readyState !== WebSocket.OPEN) {
-      console.error("Socket not ready. State:", ws?.readyState ?? "null ref");
-      return;
-    }
 
     const payload = {
       message: typeMessage.trim(),
@@ -203,7 +173,7 @@ export default function MessagesView({
       expire_after_24h: autoDelete24h,
     };
 
-    ws.send(JSON.stringify(payload));
+    sendMessage(payload);
 
     setMessages((prev) => [
       ...prev,
@@ -216,6 +186,13 @@ export default function MessagesView({
     ]);
 
     setTypeMessage("");
+  };
+
+  const handleActionClick = (type: "image/*" | "video/*") => {
+    if (fileInputRef.current) {
+      fileInputRef.current.accept = type;
+      fileInputRef.current.click();
+    }
   };
 
   const formatTime = (isoString: string) => {
@@ -257,9 +234,9 @@ export default function MessagesView({
         </div>
 
         {activeChatId === null ? (
-          /* FULL SCREEN SIDEBAR VIEW Matrix */
+          /* FULL SCREEN SIDEBAR VIEW */
           <div className="flex-1 overflow-y-auto p-4 space-y-6 no-scrollbar">
-            {activeUsers.length > 0 && (
+            {/* {activeUsers.length > 0 && (
               <div>
                 <h3 className="text-xs font-bold text-muted-foreground/80 uppercase tracking-wider mb-3">
                   Active Users ({activeUsers.length})
@@ -287,6 +264,46 @@ export default function MessagesView({
                             displayName[0]?.toUpperCase() || "?"
                           )}
                           <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-background rounded-full z-10" />
+                        </div>
+                        <span className="text-xs font-medium text-foreground truncate max-w-[70px]">
+                          {displayName.split(" ")[0]}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )} */}
+            {mutualUsers.length > 0 && (
+              <div>
+                <h3 className="text-xs font-bold text-muted-foreground/80 uppercase tracking-wider mb-3">
+                  People you know ({mutualUsers.length})
+                </h3>
+                <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar">
+                  {mutualUsers.map((u) => {
+                    const resolvedAvatar = getMediaUrl(u.avatar);
+                    const displayName = u.full_name || u.username;
+                    return (
+                      <div
+                        key={u.id}
+                        onClick={() => setActiveChatId(u.id)}
+                        className="flex flex-col items-center space-y-1.5 cursor-pointer text-center group min-w-[65px]"
+                      >
+                        <div className="relative w-12 h-12 rounded-full bg-muted border-2 border-border group-hover:border-orange-500 transition-colors flex items-center justify-center font-bold text-sm text-foreground overflow-hidden">
+                          {resolvedAvatar ? (
+                            <Image
+                              src={resolvedAvatar}
+                              alt={displayName}
+                              width={48}
+                              height={48}
+                              className="w-full h-full object-cover rounded-full"
+                            />
+                          ) : (
+                            displayName[0]?.toUpperCase() || "?"
+                          )}
+                          {u.online_status && (
+                            <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-background rounded-full z-10" />
+                          )}
                         </div>
                         <span className="text-xs font-medium text-foreground truncate max-w-[70px]">
                           {displayName.split(" ")[0]}
@@ -471,11 +488,11 @@ export default function MessagesView({
             </div>
           </div>
 
-          {/* Messages Stream Rendering */}
+          {/* Messages Stream */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-muted/5 no-scrollbar">
             {loading ? (
               <div className="flex h-full items-center justify-center">
-                <div className="h-6 w-6 animate-spin rounded-full border-2 border-orange-500 border-t-transparent"></div>
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-orange-500 border-t-transparent" />
               </div>
             ) : messages.length === 0 ? (
               <div className="flex h-full flex-col items-center justify-center text-muted-foreground space-y-1">
@@ -490,8 +507,6 @@ export default function MessagesView({
                   String(msg.sender) === String(currentUserId);
                 const textBody =
                   msg.message || msg.text || msg.body || msg.content || "";
-
-                // Fetch dynamic text fields or fall back to current context keys
                 const senderName =
                   msg.sender_full_name ||
                   (currentChat ? getChatName(currentChat) : "User");
@@ -550,7 +565,7 @@ export default function MessagesView({
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Form Controls Footer */}
+          {/* Footer Input */}
           <div className="p-3 border-t border-border/60 bg-background">
             <form
               onSubmit={handleSendMessage}
@@ -563,6 +578,7 @@ export default function MessagesView({
                 <Plus size={16} />
               </button>
               <button
+                onClick={() => handleActionClick("image/*")}
                 type="button"
                 className="text-muted-foreground/80 hover:text-foreground transition-colors shrink-0 mr-0.5"
               >
@@ -571,9 +587,9 @@ export default function MessagesView({
               <input
                 type="text"
                 value={typeMessage}
-                disabled={loading}
+                disabled={loading || (!!activeChatId && !isSendReady)}
                 onChange={(e) => setTypeMessage(e.target.value)}
-                placeholder="Type a message..."
+                placeholder="message..."
                 className="flex-1 bg-transparent border-none outline-none text-xs md:text-sm text-foreground placeholder:text-muted-foreground/50 min-w-0"
               />
               <button
@@ -584,7 +600,11 @@ export default function MessagesView({
               </button>
               <button
                 type="submit"
-                disabled={!typeMessage.trim() || loading}
+                disabled={
+                  !typeMessage.trim() ||
+                  loading ||
+                  (!!activeChatId && !isSendReady)
+                }
                 className="p-1.5 rounded-lg bg-orange-600 text-white disabled:opacity-30 hover:bg-orange-500 transition-colors shrink-0 flex items-center justify-center"
               >
                 <Send size={12} />

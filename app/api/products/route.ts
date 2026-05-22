@@ -1,19 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
+const BASE_URL = process.env.NEXT_PUBLIC_ECOMMERCE_URL;
+
+// Simple server-side in-memory cache to prevent slow DB roundtrips
+const productsCache = new Map<string, { data: any; timestamp: number }>();
+const SERVER_CACHE_TTL = 60 * 1000; // 60 seconds
+
 export async function GET(request: NextRequest) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("accessToken")?.value;
 
     if (!token) {
-      return NextResponse.json(
-        { error: "Authentication token missing from session context" },
-        { status: 401 },
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const backendUrl = "http://36.253.137.34:8004/api/products/";
+    const { searchParams } = new URL(request.url);
+    const page = searchParams.get("page") || "1";
+    const limit = searchParams.get("limit") || "10";
+
+    const cacheKey = `page=${page}&limit=${limit}`;
+    const cached = productsCache.get(cacheKey);
+
+    if (cached && Date.now() - cached.timestamp < SERVER_CACHE_TTL) {
+      return NextResponse.json(cached.data);
+    }
+
+    const backendUrl = `${BASE_URL}/api/products/?page=${page}&limit=${limit}`;
 
     const response = await fetch(backendUrl, {
       method: "GET",
@@ -27,18 +41,27 @@ export async function GET(request: NextRequest) {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       return NextResponse.json(
-        {
-          error: errorData.detail || "Failed to fetch products",
-        },
+        { error: errorData.detail || "Failed to fetch products" },
         { status: response.status },
       );
     }
 
     const data = await response.json();
+    let resultPayload;
 
-    const products = Array.isArray(data) ? data : (data.results ?? []);
+    if (Array.isArray(data)) {
+      resultPayload = { results: data, hasMore: false };
+    } else {
+      resultPayload = {
+        results: data.results ?? [],
+        hasMore: !!data.next,
+        count: data.count ?? 0,
+      };
+    }
 
-    return NextResponse.json(products);
+    productsCache.set(cacheKey, { data: resultPayload, timestamp: Date.now() });
+
+    return NextResponse.json(resultPayload);
   } catch (error: any) {
     console.error("Upstream server middleware proxy failure:", error);
     return NextResponse.json(

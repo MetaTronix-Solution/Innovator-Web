@@ -120,7 +120,6 @@ export async function GET(
     });
 
     const result = await parseBackendResponse(response);
-    console.log(result);
 
     if (result?.error) {
       return NextResponse.json(result.details, { status: result.status });

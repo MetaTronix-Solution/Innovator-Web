@@ -32,7 +32,6 @@ export async function POST(
     });
 
     const data = await response.json().catch(() => null);
-    console.log("Backend repost response:", JSON.stringify(data, null, 2)); // ← add this
 
     if (!response.ok) {
       return NextResponse.json(

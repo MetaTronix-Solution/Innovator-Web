@@ -47,9 +47,7 @@ export default function LoginPage() {
           user: data.user,
         }),
       );
-      console.log(data);
 
-      // 2. Set flag BEFORE navigation triggers layout evaluation
       if (typeof window !== "undefined") {
         sessionStorage.setItem("just_logged_in", "true");
       }

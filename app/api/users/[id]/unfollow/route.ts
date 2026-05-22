@@ -25,7 +25,6 @@ export async function POST(
       },
     });
 
-    console.log("Unfollow response:", res.status);
     const data = await res.json().catch(() => ({}));
     return NextResponse.json(data, { status: res.status });
   } catch (err) {

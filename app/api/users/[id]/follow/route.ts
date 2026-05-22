@@ -27,9 +27,7 @@ export async function POST(
       },
     });
 
-    console.log("Follow/Unfollow response:", res.status);
     const data = await res.json().catch(() => ({}));
-    console.log("Follow/Unfollow data:", data);
     return NextResponse.json(data, { status: res.status });
   } catch (err) {
     console.error("Follow error:", err);

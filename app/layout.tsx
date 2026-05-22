@@ -16,12 +16,6 @@ export const metadata: Metadata = {
     icon: [{ url: "/logo1.png", sizes: "512x512", type: "image/png" }],
   },
   keywords: ["social media", "community", "connect", "ideas", "innovator"],
-  openGraph: {
-    title: "Innovator",
-    description: "Connect, share ideas, and grow together on Innovator.",
-    type: "website",
-    images: [{ url: "/logo1.png" }],
-  },
 };
 
 export default function RootLayout({

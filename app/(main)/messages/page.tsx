@@ -6,19 +6,56 @@ import { useSelector } from "react-redux";
 import MessagesView, {
   ActiveChatUser,
 } from "@/components/messages/MessageView";
+import { RootState } from "@/lib/store/store";
+
+export interface MutualUser {
+  id: string;
+  username: string;
+  full_name: string;
+  avatar: string | null;
+  online_status: boolean;
+}
 
 export default function MessagesPage() {
   const router = useRouter();
   const [fetchedChatThreads, setFetchedChatThreads] = useState<
     ActiveChatUser[]
   >([]);
+  const [mutualUsers, setMutualUsers] = useState<MutualUser[]>([]);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const { user } = useSelector((state: any) => state.auth);
-  const currentUserId = user?.id
-    ? String(user.id)
-    : "b86914b5-14b0-4ea4-a102-42cc7eb6f447";
+  const { user } = useSelector((state: RootState) => state.auth);
+  const currentUserId = user?.id ? String(user.id) : "";
+
+  useEffect(() => {
+    const getToken = async () => {
+      try {
+        const res = await fetch("/api/auth/token");
+        const data = await res.json();
+        setToken(data.token ?? null);
+      } catch (err) {
+        console.error("Failed to get token:", err);
+      }
+    };
+    getToken();
+  }, []);
+
+  useEffect(() => {
+    const fetchMutualUsers = async () => {
+      try {
+        const res = await fetch("/api/users/mutual-users");
+        if (res.ok) {
+          const data = await res.json();
+          setMutualUsers(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch mutual users:", error);
+      }
+    };
+
+    fetchMutualUsers();
+  }, []);
 
   useEffect(() => {
     const initializeChatWorkspace = async () => {
@@ -26,26 +63,13 @@ export default function MessagesPage() {
         const response = await fetch("/api/chats");
         if (response.ok) {
           const rawData = await response.json();
-
-          console.log("RAW /api/chats:", JSON.stringify(rawData, null, 2));
-
-          let messagesArray: any[] = [];
-
-          if (rawData && typeof rawData === "object" && "messages" in rawData) {
-            setToken(typeof rawData.token === "string" ? rawData.token : null);
-            messagesArray = Array.isArray(rawData.messages)
-              ? rawData.messages
-              : [];
-          } else if (Array.isArray(rawData)) {
-            messagesArray = rawData;
-          }
+          const messagesArray: any[] = Array.isArray(rawData) ? rawData : [];
 
           const threadsMap: Record<string, any> = {};
 
           messagesArray.forEach((msg: any) => {
             const isMeSender = String(msg.sender) === currentUserId;
             const targetId = isMeSender ? msg.receiver : msg.sender;
-
             const targetUsername = isMeSender
               ? msg.receiver_username
               : msg.sender_username;
@@ -116,6 +140,7 @@ export default function MessagesPage() {
   return (
     <MessagesView
       conversations={fetchedChatThreads}
+      mutualUsers={mutualUsers}
       token={token}
       onClose={() => router.push("/")}
     />

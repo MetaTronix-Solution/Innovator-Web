@@ -43,6 +43,7 @@ import themeReducer from "./features/themeSlice";
 import cartReducer from "./features/cartSlice";
 import postsReducer from "./features/postsSlice";
 import reelsReducer from "./features/reelsSlice";
+import productsReducer from "./features/productsSlice";
 
 const persistConfig: PersistConfig<any> = {
   key: "root",
@@ -56,6 +57,7 @@ const appReducer = combineReducers({
   cart: cartReducer,
   posts: postsReducer,
   reels: reelsReducer,
+  products: productsReducer,
 });
 
 const rootReducer = (state: any, action: any) => {

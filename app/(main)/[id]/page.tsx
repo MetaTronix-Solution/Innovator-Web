@@ -54,6 +54,7 @@ const ProfilePage = () => {
         if (userData?.reels) {
           setUserReels(userData.reels);
         }
+        console.log(userData);
       } catch (err) {
         console.error("Failed to load profile data:", err);
         setIs404(true);

@@ -65,7 +65,6 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Try post first, fallback to reel if 404
     const tryFetch = async (contentType: "posts" | "reels") =>
       fetch(`${BACKEND_URL}/api/${contentType}/${postId}/reactions-list/`, {
         method: "GET",
@@ -78,7 +77,6 @@ export async function GET(
 
     let response = await tryFetch("posts");
 
-    // If post endpoint 404s, try reels
     if (response.status === 404) {
       response = await tryFetch("reels");
     }

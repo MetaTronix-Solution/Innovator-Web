@@ -1,110 +1,3 @@
-// import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-
-// export interface PostMedia {
-//   id: string;
-//   file: string;
-//   media_type: "image" | "video";
-// }
-
-// interface Post {
-//   id: string;
-//   username: string;
-//   user_id: string;
-//   caption: string;
-//   content: string;
-//   media: PostMedia[];
-//   video: string | null;
-//   thumbnail: string | null;
-//   type: "reel" | "post";
-//   like_count: number;
-//   comments_count: number;
-//   views_count: number;
-//   created_at: string;
-//   current_user_reaction: string | null;
-//   is_followed: boolean;
-//   is_recommended: boolean;
-// }
-
-// interface PostsState {
-//   items: Post[];
-//   next_cursor: string | null;
-//   has_next: boolean;
-//   loading: boolean;
-//   error: string | null;
-// }
-
-// const initialState: PostsState = {
-//   items: [],
-//   next_cursor: null,
-//   has_next: false,
-//   loading: false,
-//   error: null,
-// };
-
-// const postsSlice = createSlice({
-//   name: "posts",
-//   initialState,
-//   reducers: {
-//     setPostsLoading: (state, action: PayloadAction<boolean>) => {
-//       state.loading = action.payload;
-//     },
-
-//     setPosts: (
-//       state,
-//       action: PayloadAction<{
-//         results: Post[];
-//         next_cursor: string | null;
-//         has_next: boolean;
-//       }>,
-//     ) => {
-//       if (state.next_cursor === null) {
-//         state.items = action.payload.results;
-//       } else {
-//         // Append for infinite scroll
-//         state.items = [...state.items, ...action.payload.results];
-//       }
-//       state.next_cursor = action.payload.next_cursor;
-//       state.has_next = action.payload.has_next;
-//       state.loading = false;
-//     },
-
-//     // Push new post to top of array
-//     addPostToTop: (state, action: PayloadAction<Post>) => {
-//       state.items = [action.payload, ...state.items];
-//     },
-
-//     setPostsError: (state, action: PayloadAction<string | null>) => {
-//       state.error = action.payload;
-//       state.loading = false;
-//     },
-
-//     resetPosts: () => initialState,
-
-//     // In your togglePostReaction reducer, ensure it handles the count correctly:
-//     togglePostReaction: (
-//       state,
-//       action: PayloadAction<{ postId: string; reactionType: string | null }>,
-//     ) => {
-//       const post = state.items.find((p) => p.id === action.payload.postId);
-//       if (!post) return;
-
-//       // Only update the reaction type — don't touch like_count
-//       post.current_user_reaction = action.payload.reactionType;
-//     },
-//   },
-// });
-
-// export const {
-//   setPostsLoading,
-//   addPostToTop,
-//   setPosts,
-//   setPostsError,
-//   resetPosts,
-//   togglePostReaction,
-// } = postsSlice.actions;
-
-// export default postsSlice.reducer;
-
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 export interface PostMedia {
@@ -225,7 +118,41 @@ const postsSlice = createSlice({
     ) => {
       const post = state.items.find((p) => p.id === action.payload.postId);
       if (!post) return;
-      post.current_user_reaction = action.payload.reactionType;
+
+      const prevReaction = post.current_user_reaction;
+      const newReaction = action.payload.reactionType;
+
+      if (!prevReaction && newReaction) {
+        post.reactions_count += 1;
+      } else if (prevReaction && !newReaction) {
+        post.reactions_count = Math.max(0, post.reactions_count - 1);
+      }
+
+      // Update reaction_types distribution if it is an object/Record
+      if (
+        post.reaction_types &&
+        typeof post.reaction_types === "object" &&
+        !Array.isArray(post.reaction_types)
+      ) {
+        const types = post.reaction_types as Record<string, number>;
+        if (prevReaction && typeof types[prevReaction] === "number") {
+          types[prevReaction] = Math.max(0, types[prevReaction] - 1);
+          if (types[prevReaction] === 0) {
+            delete types[prevReaction];
+          }
+        }
+        if (newReaction) {
+          types[newReaction] = (types[newReaction] || 0) + 1;
+        }
+      } else if (Array.isArray(post.reaction_types)) {
+        const types = [...post.reaction_types];
+        if (newReaction && !types.includes(newReaction)) {
+          types.push(newReaction);
+        }
+        post.reaction_types = types;
+      }
+
+      post.current_user_reaction = newReaction;
     },
 
     incrementCommentCount: (state, action: PayloadAction<string>) => {
@@ -242,7 +169,6 @@ const postsSlice = createSlice({
       state,
       action: PayloadAction<{ userId: string; isFollowed: boolean }>,
     ) => {
-      // Update is_followed across all posts by this user
       state.items.forEach((p) => {
         if (p.user_id === action.payload.userId) {
           p.is_followed = action.payload.isFollowed;

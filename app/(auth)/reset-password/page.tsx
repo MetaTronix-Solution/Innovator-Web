@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, Lock, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-// Inner component that uses useSearchParams
 function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();

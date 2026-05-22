@@ -4,7 +4,6 @@ import { NextRequest, NextResponse } from "next/server";
 const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 export async function GET(req: NextRequest) {
-  // 1. Get '?q=' from the frontend URL
   const { searchParams } = new URL(req.url);
   const query = searchParams.get("q");
 
@@ -43,7 +42,6 @@ export async function GET(req: NextRequest) {
 
     const data = await response.json();
 
-    // Handle either direct array or standard paginated results array
     const usersList = Array.isArray(data) ? data : data.results || [];
 
     return NextResponse.json(usersList);

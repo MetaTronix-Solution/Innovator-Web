@@ -36,7 +36,7 @@ const LeftSidebar = () => {
         <SidebarItem
           icon={<Store size={24} className="text-primary" />}
           label="Shop"
-          onClick={() => router.push("/ecommerce")}
+          onClick={() => router.push("/products")}
         />
         <SidebarItem
           icon={<Calendar size={24} className="text-primary" />}

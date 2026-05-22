@@ -48,6 +48,9 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
   const [isVisible, setIsVisible] = useState(wasRendered);
   const [showReactionsModal, setShowReactionsModal] = useState(false);
   const [localCount, setLocalCount] = useState<number>(post.like_count ?? 0);
+  const [localReaction, setLocalReaction] = useState<string | null>(
+    post.current_user_reaction ?? null
+  );
 
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(
@@ -55,11 +58,18 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
   );
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
+  // Sync state with props if they change externally
+  useEffect(() => {
+    setLocalReaction(post.current_user_reaction ?? null);
+    setLocalCount(post.like_count ?? 0);
+  }, [post.id, post.current_user_reaction, post.like_count]);
+
   const cardRef = useRef<HTMLDivElement>(null);
   const dispatch = useDispatch();
   const router = useRouter();
 
   const currentUser = useSelector((state: RootState) => state.auth.user);
+
   const isOwnPost = currentUser?.id === post.user_id;
   const isRepost = !!post.shared_post_details;
   const caption = post.caption || post.content || "";
@@ -143,10 +153,12 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
       const reactions = Array.isArray(data) ? data : (data.results ?? []);
       setLocalCount(reactions.length);
       const myReaction = reactions.find((r: any) => r.user === currentUser?.id);
+      const finalReaction = myReaction?.type ?? null;
+      setLocalReaction(finalReaction);
       dispatch(
         togglePostReaction({
           postId: post.id,
-          reactionType: myReaction?.type ?? null,
+          reactionType: finalReaction,
         }),
       );
     } catch {}
@@ -156,21 +168,55 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
     if (isVisible) fetchReactionCount();
   }, [isVisible]);
 
+  // const handleReact = useCallback(
+  //   async (reactionType: string) => {
+  //     const prevReaction = post.current_user_reaction;
+  //     const isSameReaction = prevReaction === reactionType;
+  //     const nextReaction = isSameReaction ? null : reactionType;
+  //     const delta =
+  //       !prevReaction && nextReaction
+  //         ? 1
+  //         : prevReaction && !nextReaction
+  //           ? -1
+  //           : 0;
+  //     dispatch(
+  //       togglePostReaction({ postId: post.id, reactionType: nextReaction }),
+  //     );
+  //     setLocalCount((c) => Math.max(0, c + delta));
+  //     try {
+  //       const res = await fetch("/api/reactions", {
+  //         method: "POST",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify({
+  //           postId: post.id,
+  //           type: reactionType,
+  //           contentType: post.type,
+  //         }),
+  //       });
+  //       if (!res.ok) {
+  //         if (res.status === 401) router.push("/login");
+  //         throw new Error("Failed to sync reaction");
+  //       }
+  //     } catch {
+  //       dispatch(
+  //         togglePostReaction({ postId: post.id, reactionType: prevReaction }),
+  //       );
+  //       setLocalCount((c) => Math.max(0, c - delta));
+  //     }
+  //   },
+  //   [post.id, post.current_user_reaction, dispatch, router],
+  // );
+
   const handleReact = useCallback(
-    async (reactionType: string) => {
-      const prevReaction = post.current_user_reaction;
-      const isSameReaction = prevReaction === reactionType;
-      const nextReaction = isSameReaction ? null : reactionType;
-      const delta =
-        !prevReaction && nextReaction
-          ? 1
-          : prevReaction && !nextReaction
-            ? -1
-            : 0;
+    async (reactionType: string | null) => {
+      const prevReaction = localReaction;
+
+      // Optimistic update
+      setLocalReaction(reactionType);
       dispatch(
-        togglePostReaction({ postId: post.id, reactionType: nextReaction }),
+        togglePostReaction({ postId: post.id, reactionType: reactionType }),
       );
-      setLocalCount((c) => Math.max(0, c + delta));
+
       try {
         const res = await fetch("/api/reactions", {
           method: "POST",
@@ -181,18 +227,20 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
             contentType: post.type,
           }),
         });
-        if (!res.ok) {
-          if (res.status === 401) router.push("/login");
-          throw new Error("Failed to sync reaction");
-        }
-      } catch {
+
+        if (!res.ok) throw new Error("Failed to sync");
+
+        fetchReactionCount();
+      } catch (err) {
+        // Rollback on failure
+        setLocalReaction(prevReaction);
         dispatch(
           togglePostReaction({ postId: post.id, reactionType: prevReaction }),
         );
-        setLocalCount((c) => Math.max(0, c - delta));
+        toast.error("Could not update reaction.");
       }
     },
-    [post.id, post.current_user_reaction, dispatch, router],
+    [post.id, post.type, dispatch, fetchReactionCount, localReaction],
   );
 
   const handleRepostSubmit = useCallback(async () => {
@@ -408,7 +456,7 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
         <div className="px-4 py-2 flex items-center justify-between border-t border-border/50">
           <div className="flex gap-1">
             <ReactionButton
-              currentReaction={post.current_user_reaction ?? null}
+              currentReaction={localReaction}
               count={localCount}
               onReact={handleReact}
               onCountClick={() => {
