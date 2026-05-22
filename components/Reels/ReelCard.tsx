@@ -46,7 +46,7 @@ const ReelCard = ({ reel, post }: ReelCardProps) => {
   const userId = reel.user_id || reel.user?.id || reel.id;
 
   const handleReact = useCallback(
-    async (reactionType: string) => {
+    async (reactionType: string | null) => {
       const prevReaction = reel.current_user_reaction;
       const isSame = prevReaction === reactionType;
       const nextReaction = isSame ? null : reactionType;
