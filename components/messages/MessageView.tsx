@@ -236,44 +236,6 @@ export default function MessagesView({
         {activeChatId === null ? (
           /* FULL SCREEN SIDEBAR VIEW */
           <div className="flex-1 overflow-y-auto p-4 space-y-6 no-scrollbar">
-            {/* {activeUsers.length > 0 && (
-              <div>
-                <h3 className="text-xs font-bold text-muted-foreground/80 uppercase tracking-wider mb-3">
-                  Active Users ({activeUsers.length})
-                </h3>
-                <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar">
-                  {activeUsers.map((chatUser: ActiveChatUser) => {
-                    const resolvedAvatar = getMediaUrl(getChatAvatar(chatUser));
-                    const displayName = getChatName(chatUser);
-                    return (
-                      <div
-                        key={chatUser.id}
-                        onClick={() => setActiveChatId(chatUser.id)}
-                        className="flex flex-col items-center space-y-1.5 cursor-pointer text-center group min-w-[65px]"
-                      >
-                        <div className="relative w-12 h-12 rounded-full bg-muted border-2 border-border group-hover:border-orange-500 transition-colors flex items-center justify-center font-bold text-sm text-foreground overflow-hidden">
-                          {resolvedAvatar ? (
-                            <Image
-                              src={resolvedAvatar}
-                              alt={displayName}
-                              width={48}
-                              height={48}
-                              className="w-full h-full object-cover rounded-full"
-                            />
-                          ) : (
-                            displayName[0]?.toUpperCase() || "?"
-                          )}
-                          <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-background rounded-full z-10" />
-                        </div>
-                        <span className="text-xs font-medium text-foreground truncate max-w-[70px]">
-                          {displayName.split(" ")[0]}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )} */}
             {mutualUsers.length > 0 && (
               <div>
                 <h3 className="text-xs font-bold text-muted-foreground/80 uppercase tracking-wider mb-3">
