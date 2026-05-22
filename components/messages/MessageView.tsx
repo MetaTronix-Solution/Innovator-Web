@@ -280,7 +280,7 @@ export default function MessagesView({
                   People you know ({mutualUsers.length})
                 </h3>
                 <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar">
-                  {mutualUsers.map((u) => {
+                  {mutualUsers.map((u: MutualUser) => {
                     const resolvedAvatar = getMediaUrl(u.avatar);
                     const displayName = u.full_name || u.username;
                     return (
