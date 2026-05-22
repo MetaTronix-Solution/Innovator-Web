@@ -3,9 +3,8 @@ import { cookies } from "next/headers";
 
 const BASE_URL = process.env.NEXT_PUBLIC_ECOMMERCE_URL;
 
-// Simple server-side in-memory cache to prevent slow DB roundtrips
 const productsCache = new Map<string, { data: any; timestamp: number }>();
-const SERVER_CACHE_TTL = 60 * 1000; // 60 seconds
+const SERVER_CACHE_TTL = 60 * 1000;
 
 export async function GET(request: NextRequest) {
   try {
