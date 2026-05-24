@@ -47,7 +47,6 @@ const CommentSection = ({
 }: CommentSectionProps) => {
   return (
     <div className="border-t border-border/50 bg-muted/10">
-      {/* Comment input */}
       <form
         onSubmit={onCommentSubmit}
         className="flex items-center gap-2 px-4 py-3 border-b border-border/30"
@@ -72,7 +71,6 @@ const CommentSection = ({
         </button>
       </form>
 
-      {/* Comments list */}
       <div className="px-4 py-2 space-y-1 max-h-[360px] overflow-y-auto">
         {isLoadingComments ? (
           <div className="flex justify-center py-6">

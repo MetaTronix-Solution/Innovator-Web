@@ -7,7 +7,7 @@ interface ActionButtonProps {
   icon: ReactNode;
   label: ReactNode;
   onClick?: () => void;
-  onLabelClick?: () => void; // ← new: separate click for the count/label
+  onLabelClick?: () => void;
   active?: boolean;
 }
 
@@ -33,7 +33,6 @@ const ActionButton = memo(
         {icon}
       </button>
 
-      {/* Label zone — opens modal if onLabelClick provided, else same as icon */}
       <button
         onClick={onLabelClick ?? onClick}
         className={`flex items-center pr-3 py-2 rounded-r-lg text-sm font-semibold transition-all hover:bg-accent ${

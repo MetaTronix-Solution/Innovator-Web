@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useDispatch } from "react-redux";
 import {
   Minus,
@@ -13,7 +13,6 @@ import {
   ChevronRight,
 } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
 import {
   removeFromCart,
   addToCart,
@@ -22,6 +21,7 @@ import {
 import { Product } from "@/types/product";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { getMediaUrl } from "@/lib/utils/getMediaUrl";
 
 interface CartItem {
   id: string;
@@ -34,58 +34,113 @@ interface CartItem {
   product_image?: string;
 }
 
+const CACHE_KEY = "cart_cache";
+
+interface CartCache {
+  items: CartItem[];
+  timestamp: number;
+}
+
+const readCartCache = (): CartCache | null => {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as CartCache;
+  } catch {
+    return null;
+  }
+};
+
+const writeCartCache = (items: CartItem[]) => {
+  try {
+    localStorage.setItem(
+      CACHE_KEY,
+      JSON.stringify({ items, timestamp: Date.now() }),
+    );
+  } catch {}
+};
+
+const clearCartCache = () => {
+  try {
+    localStorage.removeItem(CACHE_KEY);
+  } catch {}
+};
+
 export default function CartPage() {
   const dispatch = useDispatch();
+  const router = useRouter();
+
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Only true when nothing is cached at all
+  const [bootstrapping, setBootstrapping] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loadingItemId, setLoadingItemId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<CartItem | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  const router = useRouter();
+  const fetchDone = useRef(false);
 
+  // ─── Bootstrap: cache-first then revalidate ──────────────────────────────
   useEffect(() => {
-    fetchCart();
+    if (fetchDone.current) return;
+    fetchDone.current = true;
+
+    const bootstrap = async () => {
+      const cache = readCartCache();
+
+      if (cache?.items?.length) {
+        setCartItems(cache.items);
+        syncToStore(cache.items);
+        setBootstrapping(false); // show cached items instantly
+      }
+
+      try {
+        const res = await fetch("/api/cart-items");
+        if (!res.ok) throw new Error("Could not fetch cart.");
+        const data: CartItem[] = await res.json();
+        setCartItems(data);
+        syncToStore(data);
+        writeCartCache(data);
+      } catch (err: any) {
+        if (!cache?.items?.length) {
+          setError(err.message || "Something went wrong.");
+        }
+      } finally {
+        setBootstrapping(false);
+      }
+    };
+
+    bootstrap();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const fetchCart = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch("/api/cart-items");
-      if (!response.ok) throw new Error("Could not fetch cart.");
-      const data = await response.json();
-      setCartItems(data);
-
-      const mapped = data.map((item: CartItem) => ({
-        id: item.product,
-        name: item.product_name,
-        price: item.price,
-        quantity: item.quantity,
-        image: item.product_image ?? "",
-      }));
-      dispatch(syncCart(mapped));
-    } catch (err: any) {
-      setError(err.message || "Something went wrong.");
-    } finally {
-      setLoading(false);
-    }
+  const syncToStore = (items: CartItem[]) => {
+    const mapped = items.map((item) => ({
+      id: item.product,
+      name: item.product_name,
+      price: item.price,
+      quantity: item.quantity,
+      image: item.product_image ?? "",
+    }));
+    dispatch(syncCart(mapped));
   };
 
   const handleIncrease = async (item: CartItem) => {
     setLoadingItemId(item.id);
+    // Optimistic update
+    const updated = cartItems.map((i) =>
+      i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i,
+    );
+    setCartItems(updated);
+    writeCartCache(updated);
+
     try {
-      const response = await fetch(`/api/cart-items/${item.id}`, {
+      const res = await fetch(`/api/cart-items/${item.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ quantity: item.quantity + 1 }),
       });
-      if (!response.ok) throw new Error("Failed to update quantity");
-      setCartItems((prev) =>
-        prev.map((i) =>
-          i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i,
-        ),
-      );
+      if (!res.ok) throw new Error("Failed to update quantity");
       dispatch(
         addToCart({
           id: item.product,
@@ -94,6 +149,9 @@ export default function CartPage() {
         } as Product),
       );
     } catch (error) {
+      // Rollback on failure
+      setCartItems(cartItems);
+      writeCartCache(cartItems);
       console.error("Increase failed:", error);
     } finally {
       setLoadingItemId(null);
@@ -106,20 +164,25 @@ export default function CartPage() {
       return;
     }
     setLoadingItemId(item.id);
+    // Optimistic update
+    const updated = cartItems.map((i) =>
+      i.id === item.id ? { ...i, quantity: i.quantity - 1 } : i,
+    );
+    setCartItems(updated);
+    writeCartCache(updated);
+
     try {
-      const response = await fetch(`/api/cart-items/${item.id}`, {
+      const res = await fetch(`/api/cart-items/${item.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ quantity: item.quantity - 1 }),
       });
-      if (!response.ok) throw new Error("Failed to update quantity");
-      setCartItems((prev) =>
-        prev.map((i) =>
-          i.id === item.id ? { ...i, quantity: i.quantity - 1 } : i,
-        ),
-      );
+      if (!res.ok) throw new Error("Failed to update quantity");
       dispatch(removeFromCart(item.product));
     } catch (error) {
+      // Rollback on failure
+      setCartItems(cartItems);
+      writeCartCache(cartItems);
       console.error("Decrease failed:", error);
     } finally {
       setLoadingItemId(null);
@@ -129,15 +192,23 @@ export default function CartPage() {
   const confirmDelete = async () => {
     if (!deleteTarget) return;
     setDeleteLoading(true);
+    // Optimistic update
+    const updated = cartItems.filter((i) => i.id !== deleteTarget.id);
+    setCartItems(updated);
+    writeCartCache(updated);
+
     try {
-      const response = await fetch(`/api/cart-items/${deleteTarget.id}`, {
+      const res = await fetch(`/api/cart-items/${deleteTarget.id}`, {
         method: "DELETE",
       });
-      if (!response.ok) throw new Error("Failed to delete item");
-      setCartItems((prev) => prev.filter((i) => i.id !== deleteTarget.id));
+      if (!res.ok) throw new Error("Failed to delete item");
       dispatch(removeFromCart(deleteTarget.product));
+      if (updated.length === 0) clearCartCache();
       setDeleteTarget(null);
     } catch (error) {
+      // Rollback on failure
+      setCartItems(cartItems);
+      writeCartCache(cartItems);
       console.error("Delete failed:", error);
     } finally {
       setDeleteLoading(false);
@@ -149,13 +220,29 @@ export default function CartPage() {
     0,
   );
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500" />
-      </div>
-    );
-  }
+  // ─── Skeleton ─────────────────────────────────────────────────────────────
+  const SkeletonCart = () => (
+    <div className="flex flex-col gap-4">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div
+          key={i}
+          className="flex gap-4 bg-white dark:bg-zinc-900 p-4 rounded-3xl border border-zinc-200 dark:border-zinc-800 animate-pulse"
+        >
+          <div className="w-24 h-24 rounded-2xl bg-zinc-200 dark:bg-zinc-800 flex-shrink-0" />
+          <div className="flex flex-col justify-between flex-1 py-1">
+            <div>
+              <div className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded w-3/4 mb-2" />
+              <div className="h-3 bg-zinc-200 dark:bg-zinc-700 rounded w-1/3" />
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="h-8 w-24 bg-zinc-200 dark:bg-zinc-700 rounded-xl" />
+              <div className="h-8 w-10 bg-zinc-200 dark:bg-zinc-700 rounded-xl" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 
   if (error) {
     return (
@@ -167,14 +254,13 @@ export default function CartPage() {
 
   return (
     <div className="w-full max-w-2xl mx-auto px-4 py-8 min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
+      {/* Delete confirmation modal */}
       {deleteTarget && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4 pb-4 sm:pb-0">
-          {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => !deleteLoading && setDeleteTarget(null)}
           />
-
           <div className="relative z-10 w-full max-w-sm bg-white dark:bg-zinc-900 rounded-3xl p-6 shadow-2xl border border-zinc-200 dark:border-zinc-800">
             <button
               onClick={() => !deleteLoading && setDeleteTarget(null)}
@@ -187,7 +273,10 @@ export default function CartPage() {
             <div className="flex items-center gap-3 mb-5 pr-6">
               <div className="relative w-14 h-14 rounded-2xl bg-zinc-100 dark:bg-zinc-800 overflow-hidden flex-shrink-0">
                 <Image
-                  src={deleteTarget.product_image || "/placeholder-product.png"}
+                  src={
+                    getMediaUrl(deleteTarget.product_image) ||
+                    "/placeholder-product.png"
+                  }
                   alt={deleteTarget.product_name}
                   fill
                   className="object-contain p-1.5"
@@ -237,6 +326,7 @@ export default function CartPage() {
         </div>
       )}
 
+      {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <Button
           variant="secondary"
@@ -249,7 +339,10 @@ export default function CartPage() {
         <div className="w-10" />
       </div>
 
-      {cartItems.length === 0 ? (
+      {/* Content */}
+      {bootstrapping ? (
+        <SkeletonCart />
+      ) : cartItems.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <div className="w-24 h-24 mb-6 rounded-3xl bg-orange-100 dark:bg-orange-950/30 flex items-center justify-center">
             <ShoppingBag size={40} className="text-primary" />
@@ -273,7 +366,10 @@ export default function CartPage() {
               >
                 <div className="relative w-24 h-24 rounded-2xl bg-zinc-100 dark:bg-zinc-800 overflow-hidden flex-shrink-0">
                   <Image
-                    src={item.product_image || "/placeholder-product.png"}
+                    src={
+                      getMediaUrl(item.product_image) ||
+                      "/placeholder-product.png"
+                    }
                     alt={item.product_name}
                     fill
                     className="object-contain p-2"
@@ -355,7 +451,6 @@ export default function CartPage() {
                 </span>
               </div>
             </div>
-
             <Button className="w-full p-6">
               Proceed to Checkout <ChevronRight size={18} />
             </Button>

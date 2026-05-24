@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, notFound } from "next/navigation";
 import { useSelector } from "react-redux";
 import Image from "next/image";
@@ -11,31 +11,54 @@ import {
   Send,
   LayoutGrid,
   Film,
+  Link2,
+  Flag,
+  Ban,
+  Loader2,
 } from "lucide-react";
 import { RootState } from "@/lib/store/store";
 import { getMediaUrl } from "@/lib/utils/getMediaUrl";
 import CreatePostBox from "@/components/Home/CreatePostBox";
 import FollowToggle from "@/components/FollowToggle";
 import PostCard from "@/components/posts/PostCard";
-import EditProfileModal from "@/components/profile/EditProfileModal";
 import ReelCard from "@/components/Reels/ReelCard";
+import { useRouter } from "next/navigation";
+import { updateAvatar } from "@/lib/services/profileService";
+import { toast } from "sonner";
+import ReportModal from "@/components/ReportModal";
 
 const ProfilePage = () => {
   const params = useParams();
   const targetId = params?.id as string;
   const { user: currentUser } = useSelector((state: RootState) => state.auth);
+  const router = useRouter();
 
   const [profileData, setProfileData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [is404, setIs404] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
   const [userReels, setUserReels] = useState<any[]>([]);
   const [reelsLoading, setReelsLoading] = useState(false);
   const [reelsFetched, setReelsFetched] = useState(false);
-
   const [activeTab, setActiveTab] = useState<"posts" | "reels">("posts");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [blocking, setBlocking] = useState(false);
+
+  const menuRef = useRef<HTMLDivElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const isOwnProfile = currentUser?.id?.toString() === targetId;
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   useEffect(() => {
     const loadData = async () => {
@@ -43,20 +66,14 @@ const ProfilePage = () => {
       try {
         setLoading(true);
         const userRes = await fetch(`/api/users/${targetId}`);
-
         if (userRes.status === 404 || !userRes.ok) {
           setIs404(true);
           return;
         }
-
         const userData = await userRes.json();
         setProfileData(userData);
-        if (userData?.reels) {
-          setUserReels(userData.reels);
-        }
-        console.log(userData);
+        if (userData?.reels) setUserReels(userData.reels);
       } catch (err) {
-        console.error("Failed to load profile data:", err);
         setIs404(true);
       } finally {
         setLoading(false);
@@ -98,6 +115,49 @@ const ProfilePage = () => {
     }));
   };
 
+  const handleCameraChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarUploading(true);
+    try {
+      const updated = await updateAvatar(file);
+      handleProfileUpdated(updated);
+      toast.success("Avatar updated!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to upload avatar");
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
+  const handleBlock = async () => {
+    if (
+      !confirm("Block this user? You will no longer see their posts or reels.")
+    )
+      return;
+
+    setBlocking(true);
+    try {
+      const res = await fetch(`/api/users/${targetId}/block/`, {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error("Failed to block user");
+
+      toast.success("User blocked");
+      router.push("/");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to block user");
+    } finally {
+      setBlocking(false);
+    }
+  };
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+    toast.success("Profile link copied!");
+    setMenuOpen(false);
+  };
+
   if (is404) {
     notFound();
     return null;
@@ -106,7 +166,7 @@ const ProfilePage = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh] bg-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     );
   }
@@ -119,20 +179,20 @@ const ProfilePage = () => {
   const avatarUrl = getMediaUrl(
     profileData?.profile?.avatar || profileData?.profile_image,
   );
+  const bio = profileData?.profile?.bio || profileData?.bio;
+  const occupation =
+    profileData?.profile?.occupation || profileData?.occupation;
 
   return (
     <div className="max-w-4xl mx-auto bg-background min-h-screen border-x border-border/60 shadow-sm font-sans antialiased text-foreground">
-      {/* 1. Header / Cover Area */}
       <div className="h-36 md:h-44 bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.1),transparent)]" />
       </div>
 
-      {/* 2. Profile Info Section */}
       <div className="px-6 pb-6 border-b border-border bg-card">
         <div className="relative flex justify-between items-start">
-          {/* Avatar Container */}
           <div className="relative -mt-16 md:-mt-20">
-            <div className="w-28 h-28 md:w-34 md:h-34 rounded-full border-4 border-card bg-muted overflow-hidden relative shadow-md">
+            <div className="w-28 h-28 md:w-32 md:h-32 rounded-full border-4 border-card bg-muted overflow-hidden relative shadow-md">
               {avatarUrl ? (
                 <Image
                   src={avatarUrl}
@@ -149,31 +209,69 @@ const ProfilePage = () => {
                 />
               )}
             </div>
+
             {isOwnProfile && (
-              <button className="absolute bottom-1 right-1 bg-orange-500 hover:bg-orange-600 p-2 rounded-full border-2 border-card text-white shadow-md active:scale-95 transition-transform">
-                <Camera size={15} />
-              </button>
+              <>
+                <button
+                  onClick={() => cameraInputRef.current?.click()}
+                  disabled={avatarUploading}
+                  className="absolute bottom-1 right-1 bg-orange-500 hover:bg-orange-600 p-2 rounded-full border-2 border-card text-white shadow-md active:scale-95 transition-transform disabled:opacity-60"
+                >
+                  {avatarUploading ? (
+                    <div className="h-[15px] w-[15px] animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  ) : (
+                    <Camera size={15} />
+                  )}
+                </button>
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleCameraChange}
+                />
+              </>
             )}
           </div>
 
-          {/* Action Row */}
-          <div className="pt-4">
+          <div className="pt-4 flex items-center gap-2">
             {isOwnProfile ? (
-              <div className="flex items-center gap-2">
+              <>
                 <button
-                  onClick={() => setShowEditModal(true)}
+                  onClick={() => router.push("/settings/edit-profile")}
                   className="border border-border bg-muted hover:bg-accent text-foreground px-5 py-2 rounded-full font-bold text-xs tracking-wide transition-colors shadow-sm"
                 >
                   Edit profile
                 </button>
-                <button className="p-2 text-muted-foreground hover:bg-accent rounded-full transition-colors">
-                  <MoreHorizontal size={22} />
-                </button>
-              </div>
+
+                <div className="relative" ref={menuRef}>
+                  <button
+                    onClick={() => setMenuOpen((o) => !o)}
+                    className="p-2 text-muted-foreground hover:bg-accent rounded-full transition-colors"
+                  >
+                    <MoreHorizontal size={22} />
+                  </button>
+
+                  {menuOpen && (
+                    <div className="absolute right-0 top-full mt-1.5 z-20 min-w-[180px] rounded-xl border border-border bg-popover shadow-lg py-1">
+                      <button
+                        onClick={handleCopyLink}
+                        className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-foreground hover:bg-muted transition-colors"
+                      >
+                        <Link2 size={15} />
+                        Copy profile link
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
             ) : (
-              <div className="flex gap-2">
-                <button className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-full font-bold text-xs tracking-wide shadow-sm active:scale-95 transition-all flex items-center gap-2">
-                  <Send size={14} /> Send
+              <>
+                <button
+                  onClick={() => router.push(`/messages/${targetId}`)}
+                  className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-full font-bold text-xs tracking-wide shadow-sm active:scale-95 transition-all flex items-center gap-2"
+                >
+                  <Send size={14} /> Message
                 </button>
                 <FollowToggle
                   username=""
@@ -181,19 +279,60 @@ const ProfilePage = () => {
                   initialIsFollowed={profileData.is_followed}
                   variant="button"
                 />
-              </div>
-            )}
 
-            {showEditModal && (
-              <EditProfileModal
-                onClose={() => setShowEditModal(false)}
-                onUpdated={handleProfileUpdated}
-              />
+                <div className="relative" ref={menuRef}>
+                  <button
+                    onClick={() => setMenuOpen((o) => !o)}
+                    className="p-2 text-muted-foreground hover:bg-accent rounded-full transition-colors"
+                  >
+                    <MoreHorizontal size={22} />
+                  </button>
+
+                  {menuOpen && (
+                    <div className="absolute right-0 top-full mt-1.5 z-20 min-w-[180px] rounded-xl border border-border bg-popover shadow-lg py-1">
+                      <button
+                        onClick={handleCopyLink}
+                        className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-foreground hover:bg-muted"
+                      >
+                        <Link2 size={15} /> Copy profile link
+                      </button>
+
+                      <button
+                        onClick={() => setIsReportModalOpen(true)}
+                        className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-destructive hover:bg-muted"
+                      >
+                        <Flag size={15} /> Report
+                      </button>
+
+                      <button
+                        onClick={handleBlock}
+                        disabled={blocking}
+                        className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-destructive hover:bg-muted disabled:opacity-50"
+                      >
+                        {blocking ? (
+                          <Loader2 size={15} className="animate-spin" />
+                        ) : (
+                          <Ban size={15} />
+                        )}
+                        Block
+                      </button>
+                    </div>
+                  )}
+
+                  <ReportModal
+                    userId={targetId}
+                    isOpen={isReportModalOpen}
+                    onClose={() => {
+                      setIsReportModalOpen(false);
+                      setMenuOpen(false);
+                    }}
+                  />
+                </div>
+              </>
             )}
           </div>
         </div>
 
-        {/* Identity block */}
         <div className="mt-4">
           <h1 className="text-xl md:text-2xl font-black tracking-tight text-foreground">
             {profileData?.full_name || profileData?.username}
@@ -203,9 +342,16 @@ const ProfilePage = () => {
               ? `@${profileData.username}`
               : profileData?.email}
           </p>
+          {occupation && (
+            <p className="text-xs text-muted-foreground mt-1">{occupation}</p>
+          )}
+          {bio && (
+            <p className="text-sm text-foreground/80 mt-2 leading-relaxed max-w-lg">
+              {bio}
+            </p>
+          )}
         </div>
 
-        {/* Dynamic Stats Row */}
         <div className="flex gap-10 mt-6 pt-5 border-t border-border/40">
           <StatItem count={profileData?.followers_count} label="Followers" />
           <StatItem
@@ -217,7 +363,6 @@ const ProfilePage = () => {
         </div>
       </div>
 
-      {/* 3. Feed Section */}
       <div className="bg-background p-4 min-h-screen space-y-6">
         {isOwnProfile && activeTab === "posts" && (
           <div className="space-y-2.5">
@@ -229,39 +374,25 @@ const ProfilePage = () => {
         )}
 
         <div className="flex items-center justify-between mb-4 border-b border-border p-2">
-          <button
-            onClick={() => handleTabChange("posts")}
-            className={`flex items-center gap-2 pb-3 transition-all relative group ${
-              activeTab === "posts"
-                ? "text-foreground font-black"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <LayoutGrid size={16} />
-            <span className="text-xs font-bold uppercase tracking-wider">
-              Posts
-            </span>
-            {activeTab === "posts" && (
-              <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-orange-500 rounded-full" />
-            )}
-          </button>
-
-          <button
-            onClick={() => handleTabChange("reels")}
-            className={`flex items-center gap-2 pb-3 transition-all relative group ${
-              activeTab === "reels"
-                ? "text-foreground font-black"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Film size={16} />
-            <span className="text-xs font-bold uppercase tracking-wider">
-              Reels
-            </span>
-            {activeTab === "reels" && (
-              <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-orange-500 rounded-full" />
-            )}
-          </button>
+          {(["posts", "reels"] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => handleTabChange(tab)}
+              className={`flex items-center gap-2 pb-3 transition-all relative ${
+                activeTab === tab
+                  ? "text-foreground font-black"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {tab === "posts" ? <LayoutGrid size={16} /> : <Film size={16} />}
+              <span className="text-xs font-bold uppercase tracking-wider">
+                {tab}
+              </span>
+              {activeTab === tab && (
+                <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-orange-500 rounded-full" />
+              )}
+            </button>
+          ))}
         </div>
 
         <div className="grid grid-cols-1 gap-4">

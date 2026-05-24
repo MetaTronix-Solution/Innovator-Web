@@ -96,7 +96,6 @@ const FollowToggle = ({
     );
   }
 
-  // variant === "button"
   return (
     <button
       onClick={handleToggle}

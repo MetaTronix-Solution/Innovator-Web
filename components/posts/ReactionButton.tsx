@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, memo } from "react";
+import React, { useState, useEffect, memo } from "react";
 import { ThumbsUp } from "lucide-react";
 import ReactionPicker, { REACTIONS } from "./ReactionPicker";
 

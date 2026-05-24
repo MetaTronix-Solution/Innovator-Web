@@ -1,4 +1,3 @@
-// src/app/api/auth/verify-otp/route.ts
 import { NextRequest, NextResponse } from "next/server";
 
 const AUTH_API = process.env.NEXT_PUBLIC_AUTH_URL as string;

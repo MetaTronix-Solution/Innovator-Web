@@ -3,13 +3,12 @@ import { cookies } from "next/headers";
 
 export async function GET(request: NextRequest) {
   try {
-    // 1. Retrieve the token from server-side cookies
     const cookieStore = await cookies();
     const token = cookieStore.get("accessToken")?.value;
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
-    const type = searchParams.get("type"); // 'post' or 'reel'
+    const type = searchParams.get("type");
 
     if (!id) {
       return NextResponse.json({ error: "ID required" }, { status: 400 });

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback, memo } from "react";
 import Image from "next/image";
-import { MessageCircle, Repeat2, User, Send, Loader2 } from "lucide-react";
+import { User, Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { repostPost, updatePost } from "@/lib/services/postService";
 import { getComments, postComment } from "@/lib/services/commentService";
@@ -13,13 +13,12 @@ import {
   addPostToTop,
   togglePostReaction,
   removePost,
+  removePostsByUser,
 } from "@/lib/store/features/postsSlice";
-import { useRouter } from "next/navigation";
 import { getMediaUrl } from "@/lib/utils/getMediaUrl";
 import PostCardSkeleton from "./PostCardSkeleton";
 import LazyVideo from "./LazyVideo";
 import MediaCarousel from "./MediaCarousel";
-import ActionButton from "./ActionButton";
 import CommentSection from "./CommentSection";
 import RepostModal from "./RepostModal";
 import RepostCard from "./RepostCard";
@@ -33,7 +32,7 @@ import RepostButton from "./RepostButton";
 
 export const renderedPosts = new Set<string>();
 
-const PostCard = ({ post, index }: { post: any; index?: number }) => {
+const PostCard = ({ post }: { post: any; index?: number }) => {
   const [isRepostModalOpen, setIsRepostModalOpen] = useState(false);
   const [repostCaption, setRepostCaption] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -49,7 +48,7 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
   const [showReactionsModal, setShowReactionsModal] = useState(false);
   const [localCount, setLocalCount] = useState<number>(post.like_count ?? 0);
   const [localReaction, setLocalReaction] = useState<string | null>(
-    post.current_user_reaction ?? null
+    post.current_user_reaction ?? null,
   );
 
   const [isEditing, setIsEditing] = useState(false);
@@ -58,7 +57,6 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
   );
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
-  // Sync state with props if they change externally
   useEffect(() => {
     setLocalReaction(post.current_user_reaction ?? null);
     setLocalCount(post.like_count ?? 0);
@@ -66,11 +64,11 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
 
   const cardRef = useRef<HTMLDivElement>(null);
   const dispatch = useDispatch();
-  const router = useRouter();
 
   const currentUser = useSelector((state: RootState) => state.auth.user);
 
   const isOwnPost = currentUser?.id === post.user_id;
+
   const isRepost = !!post.shared_post_details;
   const caption = post.caption || post.content || "";
   const avatarUrl = getMediaUrl(post.avatar);
@@ -168,50 +166,10 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
     if (isVisible) fetchReactionCount();
   }, [isVisible]);
 
-  // const handleReact = useCallback(
-  //   async (reactionType: string) => {
-  //     const prevReaction = post.current_user_reaction;
-  //     const isSameReaction = prevReaction === reactionType;
-  //     const nextReaction = isSameReaction ? null : reactionType;
-  //     const delta =
-  //       !prevReaction && nextReaction
-  //         ? 1
-  //         : prevReaction && !nextReaction
-  //           ? -1
-  //           : 0;
-  //     dispatch(
-  //       togglePostReaction({ postId: post.id, reactionType: nextReaction }),
-  //     );
-  //     setLocalCount((c) => Math.max(0, c + delta));
-  //     try {
-  //       const res = await fetch("/api/reactions", {
-  //         method: "POST",
-  //         headers: { "Content-Type": "application/json" },
-  //         body: JSON.stringify({
-  //           postId: post.id,
-  //           type: reactionType,
-  //           contentType: post.type,
-  //         }),
-  //       });
-  //       if (!res.ok) {
-  //         if (res.status === 401) router.push("/login");
-  //         throw new Error("Failed to sync reaction");
-  //       }
-  //     } catch {
-  //       dispatch(
-  //         togglePostReaction({ postId: post.id, reactionType: prevReaction }),
-  //       );
-  //       setLocalCount((c) => Math.max(0, c - delta));
-  //     }
-  //   },
-  //   [post.id, post.current_user_reaction, dispatch, router],
-  // );
-
   const handleReact = useCallback(
     async (reactionType: string | null) => {
       const prevReaction = localReaction;
 
-      // Optimistic update
       setLocalReaction(reactionType);
       dispatch(
         togglePostReaction({ postId: post.id, reactionType: reactionType }),
@@ -232,7 +190,6 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
 
         fetchReactionCount();
       } catch (err) {
-        // Rollback on failure
         setLocalReaction(prevReaction);
         dispatch(
           togglePostReaction({ postId: post.id, reactionType: prevReaction }),
@@ -338,7 +295,6 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
         ref={cardRef}
         className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm mb-4 transition-all hover:shadow-md"
       >
-        {/* Header */}
         <div className="p-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Link
@@ -387,11 +343,13 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
             postId={post.id}
             isOwnPost={isOwnPost}
             content={caption}
+            userId={post.user_id}
             onDeleted={handleDeleted}
             onEditClick={() => {
               setEditContent(caption);
               setIsEditing(true);
             }}
+            onBlocked={() => dispatch(removePostsByUser(post.user_id))}
           />
         </div>
 
@@ -452,7 +410,6 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
           </>
         )}
 
-        {/* Footer */}
         <div className="px-4 py-2 flex items-center justify-between border-t border-border/50">
           <div className="flex gap-1">
             <ReactionButton
@@ -487,7 +444,6 @@ const PostCard = ({ post, index }: { post: any; index?: number }) => {
           />
         </div>
 
-        {/* Comments */}
         {showComments && (
           <CommentSection
             comments={comments}

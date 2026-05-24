@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { Video, ImageIcon, Smile, User } from "lucide-react";
+import { Video, ImageIcon, User } from "lucide-react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/store/store";
 import Image from "next/image";
@@ -104,11 +104,6 @@ const CreatePostBox = () => {
           icon={<Video className="text-destructive" size={20} />}
           label="Video"
           onClick={() => handleActionClick("video/*")}
-        />
-        <PostAction
-          icon={<Smile className="text-[#f7b928]" size={20} />}
-          label="Feeling"
-          className="hidden sm:flex"
         />
       </div>
     </div>

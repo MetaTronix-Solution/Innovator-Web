@@ -3,7 +3,15 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSelector } from "react-redux";
 import Image from "next/image";
-import { X, Plus, Image as ImageIcon, Smile, Send } from "lucide-react";
+import {
+  X,
+  Plus,
+  Image as ImageIcon,
+  Smile,
+  Send,
+  Loader2,
+  Trash2,
+} from "lucide-react";
 import { getMediaUrl } from "@/lib/utils/getMediaUrl";
 import { useChatBridge } from "@/lib/hooks/useChatBridge";
 import { MutualUser } from "@/app/(main)/messages/page";
@@ -46,12 +54,13 @@ interface MessagesViewProps {
 
 export default function MessagesView({
   conversations: rawConversations = [],
+  mutualUsers = [],
   token,
   onClose,
 }: MessagesViewProps) {
   const stableToken = typeof token === "string" ? token : null;
 
-  const conversations = Array.isArray(rawConversations)
+  const conversations: ActiveChatUser[] = Array.isArray(rawConversations)
     ? rawConversations
     : (rawConversations as any)?.messages &&
         Array.isArray((rawConversations as any).messages)
@@ -66,9 +75,13 @@ export default function MessagesView({
   }, [currentUserId]);
 
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const [tempChat, setTempChat] = useState<ActiveChatUser | null>(null);
+  // Local override for unread counts — zeroed when chat is opened
+  const [localUnread, setLocalUnread] = useState<Record<string, number>>({});
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [typeMessage, setTypeMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [autoDelete24h, setAutoDelete24h] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -83,15 +96,54 @@ export default function MessagesView({
   const getChatLastMsg = (chat: ActiveChatUser) =>
     chat.lastMsg || chat.last_message || "";
 
-  const mutualUsers = conversations.filter((chat: ActiveChatUser) =>
-    getChatActiveStatus(chat),
-  );
+  const allConversations: ActiveChatUser[] =
+    tempChat && !conversations.find((c) => String(c.id) === String(tempChat.id))
+      ? [tempChat, ...conversations]
+      : conversations;
 
-  const currentChat = conversations.find(
-    (chat: ActiveChatUser) => String(chat.id) === String(activeChatId),
+  const currentChat = allConversations.find(
+    (chat) => String(chat.id) === String(activeChatId),
   );
 
   const activeRoomId = currentChat?.conversation_id || activeChatId;
+
+  const getLiveOnlineStatus = (userId: string, fallback: boolean) =>
+    mutualUsers.find((u) => String(u.id) === String(userId))?.online_status ??
+    fallback;
+
+  const markAsRead = useCallback((chatId: string) => {
+    setLocalUnread((prev) => ({ ...prev, [chatId]: 0 }));
+    fetch(`/api/chats/mark-as-read/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sender_id: chatId }),
+    }).catch(() => {});
+  }, []);
+
+  const handleStartChat = (u: MutualUser) => {
+    const existing = conversations.find((c) => String(c.id) === String(u.id));
+    if (!existing) {
+      setTempChat({
+        id: u.id,
+        name: u.full_name || u.username || "User",
+        avatar: u.avatar,
+        active: u.online_status,
+      });
+    }
+    markAsRead(u.id);
+    setActiveChatId(u.id);
+  };
+
+  const handleOpenChat = (chatId: string) => {
+    markAsRead(chatId);
+    setActiveChatId(chatId);
+  };
+
+  const handleCloseChat = () => {
+    setActiveChatId(null);
+    setTempChat(null);
+    setMessages([]);
+  };
 
   const handleIncomingMessage = useCallback((data: any) => {
     if (data.type !== "chat_message") return;
@@ -135,22 +187,18 @@ export default function MessagesView({
         const response = await fetch(`/api/chats/?with_user=${activeChatId}`);
         if (response.ok) {
           const data = await response.json();
-
           let rawMessages = [];
           if (data && typeof data === "object" && "messages" in data) {
             rawMessages = Array.isArray(data.messages) ? data.messages : [];
           } else if (Array.isArray(data)) {
             rawMessages = data;
           }
-
           const sortedMessages = rawMessages.sort(
             (a: ChatMessage, b: ChatMessage) =>
               new Date(a.created_at).getTime() -
               new Date(b.created_at).getTime(),
           );
           setMessages(sortedMessages);
-        } else {
-          console.error("Failed fetching chat logs");
         }
       } catch (error) {
         console.error("Network communication error:", error);
@@ -166,14 +214,12 @@ export default function MessagesView({
     e.preventDefault();
     if (!typeMessage.trim() || !activeChatId) return;
 
-    const payload = {
+    sendMessage({
       message: typeMessage.trim(),
       sender_id: currentUserId,
       receiver_id: activeChatId,
       expire_after_24h: autoDelete24h,
-    };
-
-    sendMessage(payload);
+    });
 
     setMessages((prev) => [
       ...prev,
@@ -186,6 +232,23 @@ export default function MessagesView({
     ]);
 
     setTypeMessage("");
+  };
+
+  const handleDeleteConversation = async () => {
+    if (!activeChatId || deleteLoading) return;
+    setDeleteLoading(true);
+    try {
+      await fetch("/api/chats/delete-conversation/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ with_user: activeChatId }),
+      });
+      handleCloseChat();
+    } catch (err) {
+      console.error("Failed to delete conversation:", err);
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   const handleActionClick = (type: "image/*" | "video/*") => {
@@ -209,9 +272,15 @@ export default function MessagesView({
     }
   };
 
+  // Resolve unread count — local override wins over API value
+  const getUnreadCount = (chat: ActiveChatUser) =>
+    localUnread[chat.id] !== undefined
+      ? localUnread[chat.id]
+      : (chat.unread ?? 0);
+
   return (
     <div className="flex h-[calc(100vh-72px)] w-full bg-background font-sans antialiased">
-      {/* SIDEBAR NAVIGATION COLUMN */}
+      {/* SIDEBAR */}
       <div
         className={`flex flex-col bg-background transition-all duration-300 ${
           activeChatId === null
@@ -234,8 +303,8 @@ export default function MessagesView({
         </div>
 
         {activeChatId === null ? (
-          /* FULL SCREEN SIDEBAR VIEW */
           <div className="flex-1 overflow-y-auto p-4 space-y-6 no-scrollbar">
+            {/* People you know */}
             {mutualUsers.length > 0 && (
               <div>
                 <h3 className="text-xs font-bold text-muted-foreground/80 uppercase tracking-wider mb-3">
@@ -244,11 +313,11 @@ export default function MessagesView({
                 <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar">
                   {mutualUsers.map((u: MutualUser) => {
                     const resolvedAvatar = getMediaUrl(u.avatar);
-                    const displayName = u.full_name || u.username;
+                    const displayName = u.full_name || u.username || "User";
                     return (
                       <div
                         key={u.id}
-                        onClick={() => setActiveChatId(u.id)}
+                        onClick={() => handleStartChat(u)}
                         className="flex flex-col items-center space-y-1.5 cursor-pointer text-center group min-w-[65px]"
                       >
                         <div className="relative w-12 h-12 rounded-full bg-muted border-2 border-border group-hover:border-orange-500 transition-colors flex items-center justify-center font-bold text-sm text-foreground overflow-hidden">
@@ -259,6 +328,7 @@ export default function MessagesView({
                               width={48}
                               height={48}
                               className="w-full h-full object-cover rounded-full"
+                              unoptimized
                             />
                           ) : (
                             displayName[0]?.toUpperCase() || "?"
@@ -277,23 +347,34 @@ export default function MessagesView({
               </div>
             )}
 
+            {/* Recent Chats */}
             <div>
               <h3 className="text-xs font-bold text-muted-foreground/80 uppercase tracking-wider mb-2">
                 Recent Chats
               </h3>
               {conversations.length === 0 ? (
                 <p className="text-xs text-muted-foreground p-2">
-                  No conversations found.
+                  No conversations yet.{" "}
+                  {mutualUsers.length > 0 && (
+                    <span className="text-orange-500 font-medium">
+                      Start one from "People you know" above!
+                    </span>
+                  )}
                 </p>
               ) : (
                 <div className="divide-y divide-border/40">
                   {conversations.map((chat: ActiveChatUser) => {
                     const resolvedAvatar = getMediaUrl(getChatAvatar(chat));
                     const displayName = getChatName(chat);
+                    const isOnline = getLiveOnlineStatus(
+                      chat.id,
+                      getChatActiveStatus(chat),
+                    );
+                    const unreadCount = getUnreadCount(chat);
                     return (
                       <div
                         key={chat.id}
-                        onClick={() => setActiveChatId(chat.id)}
+                        onClick={() => handleOpenChat(chat.id)}
                         className="flex items-center gap-3 py-3 hover:bg-muted/30 px-2 rounded-xl cursor-pointer transition-colors"
                       >
                         <div className="relative w-11 h-11 rounded-full bg-muted border border-border flex items-center justify-center font-bold text-sm text-muted-foreground shrink-0 overflow-hidden">
@@ -309,7 +390,7 @@ export default function MessagesView({
                           ) : (
                             displayName[0]?.toUpperCase() || "?"
                           )}
-                          {getChatActiveStatus(chat) && (
+                          {isOnline && (
                             <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border border-background rounded-full z-10" />
                           )}
                         </div>
@@ -326,11 +407,11 @@ export default function MessagesView({
                             {getChatLastMsg(chat)}
                           </p>
                         </div>
-                        {chat.unread && chat.unread > 0 ? (
+                        {unreadCount > 0 && (
                           <span className="w-4 h-4 bg-orange-500 text-white font-bold text-[9px] flex items-center justify-center rounded-full">
-                            {chat.unread}
+                            {unreadCount}
                           </span>
-                        ) : null}
+                        )}
                       </div>
                     );
                   })}
@@ -339,15 +420,20 @@ export default function MessagesView({
             </div>
           </div>
         ) : (
-          /* CONDENSED SIDEBAR SPLIT COLUMN VIEW */
+          /* CONDENSED SIDEBAR */
           <div className="flex-1 overflow-y-auto divide-y divide-border/10 no-scrollbar">
-            {conversations.map((chat: ActiveChatUser) => {
+            {allConversations.map((chat: ActiveChatUser) => {
               const resolvedAvatar = getMediaUrl(getChatAvatar(chat));
               const displayName = getChatName(chat);
+              const isOnline = getLiveOnlineStatus(
+                chat.id,
+                getChatActiveStatus(chat),
+              );
+              const unreadCount = getUnreadCount(chat);
               return (
                 <div
                   key={chat.id}
-                  onClick={() => setActiveChatId(chat.id)}
+                  onClick={() => handleOpenChat(chat.id)}
                   className={`flex items-center justify-center sm:justify-start gap-3 p-3 sm:p-4 cursor-pointer transition-colors relative ${
                     String(activeChatId) === String(chat.id)
                       ? "bg-accent/40 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-orange-500"
@@ -367,19 +453,25 @@ export default function MessagesView({
                     ) : (
                       displayName[0]?.toUpperCase() || "?"
                     )}
-                    {getChatActiveStatus(chat) && (
+                    {isOnline && (
                       <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border border-background rounded-full z-10" />
                     )}
                   </div>
-
                   <div className="flex-1 min-w-0 hidden sm:block">
                     <div className="flex items-center justify-between mb-0.5">
                       <span className="text-xs md:text-sm font-bold text-foreground truncate">
                         {displayName}
                       </span>
-                      <span className="text-[10px] text-muted-foreground/70 pl-1">
-                        {chat.time || ""}
-                      </span>
+                      <div className="flex items-center gap-1 pl-1">
+                        <span className="text-[10px] text-muted-foreground/70">
+                          {chat.time || ""}
+                        </span>
+                        {unreadCount > 0 && (
+                          <span className="w-4 h-4 bg-orange-500 text-white font-bold text-[9px] flex items-center justify-center rounded-full">
+                            {unreadCount}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <p className="text-xs text-muted-foreground/80 truncate">
                       {getChatLastMsg(chat)}
@@ -392,10 +484,9 @@ export default function MessagesView({
         )}
       </div>
 
-      {/* CHAT CANVAS VIEW AREA */}
+      {/* CHAT PANEL */}
       {activeChatId !== null && currentChat && (
         <div className="flex-1 flex flex-col bg-background relative min-w-0">
-          {/* Header */}
           <div className="px-4 py-3 h-[65px] border-b border-border/60 flex items-center justify-between bg-background">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="relative w-9 h-9 rounded-full bg-muted border border-border flex items-center justify-center font-bold text-xs text-muted-foreground shrink-0 overflow-hidden">
@@ -411,7 +502,10 @@ export default function MessagesView({
                 ) : (
                   getChatName(currentChat)[0]?.toUpperCase() || "?"
                 )}
-                {getChatActiveStatus(currentChat) && (
+                {getLiveOnlineStatus(
+                  currentChat.id,
+                  getChatActiveStatus(currentChat),
+                ) && (
                   <span className="absolute bottom-0 right-0 w-2 h-2 bg-green-500 border border-background rounded-full z-10" />
                 )}
               </div>
@@ -420,7 +514,12 @@ export default function MessagesView({
                   {getChatName(currentChat)}
                 </h3>
                 <span className="text-[10px] text-muted-foreground/80 font-medium">
-                  {getChatActiveStatus(currentChat) ? "Active now" : "Offline"}
+                  {getLiveOnlineStatus(
+                    currentChat.id,
+                    getChatActiveStatus(currentChat),
+                  )
+                    ? "Active now"
+                    : "Offline"}
                 </span>
               </div>
             </div>
@@ -440,9 +539,19 @@ export default function MessagesView({
                 />
                 {autoDelete24h ? "24h Auto-Delete ON" : "Keep Messages"}
               </button>
-
               <button
-                onClick={() => setActiveChatId(null)}
+                onClick={handleDeleteConversation}
+                disabled={deleteLoading}
+                className="p-2 hover:bg-muted text-muted-foreground hover:text-destructive rounded-full transition-colors disabled:opacity-40"
+              >
+                {deleteLoading ? (
+                  <Loader2 size={15} className="animate-spin" />
+                ) : (
+                  <Trash2 size={15} />
+                )}
+              </button>
+              <button
+                onClick={handleCloseChat}
                 className="p-2 hover:bg-muted text-muted-foreground hover:text-destructive rounded-full transition-colors ml-0.5"
               >
                 <X size={16} />
@@ -450,7 +559,6 @@ export default function MessagesView({
             </div>
           </div>
 
-          {/* Messages Stream */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-muted/5 no-scrollbar">
             {loading ? (
               <div className="flex h-full items-center justify-center">
@@ -460,7 +568,7 @@ export default function MessagesView({
               <div className="flex h-full flex-col items-center justify-center text-muted-foreground space-y-1">
                 <p className="text-sm font-bold">No messages here yet</p>
                 <p className="text-xs text-center px-4 max-w-[280px]">
-                  Say hi to initiate a transaction!
+                  Say hi to {getChatName(currentChat).split(" ")[0]}!
                 </p>
               </div>
             ) : (
@@ -527,7 +635,6 @@ export default function MessagesView({
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Footer Input */}
           <div className="p-3 border-t border-border/60 bg-background">
             <form
               onSubmit={handleSendMessage}
@@ -551,7 +658,7 @@ export default function MessagesView({
                 value={typeMessage}
                 disabled={loading || (!!activeChatId && !isSendReady)}
                 onChange={(e) => setTypeMessage(e.target.value)}
-                placeholder="message..."
+                placeholder={`Message ${getChatName(currentChat).split(" ")[0]}...`}
                 className="flex-1 bg-transparent border-none outline-none text-xs md:text-sm text-foreground placeholder:text-muted-foreground/50 min-w-0"
               />
               <button

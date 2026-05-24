@@ -12,27 +12,33 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { deletePost } from "@/lib/services/postService";
+import ReportModal from "../ReportModal";
 
 interface PostCardMenuProps {
   postId: string;
   isOwnPost: boolean;
   content: string;
+  userId: string;
   onDeleted: () => void;
   onEditClick: () => void;
+  onBlocked?: () => void;
 }
 
 export default function PostCardMenu({
   postId,
   isOwnPost,
   content,
+  userId,
   onDeleted,
   onEditClick,
+  onBlocked,
 }: PostCardMenuProps) {
   const [open, setOpen] = useState(false);
-  const [deleteing, setDeleting] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [blocking, setBlocking] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Close on outside click
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
@@ -59,20 +65,34 @@ export default function PostCardMenu({
     }
   };
 
-  const handleCopyLink = () => {
+  const handleCopyText = () => {
     navigator.clipboard.writeText(content);
     toast.success("Copied to clipboard");
     setOpen(false);
   };
 
-  const handleReport = () => {
-    toast.info("Post reported");
-    setOpen(false);
-  };
-
-  const handleBlock = () => {
-    toast.info("User blocked");
-    setOpen(false);
+  const handleBlock = async () => {
+    if (
+      !confirm("Block this user? Their posts will be removed from your feed.")
+    )
+      return;
+    setBlocking(true);
+    try {
+      const res = await fetch(`/api/users/${userId}/block/`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? "Failed to block user");
+      }
+      toast.success("User blocked");
+      setOpen(false);
+      onBlocked?.();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to block user");
+    } finally {
+      setBlocking(false);
+    }
   };
 
   return (
@@ -83,6 +103,15 @@ export default function PostCardMenu({
       >
         <EllipsisVertical size={18} />
       </button>
+
+      <ReportModal
+        userId={userId}
+        isOpen={isReportModalOpen}
+        onClose={() => {
+          setIsReportModalOpen(false);
+          setOpen(false);
+        }}
+      />
 
       {open && (
         <div className="absolute right-0 top-9 z-50 w-44 bg-card border border-border rounded-xl shadow-xl overflow-hidden">
@@ -98,7 +127,7 @@ export default function PostCardMenu({
               />
               <MenuItem
                 icon={
-                  deleteing ? (
+                  deleting ? (
                     <Loader2 size={15} className="animate-spin" />
                   ) : (
                     <Trash2 size={15} />
@@ -107,7 +136,7 @@ export default function PostCardMenu({
                 label="Delete post"
                 onClick={handleDelete}
                 danger
-                disabled={deleteing}
+                disabled={deleting}
               />
             </>
           ) : (
@@ -115,18 +144,26 @@ export default function PostCardMenu({
               <MenuItem
                 icon={<Flag size={15} />}
                 label="Report post"
-                onClick={handleReport}
+                onClick={() => setIsReportModalOpen(true)}
               />
+
               <MenuItem
-                icon={<Ban size={15} />}
+                icon={
+                  blocking ? (
+                    <Loader2 size={15} className="animate-spin" />
+                  ) : (
+                    <Ban size={15} />
+                  )
+                }
                 label="Block user"
                 onClick={handleBlock}
                 danger
+                disabled={blocking}
               />
               <MenuItem
                 icon={<Copy size={15} />}
                 label="Copy text"
-                onClick={handleCopyLink}
+                onClick={handleCopyText}
               />
             </>
           )}

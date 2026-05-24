@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import {
-  ArrowLeft,
   ShoppingCart,
   Check,
   Loader2,
@@ -15,9 +14,9 @@ import {
 import Image from "next/image";
 import { useRouter, useParams } from "next/navigation";
 import { addToCart, removeFromCart } from "@/lib/store/features/cartSlice";
-import { RootState } from "@/lib/store/store";
 import { Product } from "@/types/product";
 import { Button } from "@/components/ui/button";
+import { getMediaUrl } from "@/lib/utils/getMediaUrl";
 
 export default function ProductDetailPage() {
   const dispatch = useDispatch();
@@ -126,8 +125,7 @@ export default function ProductDetailPage() {
 
   return (
     <div className="w-full max-w-2xl mx-auto min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 pb-32">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-4">
+      {/* <div className="flex items-center justify-between px-4 py-4">
         <button
           onClick={() => router.back()}
           className="p-2.5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm hover:border-orange-500 transition-colors"
@@ -136,12 +134,11 @@ export default function ProductDetailPage() {
         </button>
         <p className="text-sm font-semibold">Product Details</p>
         <div className="w-10" />
-      </div>
+      </div> */}
 
-      {/* Image */}
       <div className="relative mx-4 aspect-square rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 overflow-hidden mb-6">
         <Image
-          src={product.image || "/placeholder-product.png"}
+          src={getMediaUrl(product.image) || "/placeholder-product.png"}
           alt={product.name}
           fill
           className="object-contain p-8"
@@ -149,7 +146,6 @@ export default function ProductDetailPage() {
           priority
         />
 
-        {/* Stock badge */}
         <div className="absolute top-3 left-3">
           {isOutOfStock ? (
             <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-red-50 text-red-700 border border-red-100 dark:bg-red-950/40 dark:text-red-300 dark:border-red-900">
@@ -163,9 +159,7 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
-      {/* Content */}
       <div className="px-4 flex flex-col gap-5">
-        {/* Name + Category */}
         <div>
           <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-800 border border-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900">
             {product.category_details?.name || "General"}
@@ -175,7 +169,6 @@ export default function ProductDetailPage() {
           </h1>
         </div>
 
-        {/* Price + Stock row */}
         <div className="flex items-center justify-between bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl px-4 py-3">
           <div>
             <p className="text-xs text-zinc-500 mb-0.5">Price</p>
@@ -194,7 +187,6 @@ export default function ProductDetailPage() {
           </div>
         </div>
 
-        {/* Description */}
         {product.description && (
           <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4">
             <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">
@@ -206,7 +198,6 @@ export default function ProductDetailPage() {
           </div>
         )}
 
-        {/* Meta info */}
         <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 flex flex-col gap-3">
           <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
             Details

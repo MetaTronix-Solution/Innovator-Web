@@ -31,7 +31,6 @@ const authSlice = createSlice({
               incomingUser.profile_image ||
               null,
           },
-          // Keep flat field fallback definition intact
           profile_image:
             incomingUser.profile_image || incomingUser.profile?.avatar || null,
         };

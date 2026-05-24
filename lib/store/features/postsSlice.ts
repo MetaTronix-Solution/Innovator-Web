@@ -175,6 +175,11 @@ const postsSlice = createSlice({
         }
       });
     },
+    removePostsByUser: (state, action: PayloadAction<string>) => {
+      state.items = state.items.filter(
+        (post) => post.user_id !== action.payload,
+      );
+    },
   },
 });
 
@@ -190,6 +195,7 @@ export const {
   incrementCommentCount,
   incrementShareCount,
   toggleFollowInPosts,
+  removePostsByUser,
 } = postsSlice.actions;
 
 export default postsSlice.reducer;

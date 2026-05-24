@@ -8,7 +8,7 @@ import React, {
   useCallback,
 } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Search, SlidersHorizontal, History, ShoppingBag } from "lucide-react";
+import { Search, SlidersHorizontal, ShoppingBag, Bell } from "lucide-react";
 
 import ProductCard from "@/components/Ecommerce/ProductCard";
 import { RootState } from "@/lib/store/store";
@@ -22,11 +22,40 @@ import {
 import { Product } from "@/types/product";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import NotificationDrawer from "@/components/Ecommerce/NotificationDrawer";
 
 type CategoryFilter = "All" | "Multimeters" | "Electronics";
 
 const LIMIT = 10;
+const CACHE_KEY = "products_cache";
 const CACHE_TTL = 5 * 60 * 1000;
+
+interface ProductCache {
+  products: Product[];
+  timestamp: number;
+  hasMore: boolean;
+}
+
+const readCache = (): ProductCache | null => {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as ProductCache;
+  } catch {
+    return null;
+  }
+};
+
+const writeCache = (data: ProductCache) => {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+  } catch {}
+};
+
+const isCacheFresh = (cache: ProductCache | null): boolean => {
+  if (!cache || !cache.products?.length) return false;
+  return Date.now() - cache.timestamp < CACHE_TTL;
+};
 
 export default function EcommercePage() {
   const dispatch = useDispatch();
@@ -35,57 +64,90 @@ export default function EcommercePage() {
   const totalQuantity = useSelector(
     (state: RootState) => state.cart.totalQuantity,
   );
-
   const products = useSelector((state: RootState) => state.products.items);
   const hasMore = useSelector((state: RootState) => state.products.hasMore);
   const page = useSelector((state: RootState) => state.products.page);
-  const lastFetched = useSelector((state: RootState) => state.products.lastFetched);
 
   const [cartItems, setCartItems] = useState<any[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [bootstrapping, setBootstrapping] = useState<boolean>(true);
   const [loadingMore, setLoadingMore] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>("All");
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const hasMoreRef = useRef(hasMore);
+  const loadingMoreRef = useRef(loadingMore);
+  const pageRef = useRef(page);
+  const initialFetchDone = useRef(false);
+
+  useEffect(() => {
+    hasMoreRef.current = hasMore;
+  }, [hasMore]);
+  useEffect(() => {
+    loadingMoreRef.current = loadingMore;
+  }, [loadingMore]);
+  useEffect(() => {
+    pageRef.current = page;
+  }, [page]);
 
   const observerRef = useRef<IntersectionObserver | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const fetchInitialData = async () => {
-      const isCacheFresh = lastFetched && Date.now() - lastFetched < CACHE_TTL;
+    if (initialFetchDone.current) return;
+    initialFetchDone.current = true;
+
+    const bootstrap = async () => {
+      const cache = readCache();
+
+      if (cache?.products?.length) {
+        dispatch(setProducts(cache.products));
+        dispatch(setHasMore(cache.hasMore ?? false));
+        dispatch(setPage(2));
+        setBootstrapping(false);
+      }
+
+      const shouldRefetch = !isCacheFresh(cache);
 
       try {
-        if (!isCacheFresh || products.length === 0) {
-          setLoading(true);
-        }
-
-        const fetchProductsPromise = (!isCacheFresh || products.length === 0)
-          ? fetch(`/api/products?page=1&limit=${LIMIT}`).then((res) => {
-              if (!res.ok) throw new Error("Could not fetch inventory layout.");
-              return res.json();
-            })
-          : Promise.resolve(null);
-
         const [productsJson, cartRes] = await Promise.all([
-          fetchProductsPromise,
+          shouldRefetch
+            ? fetch(`/api/products?page=1&limit=${LIMIT}`).then((res) => {
+                if (!res.ok) throw new Error("Could not fetch inventory.");
+                return res.json();
+              })
+            : Promise.resolve(null),
           fetch("/api/cart-items"),
         ]);
 
-        let currentProducts = products;
+        const notifRes = await fetch(
+          "/api/notifications/?is_read=false&limit=1",
+        );
+        if (notifRes.ok) {
+          const notifData = await notifRes.json();
+          setUnreadCount(notifData.count ?? 0);
+        }
+
+        let currentProducts = cache?.products ?? [];
 
         if (productsJson) {
-          const productsData: Product[] = productsJson.results ?? [];
-          dispatch(setProducts(productsData));
+          const fresh: Product[] = productsJson.results ?? [];
+          dispatch(setProducts(fresh));
           dispatch(setHasMore(productsJson.hasMore ?? false));
           dispatch(setPage(2));
-          currentProducts = productsData;
+          currentProducts = fresh;
+          writeCache({
+            products: fresh,
+            hasMore: productsJson.hasMore ?? false,
+            timestamp: Date.now(),
+          });
         }
 
         if (cartRes.ok) {
           const cartData = await cartRes.json();
           setCartItems(cartData);
-
           const mappedItems = cartData
             .map((item: any) => {
               const fullProduct = currentProducts.find(
@@ -96,57 +158,59 @@ export default function EcommercePage() {
                 : null;
             })
             .filter(Boolean);
-
           dispatch(syncCart(mappedItems));
         }
       } catch (err: any) {
-        setError(err.message || "Something went wrong.");
+        if (!cache?.products?.length) {
+          setError(err.message || "Something went wrong.");
+        }
       } finally {
-        setLoading(false);
+        setBootstrapping(false);
       }
     };
 
-    fetchInitialData();
-  }, [dispatch, lastFetched, products, CACHE_TTL]);
+    bootstrap();
+  }, []);
 
-  // fetch next page
   const fetchMore = useCallback(async () => {
-    if (loadingMore || !hasMore) return;
+    if (loadingMoreRef.current || !hasMoreRef.current) return;
     setLoadingMore(true);
     try {
-      const res = await fetch(`/api/products?page=${page}&limit=${LIMIT}`);
+      const res = await fetch(
+        `/api/products?page=${pageRef.current}&limit=${LIMIT}`,
+      );
       if (!res.ok) return;
       const json = await res.json();
       const newProducts: Product[] = json.results ?? [];
       dispatch(appendProducts(newProducts));
       dispatch(setHasMore(json.hasMore ?? false));
-      dispatch(setPage(page + 1));
+      dispatch(setPage(pageRef.current + 1));
+
+      const cache = readCache();
+      if (cache) {
+        writeCache({
+          products: [...cache.products, ...newProducts],
+          hasMore: json.hasMore ?? false,
+          timestamp: cache.timestamp,
+        });
+      }
     } catch (err) {
       console.error("Failed to fetch more products:", err);
     } finally {
       setLoadingMore(false);
     }
-  }, [page, loadingMore, hasMore, dispatch]);
+  }, [dispatch]);
 
-  // intersection observer on sentinel div
   useEffect(() => {
-    if (observerRef.current) observerRef.current.disconnect();
-
     observerRef.current = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loadingMore) {
-          fetchMore();
-        }
+        if (entries[0].isIntersecting) fetchMore();
       },
       { threshold: 0.1 },
     );
-
-    if (sentinelRef.current) {
-      observerRef.current.observe(sentinelRef.current);
-    }
-
+    if (sentinelRef.current) observerRef.current.observe(sentinelRef.current);
     return () => observerRef.current?.disconnect();
-  }, [fetchMore, hasMore, loadingMore]);
+  }, [fetchMore]);
 
   const handleCartUpdate = (product: Product, action: "add" | "remove") => {
     if (action === "add") {
@@ -163,22 +227,28 @@ export default function EcommercePage() {
       const prodName = product.name?.toLowerCase() || "";
       const prodCat = product.category_details?.name?.toLowerCase() || "";
       const query = searchQuery.toLowerCase();
-
       const matchesSearch = prodName.includes(query) || prodCat.includes(query);
       if (activeCategory === "All") return matchesSearch;
-
-      const matchesCategory = prodCat === activeCategory.toLowerCase();
-      return matchesSearch && matchesCategory;
+      return matchesSearch && prodCat === activeCategory.toLowerCase();
     });
   }, [products, searchQuery, activeCategory]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh] bg-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500" />
-      </div>
-    );
-  }
+  const SkeletonGrid = () => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+      {Array.from({ length: LIMIT }).map((_, i) => (
+        <div
+          key={i}
+          className="rounded-[2rem] bg-card border border-border/60 p-4 animate-pulse"
+        >
+          <div className="aspect-square rounded-3xl bg-muted mb-4" />
+          <div className="h-4 bg-muted rounded w-3/4 mb-2" />
+          <div className="h-3 bg-muted rounded w-1/2 mb-4" />
+          <div className="h-6 bg-muted rounded w-1/3 mb-4" />
+          <div className="h-12 bg-muted rounded-2xl w-full" />
+        </div>
+      ))}
+    </div>
+  );
 
   if (error) {
     return (
@@ -190,7 +260,6 @@ export default function EcommercePage() {
 
   return (
     <div className="w-full max-w-5xl mx-auto px-4 py-6 bg-background font-sans min-h-screen relative">
-      {/* Search */}
       <div className="flex items-center gap-2 mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 w-5 h-5" />
@@ -205,12 +274,26 @@ export default function EcommercePage() {
         <button className="p-3 bg-card border border-border/70 rounded-xl">
           <SlidersHorizontal size={18} />
         </button>
-        <button className="p-3 bg-card border border-border/70 rounded-xl">
-          <History size={18} />
+        {/* Bell button — replace the existing one */}
+        <button
+          onClick={() => setNotifOpen(true)}
+          className="relative p-3 bg-card border border-border/70 rounded-xl"
+        >
+          <Bell size={18} />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full font-bold">
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
+          )}
         </button>
+
+        {/* Add drawer just before closing </div> of the page */}
+        <NotificationDrawer
+          open={notifOpen}
+          onClose={() => setNotifOpen(false)}
+        />
       </div>
 
-      {/* Category Filter */}
       <div className="flex items-center gap-2 mb-8 overflow-x-auto pb-1 no-scrollbar">
         {(["All", "Multimeters", "Electronics"] as CategoryFilter[]).map(
           (cat) => (
@@ -230,8 +313,9 @@ export default function EcommercePage() {
         )}
       </div>
 
-      {/* Grid */}
-      {filteredProducts.length === 0 ? (
+      {bootstrapping ? (
+        <SkeletonGrid />
+      ) : filteredProducts.length === 0 ? (
         <div className="text-center py-20 border border-dashed border-border rounded-2xl">
           <p className="text-muted-foreground text-xs">No items found.</p>
         </div>
@@ -248,17 +332,23 @@ export default function EcommercePage() {
         </div>
       )}
 
-      {/* Infinite scroll sentinel */}
-      <div ref={sentinelRef} className="py-6 flex items-center justify-center">
-        {loadingMore && (
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-500" />
-        )}
-        {!hasMore && products.length > 0 && (
-          <p className="text-xs text-muted-foreground">All products loaded</p>
-        )}
-      </div>
+      {loadingMore && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-5">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <div
+              key={i}
+              className="rounded-[2rem] bg-card border border-border/60 p-4 animate-pulse"
+            >
+              <div className="aspect-square rounded-3xl bg-muted mb-4" />
+              <div className="h-4 bg-muted rounded w-3/4 mb-2" />
+              <div className="h-3 bg-muted rounded w-1/2 mb-4" />
+              <div className="h-6 bg-muted rounded w-1/3 mb-4" />
+              <div className="h-12 bg-muted rounded-2xl w-full" />
+            </div>
+          ))}
+        </div>
+      )}
 
-      {/* Cart FAB */}
       <div className="fixed bottom-8 right-8 z-40">
         <button
           onClick={() => router.push("/cart")}

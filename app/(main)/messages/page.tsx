@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import MessagesView, {
@@ -41,23 +41,29 @@ export default function MessagesPage() {
     getToken();
   }, []);
 
-  useEffect(() => {
-    const fetchMutualUsers = async () => {
-      try {
-        const res = await fetch("/api/users/mutual-users");
-        if (res.ok) {
-          const data = await res.json();
-          setMutualUsers(data);
-        }
-      } catch (error) {
-        console.error("Failed to fetch mutual users:", error);
+  const fetchMutualUsers = useCallback(async () => {
+    try {
+      const res = await fetch("/api/users/mutual-users");
+      if (res.ok) {
+        const data = await res.json();
+        // API returns { mutual_friends_count, mutual_friends: [...] }
+        const friends: MutualUser[] = data.mutual_friends ?? data ?? [];
+        setMutualUsers(friends);
       }
-    };
-
-    fetchMutualUsers();
+    } catch (error) {
+      console.error("Failed to fetch mutual users:", error);
+    }
   }, []);
 
   useEffect(() => {
+    fetchMutualUsers();
+    const interval = setInterval(fetchMutualUsers, 30_000);
+    return () => clearInterval(interval);
+  }, [fetchMutualUsers]);
+
+  useEffect(() => {
+    if (!currentUserId) return;
+
     const initializeChatWorkspace = async () => {
       try {
         const response = await fetch("/api/chats");
@@ -124,10 +130,15 @@ export default function MessagesPage() {
       }
     };
 
-    if (currentUserId) {
-      initializeChatWorkspace();
-    }
+    initializeChatWorkspace();
   }, [currentUserId]);
+
+  const threadsWithPresence: ActiveChatUser[] = fetchedChatThreads.map(
+    (thread) => {
+      const match = mutualUsers.find((u) => String(u.id) === String(thread.id));
+      return match ? { ...thread, active: match.online_status } : thread;
+    },
+  );
 
   if (loading) {
     return (
@@ -139,7 +150,7 @@ export default function MessagesPage() {
 
   return (
     <MessagesView
-      conversations={fetchedChatThreads}
+      conversations={threadsWithPresence}
       mutualUsers={mutualUsers}
       token={token}
       onClose={() => router.push("/")}

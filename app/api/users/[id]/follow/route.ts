@@ -5,9 +5,9 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 export async function POST(
   _req: Request,
-  { params }: { params: Promise<{ id: string }> }, // ← Promise type
+  { params }: { params: Promise<{ id: string }> },
 ) {
-  const { id } = await params; // ← await it
+  const { id } = await params;
 
   const cookieStore = await cookies();
   const accessToken = cookieStore.get("accessToken")?.value;
@@ -17,8 +17,6 @@ export async function POST(
   }
 
   try {
-    console.log("Follow URL:", `${BACKEND_URL}/api/users/${id}/follow/`);
-
     const res = await fetch(`${BACKEND_URL}/api/users/${id}/follow/`, {
       method: "POST",
       headers: {

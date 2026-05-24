@@ -91,7 +91,6 @@ const RepostCard = ({ post, formatRelativeTime }: RepostCardProps) => {
 
       {shared && (
         <div className="mx-4 mb-3 border border-border/70 rounded-2xl overflow-hidden bg-muted/10 hover:bg-muted/20 transition-colors cursor-pointer">
-          {/* Original post header */}
           <div className="flex items-center gap-2.5 px-3 pt-3 pb-2">
             <div className="w-7 h-7 rounded-full bg-muted border border-border relative overflow-hidden shrink-0 flex items-center justify-center">
               {shared.avatar ? (
@@ -121,14 +120,12 @@ const RepostCard = ({ post, formatRelativeTime }: RepostCardProps) => {
             </div>
           </div>
 
-          {/* Original caption */}
           {originalCaption && (
             <p className="px-3 pb-2 text-sm text-foreground/80 leading-relaxed line-clamp-3">
               {originalCaption}
             </p>
           )}
 
-          {/* Original media */}
           {renderSharedMedia()}
         </div>
       )}
