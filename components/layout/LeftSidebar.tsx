@@ -1,5 +1,5 @@
 import React from "react";
-import { Users, Bookmark, Video, Store, Calendar } from "lucide-react";
+import { Users, Bookmark, Video, Store, Calendar, Package } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface SidebarItemProps {
@@ -21,11 +21,11 @@ const LeftSidebar = () => {
           onClick={() => router.push("/following")}
         />
 
-        <SidebarItem
+        {/* <SidebarItem
           icon={<Bookmark size={24} className="text-primary" />}
           label="Saved"
           onClick={() => router.push("/saved")}
-        />
+        /> */}
 
         <SidebarItem
           icon={<Video size={24} className="text-primary" />}
@@ -38,10 +38,17 @@ const LeftSidebar = () => {
           label="Shop"
           onClick={() => router.push("/products")}
         />
+
         <SidebarItem
           icon={<Calendar size={24} className="text-primary" />}
           label="Events"
           onClick={() => router.push("/events")}
+        />
+
+        <SidebarItem
+          icon={<Package size={24} className="text-primary" />}
+          label="My Orders"
+          onClick={() => router.push("/orders")}
         />
       </div>
     </aside>

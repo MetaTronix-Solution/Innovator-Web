@@ -64,7 +64,7 @@ const PostFeed = () => {
         endReached={fetchPosts}
         increaseViewportBy={{ top: 800, bottom: 800 }}
         itemContent={(index, post) => (
-          <div className="pb-4">
+          <div className="pb-0 md:pb-2">
             <PostCard post={post} index={index} />
           </div>
         )}

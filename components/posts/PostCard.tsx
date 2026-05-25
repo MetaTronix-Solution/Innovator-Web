@@ -29,6 +29,7 @@ import { RootState } from "@/lib/store/store";
 import Link from "next/link";
 import CommentButton from "./CommentButton";
 import RepostButton from "./RepostButton";
+import { useSession } from "next-auth/react";
 
 export const renderedPosts = new Set<string>();
 
@@ -64,6 +65,8 @@ const PostCard = ({ post }: { post: any; index?: number }) => {
 
   const cardRef = useRef<HTMLDivElement>(null);
   const dispatch = useDispatch();
+
+  const { data: session } = useSession();
 
   const currentUser = useSelector((state: RootState) => state.auth.user);
 
@@ -326,12 +329,15 @@ const PostCard = ({ post }: { post: any; index?: number }) => {
                     {post.full_name || post.username}
                   </p>
                 </Link>
-                <FollowToggle
-                  userId={post.user_id}
-                  initialIsFollowed={post.is_followed}
-                  username={post.username}
-                  variant="text"
-                />
+
+                {!isOwnPost && (
+                  <FollowToggle
+                    userId={post.user_id}
+                    initialIsFollowed={post.is_followed}
+                    username={post.username}
+                    variant="text"
+                  />
+                )}
               </div>
               <p className="text-[10px] text-muted-foreground uppercase tracking-tighter">
                 {formatRelativeTime(post.created_at)}
@@ -446,6 +452,7 @@ const PostCard = ({ post }: { post: any; index?: number }) => {
 
         {showComments && (
           <CommentSection
+            currentUserId={session?.user?.id}
             comments={comments}
             newComment={newComment}
             isLoadingComments={isLoadingComments}

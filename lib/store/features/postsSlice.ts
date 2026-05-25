@@ -84,7 +84,6 @@ const postsSlice = createSlice({
     },
 
     addPostToTop: (state, action: PayloadAction<Post>) => {
-      // Prevent duplicate if already exists
       const exists = state.items.some((p) => p.id === action.payload.id);
       if (!exists) {
         state.items = [action.payload, ...state.items];
@@ -128,7 +127,6 @@ const postsSlice = createSlice({
         post.reactions_count = Math.max(0, post.reactions_count - 1);
       }
 
-      // Update reaction_types distribution if it is an object/Record
       if (
         post.reaction_types &&
         typeof post.reaction_types === "object" &&
@@ -158,6 +156,13 @@ const postsSlice = createSlice({
     incrementCommentCount: (state, action: PayloadAction<string>) => {
       const post = state.items.find((p) => p.id === action.payload);
       if (post) post.comments_count += 1;
+    },
+
+    decrementCommentCount: (state, action: PayloadAction<string>) => {
+      const post = state.items.find((p) => p.id === action.payload);
+      if (post && post.comments_count > 0) {
+        post.comments_count -= 1;
+      }
     },
 
     incrementShareCount: (state, action: PayloadAction<string>) => {
@@ -193,6 +198,7 @@ export const {
   resetPosts,
   togglePostReaction,
   incrementCommentCount,
+  decrementCommentCount,
   incrementShareCount,
   toggleFollowInPosts,
   removePostsByUser,

@@ -6,7 +6,7 @@ export async function GET(req: NextRequest) {
   const token = cookieStore.get("accessToken")?.value;
 
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/categories/`,
+    `${process.env.NEXT_PUBLIC_ELEARNING_URL}/api/categories/`,
     {
       headers: {
         "Content-Type": "application/json",

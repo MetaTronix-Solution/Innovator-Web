@@ -64,7 +64,6 @@ export default function ReactionsModal({
     fetchReactions();
   }, [postId, contentType]);
 
-  // Close on backdrop click
   const handleBackdrop = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) onClose();
   };
@@ -93,7 +92,6 @@ export default function ReactionsModal({
       onClick={handleBackdrop}
     >
       <div className="bg-card border border-border rounded-2xl w-full max-w-md shadow-xl flex flex-col max-h-[80vh]">
-        {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-3 shrink-0">
           <h2 className="font-bold text-foreground text-base">Reactions</h2>
           <button
@@ -130,7 +128,6 @@ export default function ReactionsModal({
 
         <div className="h-px bg-border mx-4 shrink-0" />
 
-        {/* List */}
         <div className="overflow-y-auto flex-1 px-4 py-3 space-y-1">
           {isLoading ? (
             Array.from({ length: 5 }).map((_, i) => (

@@ -26,6 +26,7 @@ import { useRouter } from "next/navigation";
 import { updateAvatar } from "@/lib/services/profileService";
 import { toast } from "sonner";
 import ReportModal from "@/components/ReportModal";
+import { Button } from "@/components/ui/button";
 
 const ProfilePage = () => {
   const params = useParams();
@@ -239,7 +240,7 @@ const ProfilePage = () => {
               <>
                 <button
                   onClick={() => router.push("/settings/edit-profile")}
-                  className="border border-border bg-muted hover:bg-accent text-foreground px-5 py-2 rounded-full font-bold text-xs tracking-wide transition-colors shadow-sm"
+                  className="border border-border bg-muted hover:bg-accent text-foreground px-5 py-2 rounded-full font-bold text-xs tracking-wide transition-colors shadow-sm hover:scale-105"
                 >
                   Edit profile
                 </button>
@@ -267,12 +268,12 @@ const ProfilePage = () => {
               </>
             ) : (
               <>
-                <button
+                <Button
                   onClick={() => router.push(`/messages/${targetId}`)}
-                  className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-full font-bold text-xs tracking-wide shadow-sm active:scale-95 transition-all flex items-center gap-2"
+                  className="p-4.5 rounded-3xl"
                 >
                   <Send size={14} /> Message
-                </button>
+                </Button>
                 <FollowToggle
                   username=""
                   userId={profileData.id}

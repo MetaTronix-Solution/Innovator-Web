@@ -58,10 +58,8 @@ const reelsSlice = createSlice({
       }>,
     ) => {
       if (action.payload.next_cursor === null) {
-        // initial load — replace
         state.items = action.payload.results;
       } else {
-        // paginated load — append, dedupe by id
         const existingIds = new Set(state.items.map((r) => r.id));
         const newItems = action.payload.results.filter(
           (r) => !existingIds.has(r.id),

@@ -31,7 +31,6 @@ export default function CourseDetails({
         <ArrowLeft size={20} /> Back to Courses
       </button>
 
-      {/* Grid: 12 columns total */}
       <div className="grid grid-cols-1 lg:grid-cols-6 gap-12">
         <div className="lg:col-span-8 space-y-8">
           <h1 className="text-center text-4xl md:text-5xl font-black text-neutral-900">
@@ -94,10 +93,8 @@ export default function CourseDetails({
           </div>
         </div>
 
-        {/* Sidebar: Takes 4 columns */}
         <div className="lg:col-span-8">
           <div className="sticky top-24 border rounded-3xl p-6 shadow-xl bg-white border-neutral-100">
-            {/* The clamp() function: min-size, preferred-size, max-size */}
             <div
               className="font-black mb-6 w-full text-center"
               style={{ fontSize: "clamp(1.5rem, 4vw, 3rem)" }}
