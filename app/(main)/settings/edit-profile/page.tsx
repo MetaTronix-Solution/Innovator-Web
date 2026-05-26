@@ -126,16 +126,6 @@ export default function EditProfilePage() {
 
   return (
     <div className="max-w-2xl mx-auto py-10 px-4">
-      <div className="flex items-center gap-4 mb-8">
-        <button
-          onClick={() => router.back()}
-          className="p-2 rounded-full hover:bg-accent text-foreground"
-        >
-          <ArrowLeft size={20} />
-        </button>
-        <h1 className="text-2xl font-bold text-foreground">Edit Profile</h1>
-      </div>
-
       {loading ? (
         <div className="flex justify-center py-20">
           <Loader2 size={32} className="animate-spin text-primary" />

@@ -27,9 +27,7 @@ const ReelVideo = memo(({ src, poster, className }: ReelVideoProps) => {
           try {
             await video.play();
           } catch (err) {
-            // Ignore AbortError, it's expected when play() is interrupted
             if (err instanceof Error && err.name !== "AbortError") {
-              // If it's a permission error, try forcing muted
               if (!video.muted) {
                 video.muted = true;
                 await video.play();

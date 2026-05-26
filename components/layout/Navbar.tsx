@@ -13,11 +13,10 @@ import {
   Bell,
   ChevronDown,
   BookOpen,
-  GraduationCap,
-  Menu,
   X,
-  LogOut,
   User,
+  FileText,
+  MoreHorizontal,
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { usePathname, useRouter } from "next/navigation";
@@ -28,11 +27,8 @@ import SearchBar from "../SearchBar";
 import UserDropdown from "../UserDropdown";
 import { signOut } from "next-auth/react";
 import { getMediaUrl } from "@/lib/utils/getMediaUrl";
-
 import { NotificationFeed } from "@/components/NotificationFeed";
-
 import { NotificationService } from "@/lib/services/notificationService";
-import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
 import { NotificationItem } from "@/types/notification";
 
 interface NavItemProps {
@@ -59,19 +55,15 @@ const Navbar = () => {
 
   useEffect(() => {
     if (!user) return;
-
     const fetchInitialNotifications = async () => {
       try {
         const data = await NotificationService.getNotifications();
         setInitialNotifications(data);
-
-        const unread = data.filter((n: any) => !n.is_read).length;
-        setUnreadCount(unread);
+        setUnreadCount(data.filter((n: any) => !n.is_read).length);
       } catch (err) {
         console.error("Failed loading initial notification metrics:", err);
       }
     };
-
     fetchInitialNotifications();
   }, [user]);
 
@@ -81,20 +73,16 @@ const Navbar = () => {
         setIsMobileMenuOpen(false);
       }
     };
-
-    if (isMobileMenuOpen) {
+    if (isMobileMenuOpen)
       document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isMobileMenuOpen]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         dropdownRef.current &&
-        dropdownRef.current.contains(event.target as Node) === false
+        !dropdownRef.current.contains(event.target as Node)
       ) {
         setIsDropdownOpen(false);
       }
@@ -137,14 +125,19 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", handler);
   }, [notifOpen]);
 
-  const isMobile = useMediaQuery("(max-width: 640px)");
-
   const navLinks = [
     { icon: <Home />, href: "/", label: "Home", exact: true },
     { icon: <PlaySquare />, href: "/reels", label: "Reels" },
     { icon: <Store />, href: "/products", label: "Shop" },
-    { icon: <GraduationCap />, href: "/courses", label: "Academy" },
-    { icon: <BookOpen />, href: "/research", label: "Library" },
+    { icon: <BookOpen />, href: "/courses", label: "Academy" },
+    { icon: <FileText />, href: "/research", label: "Library" },
+  ];
+
+  const tabBarLinks = [
+    { icon: <Home />, href: "/", label: "Home", exact: true },
+    { icon: <PlaySquare />, href: "/reels", label: "Reels" },
+    { icon: <Store />, href: "/products", label: "Shop" },
+    { icon: <BookOpen />, href: "/courses", label: "Academy" },
   ];
 
   return (
@@ -153,11 +146,14 @@ const Navbar = () => {
         <div
           className="fixed inset-0 z-40 bg-background/60 backdrop-blur-md md:hidden animate-in fade-in duration-300"
           aria-hidden="true"
+          onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
 
       <nav className="sticky top-0 z-50 w-full bg-card border-b border-border shadow-sm">
-        <div className="max-w-[1440px] mx-auto px-2 md:px-6 flex items-center justify-between h-16">
+        <div
+          className={`max-w-[1440px] mx-auto px-2 md:px-6 flex items-center justify-between h-16 ${pathname === "/" ? "flex" : "hidden md:flex"}`}
+        >
           <div className="flex items-center cursor-pointer flex-1 gap-2">
             <Link href="/" className="shrink-0 flex items-center gap-1">
               <Image
@@ -172,7 +168,7 @@ const Navbar = () => {
               </p>
             </Link>
           </div>
-
+          {/* Desktop nav links */}
           <div className="hidden md:flex items-center justify-center flex-[1.5] h-full gap-1">
             {navLinks.map((link) => (
               <NavItem
@@ -187,18 +183,15 @@ const Navbar = () => {
               />
             ))}
           </div>
-
           <div className="flex items-center justify-end flex-1 gap-1 md:gap-2">
             <div className="hidden sm:flex items-center gap-1 md:gap-2">
               <SearchBar />
-
               <Link href="/messages" aria-label="Open chats selection panel">
                 <IconButton
                   icon={<MessageCircle />}
                   active={pathname === "/messages"}
                 />
               </Link>
-
               <div className="relative" ref={notifRef}>
                 <div
                   onClick={() => setNotifOpen((o) => !o)}
@@ -211,7 +204,6 @@ const Navbar = () => {
                     </span>
                   )}
                 </div>
-
                 {notifOpen && (
                   <div className="fixed top-[70px] right-32 w-[320px] 2xl:w-[380px] h-[calc(100vh-72px)] z-40 bg-card border-l border-border rounded-3xl shadow-xl overflow-y-auto no-scrollbar">
                     <div className="p-4">
@@ -226,13 +218,46 @@ const Navbar = () => {
               </div>
             </div>
 
-            <div ref={dropdownRef} className="relative shrink-0">
+            <div className="flex sm:hidden items-center gap-1">
+              <Link href="/messages" aria-label="Messages">
+                <div
+                  className={`relative flex items-center justify-center w-8 h-8 rounded-full cursor-pointer transition-colors active:scale-95 ${pathname === "/messages" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-accent"}`}
+                >
+                  <MessageCircle size={18} />
+                </div>
+              </Link>
+              <div className="relative" ref={notifRef}>
+                <div
+                  onClick={() => setNotifOpen((o) => !o)}
+                  className="relative flex items-center justify-center w-8 h-8 bg-secondary text-secondary-foreground rounded-full cursor-pointer hover:bg-accent transition-colors active:scale-95"
+                >
+                  <Bell size={18} />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground flex items-center justify-center border border-card shadow animate-pulse">
+                      {unreadCount}
+                    </span>
+                  )}
+                </div>
+                {notifOpen && (
+                  <div className="fixed top-[70px] right-2 w-[calc(100vw-16px)] h-[calc(100vh-80px)] z-40 bg-card border border-border rounded-2xl shadow-xl overflow-y-auto no-scrollbar">
+                    <div className="p-4">
+                      <NotificationFeed
+                        initialNotifications={initialNotifications}
+                        userId={user?.id || user?.uuid || ""}
+                        token={user?.accessToken ?? undefined}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div
+              ref={dropdownRef}
+              className="relative shrink-0 hidden sm:block"
+            >
               <div
-                onClick={() =>
-                  !isDropdownOpen
-                    ? setIsDropdownOpen(true)
-                    : setIsDropdownOpen(false)
-                }
+                onClick={() => setIsDropdownOpen((o) => !o)}
                 className="relative w-10 h-10 rounded-full bg-secondary text-secondary-foreground border border-border cursor-pointer active:scale-95 transition-all flex items-center justify-center overflow-hidden shrink-0 p-0"
               >
                 {profileImage ? (
@@ -249,12 +274,10 @@ const Navbar = () => {
                     className="bg-secondary text-secondary-foreground block leading-none"
                   />
                 )}
-
                 <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-accent text-accent-foreground rounded-full border border-card flex items-center justify-center">
                   <ChevronDown size={8} />
                 </div>
               </div>
-
               {isDropdownOpen && (
                 <UserDropdown
                   user={user}
@@ -264,117 +287,119 @@ const Navbar = () => {
                 />
               )}
             </div>
-
-            <button
-              className="md:hidden p-2 text-foreground relative z-50"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            >
-              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
           </div>
         </div>
+      </nav>
 
-        {isMobileMenuOpen && (
-          <div
-            ref={menuRef}
-            className="md:hidden absolute top-14 left-0 w-full bg-card border-b border-border p-4 shadow-xl animate-in slide-in-from-top"
-          >
-            <div className="mb-4">
-              <SearchBar />
-            </div>
-            <div className="grid grid-cols-1 gap-2">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
-                    pathname === link.href
-                      ? "bg-primary/10 text-primary"
-                      : "hover:bg-accent"
-                  }`}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border">
+        <div className="flex items-center justify-around h-16 px-2">
+          {tabBarLinks.map((link) => {
+            const isActive = link.exact
+              ? pathname === link.href
+              : pathname.startsWith(link.href);
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="flex flex-col items-center justify-center gap-1 flex-1 h-full relative group"
+              >
+                {isActive && (
+                  <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-primary" />
+                )}
+                <span
+                  className={`transition-all duration-200 ${isActive ? "text-primary scale-110" : "text-muted-foreground group-active:scale-90"}`}
                 >
                   {React.cloneElement(
-                    link.icon as React.ReactElement<{ size?: number }>,
-                    {
-                      size: 20,
-                    },
+                    link.icon as React.ReactElement<{
+                      size?: number;
+                      strokeWidth?: number;
+                    }>,
+                    { size: 22, strokeWidth: isActive ? 2.5 : 1.8 },
                   )}
-                  <span className="font-medium">{link.label}</span>
-                </Link>
-              ))}
-
-              <hr className="border-border my-2" />
-
-              {/* Mobile Menu Message Trigger Element */}
-              <Link
-                href="/messages"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className={`flex items-center justify-between p-3 rounded-lg transition-colors ${
-                  pathname === "/messages"
-                    ? "bg-primary/10 text-primary"
-                    : "hover:bg-accent text-foreground"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <MessageCircle size={20} />
-                  <span className="font-medium">Messages</span>
-                </div>
+                </span>
+                <span
+                  className={`text-[10px] font-medium leading-none transition-colors ${isActive ? "text-primary" : "text-muted-foreground"}`}
+                >
+                  {link.label}
+                </span>
               </Link>
+            );
+          })}
 
-              <Link
-                href="/notifications"
+          <button
+            onClick={() => setIsMobileMenuOpen((o) => !o)}
+            className="flex flex-col items-center justify-center gap-1 flex-1 h-full relative group"
+          >
+            {isMobileMenuOpen && (
+              <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-primary" />
+            )}
+            <span
+              className={`transition-all duration-200 ${isMobileMenuOpen ? "text-primary scale-110" : "text-muted-foreground group-active:scale-90"}`}
+            >
+              {isMobileMenuOpen ? (
+                <X size={22} strokeWidth={2.5} />
+              ) : (
+                <MoreHorizontal size={22} strokeWidth={1.8} />
+              )}
+            </span>
+            <span
+              className={`text-[10px] font-medium leading-none transition-colors ${isMobileMenuOpen ? "text-primary" : "text-muted-foreground"}`}
+            >
+              More
+            </span>
+          </button>
+        </div>
+        <div
+          style={{ height: "env(safe-area-inset-bottom)" }}
+          className="bg-card"
+        />
+      </div>
+
+      {isMobileMenuOpen && (
+        <div
+          ref={menuRef}
+          className="md:hidden fixed inset-0 z-[60] bg-card border-l border-border shadow-2xl animate-in slide-in-from-right duration-300 p-4 w-full h-full overflow-y-auto"
+        >
+          <div className="grid grid-cols-1 gap-1">
+            <div className="flex justify-end mb-4">
+              <button
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center justify-between p-3 rounded-lg hover:bg-accent text-foreground"
+                className="p-2 rounded-full hover:bg-accent text-muted-foreground"
               >
-                <div className="flex items-center gap-3">
-                  <Bell size={20} />
-                  <span className="font-medium">Notifications</span>
-                </div>
-                {unreadCount > 0 && (
-                  <span className="px-2 py-0.5 rounded-full bg-destructive text-xs font-bold text-destructive-foreground">
-                    {unreadCount} new
-                  </span>
-                )}
-              </Link>
-
-              <div className="flex items-center justify-between px-2 py-1">
-                <span className="text-sm font-medium">Theme</span>
-                <ThemeToggle />
-              </div>
-
-              <Button
-                variant="destructive"
-                className="w-full mt-2 gap-2"
-                onClick={handleLogout}
-              >
-                <LogOut size={18} /> Logout
-              </Button>
+                <X size={24} />
+              </button>
             </div>
+
+            <UserDropdown
+              user={user}
+              onLogout={() => {
+                handleLogout();
+                setIsMobileMenuOpen(false);
+              }}
+              getProfileImage={getProfileImage}
+              onClose={() => setIsDropdownOpen(false)}
+              onNavigate={() => setIsMobileMenuOpen(false)}
+              isMobile={true}
+            />
           </div>
-        )}
-      </nav>
+        </div>
+      )}
     </>
   );
 };
 
-const NavItem = ({ icon, href, active = false }: NavItemProps) => {
-  return (
-    <Link
-      href={href}
-      className={`
-        flex items-center justify-center w-16 lg:w-24 h-full cursor-pointer border-b-4 transition-all
-        ${
-          active
-            ? "border-primary text-primary"
-            : "border-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-        }
-      `}
-    >
-      {React.cloneElement(icon, { size: 24, strokeWidth: active ? 2.5 : 2 })}
-    </Link>
-  );
-};
+const NavItem = ({ icon, href, active = false }: NavItemProps) => (
+  <Link
+    href={href}
+    className={`flex items-center justify-center w-16 lg:w-24 h-full cursor-pointer border-b-4 transition-all ${
+      active
+        ? "border-primary text-primary"
+        : "border-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+    }`}
+  >
+    {React.cloneElement(icon, { size: 24, strokeWidth: active ? 2.5 : 2 })}
+  </Link>
+);
 
 interface IconButtonProps {
   icon: React.ReactElement<{ size?: number }>;

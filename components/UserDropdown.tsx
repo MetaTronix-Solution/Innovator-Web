@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -16,12 +16,31 @@ import {
   Eye,
   Tag,
   ChevronDown,
+  Package,
+  Calendar,
 } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import ChangePasswordModal from "./ChangePasswordModal";
 
-const UserDropdown = ({ user, onLogout, getProfileImage, onClose }: any) => {
-  const profileImage = getProfileImage();
+interface UserDropdownProps {
+  user: any;
+  onLogout: () => void;
+  getProfileImage: () => string | null;
+  onClose: () => void;
+  onNavigate?: () => void;
+  isMobile?: boolean;
+}
+
+const UserDropdown = ({
+  user,
+  onLogout,
+  getProfileImage,
+  onClose,
+  onNavigate,
+  isMobile,
+}: UserDropdownProps) => {
+  const profileImage =
+    typeof getProfileImage === "function" ? getProfileImage() : null;
   const userId = user?.id || user?.user_id;
   const router = useRouter();
 
@@ -29,15 +48,27 @@ const UserDropdown = ({ user, onLogout, getProfileImage, onClose }: any) => {
   const [openSection, setOpenSection] = useState<"account" | "privacy" | null>(
     null,
   );
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handleScroll = () => onClose();
-    window.addEventListener("scroll", handleScroll, true);
-    return () => window.removeEventListener("scroll", handleScroll, true);
-  }, [onClose]);
+    if (isMobile) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        onClose();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isMobile, onClose]);
 
   const handleNavigate = (path: string) => {
     onClose();
+    if (onNavigate) onNavigate();
     router.push(path);
   };
 
@@ -46,8 +77,10 @@ const UserDropdown = ({ user, onLogout, getProfileImage, onClose }: any) => {
   };
 
   return (
-    <div className="absolute top-12 right-0 w-[360px] bg-card border border-border shadow-2xl rounded-xl overflow-hidden z-[60] p-4 animate-in fade-in zoom-in-95 duration-200">
-      {/* Profile link */}
+    <div
+      ref={dropdownRef}
+      className="w-full md:absolute md:top-12 md:right-0 md:w-[360px] md:bg-card md:border md:border-border md:shadow-2xl md:rounded-xl overflow-hidden z-[60] p-4 animate-in fade-in zoom-in-95 duration-200"
+    >
       <div className="p-2 mb-4 rounded-lg border border-border bg-background/50">
         <Link
           href={`/${userId}`}
@@ -74,11 +107,9 @@ const UserDropdown = ({ user, onLogout, getProfileImage, onClose }: any) => {
       </div>
 
       <div className="space-y-1">
-        {/* Settings Header */}
         <div className="px-2 py-1 text-xs font-bold text-muted-foreground uppercase">
           Settings & Privacy
         </div>
-
         <MenuLink
           icon={<User size={20} />}
           label="Account"
@@ -96,16 +127,10 @@ const UserDropdown = ({ user, onLogout, getProfileImage, onClose }: any) => {
             <MenuLink
               icon={<Key size={16} />}
               label="Change password"
-              onClick={() => {
-                setShowPasswordModal(true);
-              }}
+              onClick={() => setShowPasswordModal(true)}
             />
             <MenuLink icon={<Lock size={16} />} label="Private account" />
           </div>
-        )}
-
-        {showPasswordModal && (
-          <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />
         )}
 
         <MenuLink
@@ -129,23 +154,54 @@ const UserDropdown = ({ user, onLogout, getProfileImage, onClose }: any) => {
 
         <div className="my-2 border-t border-border" />
 
-        <ThemeToggle />
+        <MenuLink
+          icon={<Package size={20} />}
+          label="My orders"
+          onClick={() => handleNavigate("/orders")}
+          className="md:hidden"
+        />
 
-        <MenuLink icon={<HelpCircle size={20} />} label="Help & support" />
+        <MenuLink
+          icon={<Calendar size={20} />}
+          label="Events"
+          onClick={() => handleNavigate("/events")}
+          className="md:hidden"
+        />
+
+        <ThemeToggle />
+        <MenuLink
+          icon={<HelpCircle size={20} />}
+          label="FAQS"
+          onClick={() => handleNavigate("/faq")}
+        />
         <MenuLink
           icon={<LogOut size={20} />}
           label="Log out"
           onClick={onLogout}
         />
       </div>
+
+      {showPasswordModal && (
+        <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />
+      )}
     </div>
   );
 };
 
-const MenuLink = ({ icon, label, hasArrow, onClick, isExpanded }: any) => (
+const MenuLink = ({
+  icon,
+  label,
+  hasArrow,
+  onClick,
+  isExpanded,
+  className = "",
+}: any) => (
   <div
-    onClick={onClick}
-    className="flex items-center justify-between p-2 rounded-lg hover:bg-accent cursor-pointer transition-colors group"
+    onClick={(e) => {
+      e.stopPropagation();
+      if (onClick) onClick();
+    }}
+    className={`flex items-center justify-between p-2 rounded-lg hover:bg-accent cursor-pointer transition-colors group ${className}`}
   >
     <div className="flex items-center gap-3">
       <div className="w-8 h-8 flex items-center justify-center bg-secondary rounded-full">

@@ -76,6 +76,7 @@ export default function EcommercePage() {
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>("All");
   const [notifOpen, setNotifOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
 
   const hasMoreRef = useRef(hasMore);
   const loadingMoreRef = useRef(loadingMore);
@@ -259,7 +260,7 @@ export default function EcommercePage() {
   }
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-4 py-6 bg-background font-sans min-h-screen relative">
+    <div className="w-full max-w-5xl mx-auto px-4 py-2 bg-background font-sans min-h-screen relative">
       <div className="flex items-center gap-2 mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 w-5 h-5" />
@@ -349,13 +350,16 @@ export default function EcommercePage() {
         </div>
       )}
 
-      <div className="fixed bottom-8 right-8 z-40">
+      <div className="fixed bottom-20 md:bottom-8 right-8 z-40">
         <button
           onClick={() => router.push("/cart")}
-          className="bg-primary text-white p-4 rounded-full shadow-lg hover:scale-105 transition-all"
+          className={`bg-primary text-white rounded-full shadow-lg hover:scale-105 transition-all flex items-center justify-center ${
+            isMobile ? "p-3" : "p-4"
+          }`}
         >
           <div className="relative">
-            <ShoppingBag size={24} />
+            <ShoppingBag size={isMobile ? 16 : 24} />
+
             {totalQuantity > 0 && (
               <span className="absolute -top-2 -right-2 bg-black text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full border-2 border-orange-500">
                 {totalQuantity > 99 ? "99+" : totalQuantity}

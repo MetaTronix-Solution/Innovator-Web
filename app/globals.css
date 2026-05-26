@@ -175,3 +175,9 @@
 .animate-reel-heart {
   animation: reel-heart 0.8s ease-out forwards;
 }
+
+@layer utilities {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}

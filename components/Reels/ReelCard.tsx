@@ -2,7 +2,7 @@
 
 import React, { memo, useState, useCallback } from "react";
 import Image from "next/image";
-import Link from "next/link"; // Ensure next/link is used for clean client-side transitions
+import Link from "next/link";
 import {
   MessageCircle,
   MoreHorizontal,
@@ -38,6 +38,7 @@ const ReelCard = ({ reel, post }: ReelCardProps) => {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [showReactions, setShowReactions] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const [localCount, setLocalCount] = useState<number>(
     reel.reactions_count ?? reel.like_count ?? 0,
@@ -104,9 +105,9 @@ const ReelCard = ({ reel, post }: ReelCardProps) => {
         )}
       </div>
 
-      {/* Right-side action buttons */}
       <div className="absolute right-3 bottom-10 z-20 flex flex-col items-center gap-5">
         <ReactionButton
+          isVertical={true}
           currentReaction={reel.current_user_reaction ?? null}
           count={localCount}
           onReact={handleReact}
@@ -116,16 +117,18 @@ const ReelCard = ({ reel, post }: ReelCardProps) => {
           variant="reels"
         />
         <ActionBtn
-          icon={<MessageCircle size={26} strokeWidth={1.8} />}
+          icon={<MessageCircle size={24} strokeWidth={1.8} />}
           label={formatCount(reel.comments_count)}
-          onClick={() => setShowComments(true)} // add onClick to ActionBtn
+          onClick={() => setShowComments(true)}
         />
+
         <button
           onClick={handleShare}
           className="p-2 rounded-full cursor-pointer text-muted-foreground transition-all hover:scale-110"
         >
-          <Send size={22} className="text-white" />
+          <Send size={20} className="text-white" />
         </button>
+
         <SharePostModal
           isOpen={isShareModalOpen}
           onClose={() => setIsShareModalOpen(false)}
@@ -133,7 +136,7 @@ const ReelCard = ({ reel, post }: ReelCardProps) => {
         />
         <button className="flex flex-col items-center gap-1 opacity-70 hover:opacity-100 transition-opacity">
           <MoreHorizontal
-            size={26}
+            size={24}
             strokeWidth={1.8}
             className="text-white drop-shadow-lg"
           />
@@ -174,9 +177,11 @@ const ReelCard = ({ reel, post }: ReelCardProps) => {
                 </div>
               )}
             </div>
-            <span className="text-white font-semibold text-[15px] drop-shadow group-hover:underline decoration-white/70">
-              {reel.username}
-            </span>
+            <p className="font-bold text-white text-sm">
+              {(reel.full_name || reel.username).length > 20
+                ? (reel.full_name || reel.username).substring(0, 20) + "..."
+                : reel.full_name || reel.username}
+            </p>
           </Link>
 
           <FollowToggle
@@ -189,9 +194,21 @@ const ReelCard = ({ reel, post }: ReelCardProps) => {
         </div>
 
         {reel.caption && (
-          <p className="text-white/90 text-sm leading-relaxed max-w-[75%] line-clamp-2">
-            {reel.caption}
-          </p>
+          <div className="max-w-[75%] mt-2">
+            <p
+              className={`text-white/90 text-sm leading-relaxed ${
+                isExpanded ? "line-clamp-none" : "line-clamp-1"
+              }`}
+            >
+              {reel.caption}
+            </p>
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="text-white/60 text-xs font-semibold hover:text-white transition-colors mt-1"
+            >
+              {isExpanded ? "See less" : "See more"}
+            </button>
+          </div>
         )}
 
         {reel.audio_name && (

@@ -173,7 +173,6 @@ function NotificationsPanel({
         }`}
       />
 
-      {/* Panel */}
       <div
         ref={panelRef}
         className={`fixed top-0 right-0 z-50 h-full w-full max-w-[380px] bg-card border-l border-border shadow-2xl
@@ -181,8 +180,7 @@ function NotificationsPanel({
                       open ? "translate-x-0" : "translate-x-full"
                     }`}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-card sticky top-0 z-10">
+        <div className="flex items-center justify-between px-5 py-2 border-b border-border bg-card sticky top-0 z-10">
           <div className="flex items-center gap-2.5">
             <Bell size={18} className="text-orange-500" />
             <h2 className="font-black text-base text-foreground tracking-tight">
@@ -594,7 +592,7 @@ export default function CoursePage() {
   }
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-4 py-6 bg-background font-sans min-h-screen">
+    <div className="w-full max-w-5xl mx-auto px-4 py-2 bg-background font-sans min-h-screen">
       <div className="flex items-center gap-2 mb-5">
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 w-4 h-4" />

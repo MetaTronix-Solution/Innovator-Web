@@ -1,7 +1,7 @@
 "use client";
 import { useSelector, useDispatch } from "react-redux";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import Navbar from "@/components/layout/Navbar";
 import LeftSidebar from "@/components/layout/LeftSidebar";
@@ -22,7 +22,8 @@ export default function MainLayout({
   const router = useRouter();
   const { mode } = useSelector((state: RootState) => state.theme);
 
-  // Theme effect
+  const hasRedirected = useRef(false);
+
   useEffect(() => {
     const root = window.document.documentElement;
     if (mode === "light") {
@@ -35,20 +36,26 @@ export default function MainLayout({
   }, [mode]);
 
   useEffect(() => {
-    if (sessionStatus === "authenticated" && session?.accessToken) {
+    if (
+      sessionStatus === "authenticated" &&
+      session?.accessToken &&
+      !hasRedirected.current
+    ) {
+      hasRedirected.current = true;
+
       document.cookie = `accessToken=${session.accessToken}; path=/; max-age=${
         60 * 60 * 24
       }; SameSite=Lax`;
       dispatch(setCredentials({ user: session.user as any }));
 
-      window.history.pushState(null, "", "/");
-      window.history.replaceState(null, "", "/");
+      const isOAuthCallback = window.location.pathname.startsWith("/api/auth");
+      if (isOAuthCallback) {
+        window.history.replaceState(null, "", "/");
 
-      const blockBack = () => {
-        window.history.pushState(null, "", "/");
-      };
-      window.addEventListener("popstate", blockBack);
-      return () => window.removeEventListener("popstate", blockBack);
+        const blockBack = () => window.history.pushState(null, "", "/");
+        window.addEventListener("popstate", blockBack);
+        return () => window.removeEventListener("popstate", blockBack);
+      }
     }
   }, [sessionStatus, session, dispatch]);
 

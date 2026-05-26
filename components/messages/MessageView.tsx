@@ -76,7 +76,6 @@ export default function MessagesView({
 
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [tempChat, setTempChat] = useState<ActiveChatUser | null>(null);
-  // Local override for unread counts — zeroed when chat is opened
   const [localUnread, setLocalUnread] = useState<Record<string, number>>({});
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [typeMessage, setTypeMessage] = useState("");
@@ -272,7 +271,6 @@ export default function MessagesView({
     }
   };
 
-  // Resolve unread count — local override wins over API value
   const getUnreadCount = (chat: ActiveChatUser) =>
     localUnread[chat.id] !== undefined
       ? localUnread[chat.id]
@@ -280,7 +278,6 @@ export default function MessagesView({
 
   return (
     <div className="flex h-[calc(100vh-72px)] w-full bg-background font-sans antialiased">
-      {/* SIDEBAR */}
       <div
         className={`flex flex-col bg-background transition-all duration-300 ${
           activeChatId === null
@@ -288,7 +285,7 @@ export default function MessagesView({
             : "w-[80px] sm:w-[220px] md:w-[240px] border-r border-border/60 shrink-0"
         }`}
       >
-        <div className="p-4 h-[65px] flex items-center justify-between border-b border-border/60">
+        <div className="hidden md:flex p-4 h-[65px] flex items-center justify-between border-b border-border/60">
           <h2 className="text-lg font-black tracking-tight text-foreground">
             Messages
           </h2>

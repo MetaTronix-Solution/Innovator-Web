@@ -10,6 +10,7 @@ interface ReactionButtonProps {
   onReact: (type: string | null) => void;
   onCountClick?: () => void;
   variant?: "reels" | "post";
+  isVertical?: boolean;
 }
 
 const REACTION_COLORS: Record<string, string> = {
@@ -22,7 +23,14 @@ const REACTION_COLORS: Record<string, string> = {
 };
 
 const ReactionButton = memo(
-  ({ currentReaction, count, onReact, onCountClick }: ReactionButtonProps) => {
+  ({
+    currentReaction,
+    count,
+    onReact,
+    onCountClick,
+    variant,
+    isVertical,
+  }: ReactionButtonProps) => {
     const [showPicker, setShowPicker] = useState(false);
     const [optimisticReaction, setOptimisticReaction] =
       useState(currentReaction);
@@ -67,21 +75,25 @@ const ReactionButton = memo(
           <ReactionPicker
             onSelect={handleSelect}
             onClose={() => setShowPicker(false)}
+            variant={variant}
           />
         )}
 
         <button
-          onClick={() => handleSelect(optimisticReaction ? null : "like")} // Simple toggle on click
+          onClick={() => handleSelect(optimisticReaction ? null : "like")}
           onMouseEnter={() => setShowPicker(true)}
-          className={`flex items-center gap-1.5 px-3 py-2 cursor-pointer rounded-lg transition-all hover:bg-accent font-semibold text-sm ${color}`}
+          className={`flex items-center ${isVertical ? "flex-col gap-1" : "flex-row gap-1.5"} px-3 py-2 cursor-pointer rounded-lg transition-all hover:scale-105 font-semibold text-sm ${color}`}
         >
-          {reaction ? (
-            <span className="text-lg leading-none">{reaction.emoji}</span>
-          ) : (
-            <ThumbsUp size={18} />
-          )}
+          <div className="flex items-center justify-center">
+            {reaction ? (
+              <span className="text-lg leading-none">{reaction.emoji}</span>
+            ) : (
+              <ThumbsUp size={isVertical ? 24 : 18} />
+            )}
+          </div>
+
           <span
-            className="cursor-pointer hover:underline"
+            className="cursor-pointer  hover:underline text-xs"
             onClick={(e) => {
               e.stopPropagation();
               onCountClick?.();

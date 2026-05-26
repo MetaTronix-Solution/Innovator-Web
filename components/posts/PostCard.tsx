@@ -326,7 +326,10 @@ const PostCard = ({ post }: { post: any; index?: number }) => {
                   className="hover:underline decoration-[#ff6b00] underline-offset-2 transition-all"
                 >
                   <p className="font-bold text-foreground text-sm">
-                    {post.full_name || post.username}
+                    {(post.full_name || post.username).length > 20
+                      ? (post.full_name || post.username).substring(0, 20) +
+                        "..."
+                      : post.full_name || post.username}
                   </p>
                 </Link>
 
@@ -419,6 +422,7 @@ const PostCard = ({ post }: { post: any; index?: number }) => {
         <div className="px-4 py-2 flex items-center justify-between border-t border-border/50">
           <div className="flex gap-1">
             <ReactionButton
+              isVertical={false}
               currentReaction={localReaction}
               count={localCount}
               onReact={handleReact}
@@ -426,6 +430,7 @@ const PostCard = ({ post }: { post: any; index?: number }) => {
                 if (localCount > 0) setShowReactionsModal(true);
               }}
             />
+
             <CommentButton
               count={post.comments_count || 0}
               active={showComments}
