@@ -18,7 +18,7 @@ export async function POST(
       );
     }
 
-    const { caption } = await request.json().catch(() => ({}));
+    const { content } = await request.json().catch(() => ({}));
 
     const backendUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/posts/${postId}/repost/`;
 
@@ -28,7 +28,7 @@ export async function POST(
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ caption }),
+      body: JSON.stringify({ content }),
     });
 
     const data = await response.json().catch(() => null);

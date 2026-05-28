@@ -303,7 +303,7 @@ function CourseCard({
   const level = course.level || "Beginner";
   const levelColor =
     level === "Beginner"
-      ? "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-400"
+      ? "text-primary bg-secondary-foreground"
       : level === "Intermediate"
         ? "text-orange-600 bg-orange-50 dark:bg-orange-950/40 dark:text-orange-400"
         : "text-red-600 bg-red-50 dark:bg-red-950/40 dark:text-red-400";

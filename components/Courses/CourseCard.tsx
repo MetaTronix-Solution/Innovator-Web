@@ -8,8 +8,8 @@ interface Course {
   id: string | number;
   title: string;
   instructor: string;
-  thumbnail: string;
   duration: string;
+  thumbnail: string;
   lessonsCount: number;
   rating: number;
 }

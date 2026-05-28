@@ -19,6 +19,7 @@ interface PostCardMenuProps {
   isOwnPost: boolean;
   content: string;
   userId: string;
+  username: string;
   onDeleted: () => void;
   onEditClick: () => void;
   onBlocked?: () => void;
@@ -29,6 +30,7 @@ export default function PostCardMenu({
   isOwnPost,
   content,
   userId,
+  username,
   onDeleted,
   onEditClick,
   onBlocked,
@@ -36,6 +38,7 @@ export default function PostCardMenu({
   const [open, setOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [blocking, setBlocking] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -71,11 +74,11 @@ export default function PostCardMenu({
     setOpen(false);
   };
 
+  const handleInitiateBlock = () => {
+    setShowConfirm(true);
+  };
+
   const handleBlock = async () => {
-    if (
-      !confirm("Block this user? Their posts will be removed from your feed.")
-    )
-      return;
     setBlocking(true);
     try {
       const res = await fetch(`/api/users/${userId}/block/`, {
@@ -92,6 +95,7 @@ export default function PostCardMenu({
       toast.error(err.message || "Failed to block user");
     } finally {
       setBlocking(false);
+      setShowConfirm(false);
     }
   };
 
@@ -156,7 +160,7 @@ export default function PostCardMenu({
                   )
                 }
                 label="Block user"
-                onClick={handleBlock}
+                onClick={handleInitiateBlock}
                 danger
                 disabled={blocking}
               />
@@ -167,6 +171,40 @@ export default function PostCardMenu({
               />
             </>
           )}
+        </div>
+      )}
+
+      {showConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-sm bg-card p-6 rounded-2xl shadow-2xl border border-border">
+            <h2 className="text-lg font-semibold text-foreground">
+              Block @{username}?
+            </h2>
+            <p className="text-sm text-muted-foreground mt-2 mb-6">
+              Are you sure you want to block this user? They will be removed
+              from your feed and you will no longer see their content.
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowConfirm(false)}
+                className="flex-1 px-4 py-2 rounded-full bg-secondary hover:bg-secondary/80 font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBlock}
+                disabled={blocking}
+                className="flex-1 px-4 py-2 rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90 font-medium flex items-center justify-center"
+              >
+                {blocking ? (
+                  <Loader2 size={18} className="animate-spin" />
+                ) : (
+                  "Block"
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

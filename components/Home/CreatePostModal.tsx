@@ -42,7 +42,6 @@ export default function CreatePostModal({
   );
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch categories whenever modal opens
   useEffect(() => {
     if (!isOpen) return;
 
@@ -61,7 +60,6 @@ export default function CreatePostModal({
     fetchCategories();
   }, [isOpen]);
 
-  // Handle initialFile separately
   useEffect(() => {
     if (!isOpen || !initialFile) return;
 
@@ -162,7 +160,6 @@ export default function CreatePostModal({
         onClick={onClose}
       />
       <div className="relative w-full max-w-[520px] bg-card border border-border rounded-2xl shadow-2xl flex flex-col animate-in zoom-in-95 duration-200">
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <div className="w-8" />
           <h2 className="text-xl font-bold">Create Post</h2>
@@ -174,8 +171,7 @@ export default function CreatePostModal({
           </button>
         </div>
 
-        {/* Content */}
-        <div className="max-h-[500px] overflow-y-auto p-6 space-y-4 custom-scrollbar">
+        <div className="max-h-[500px] overflow-y-auto p-6 space-y-4 no-scrollbar">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-full bg-muted border border-border flex items-center justify-center overflow-hidden shrink-0 relative">
               {profileImage ? (

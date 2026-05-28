@@ -90,19 +90,19 @@ export function NotificationFeed({
     return date.toLocaleDateString();
   }, []);
 
-  useEffect(() => {
-    const handler = (e: MouseEvent | TouchEvent) => {
-      if (menuRef.current && menuRef.current.contains(e.target as Node)) return;
-      setMenuOpen(false);
-    };
+  // useEffect(() => {
+  //   const handler = (e: MouseEvent | TouchEvent) => {
+  //     if (menuRef.current && menuRef.current.contains(e.target as Node)) return;
+  //     setMenuOpen(false);
+  //   };
 
-    document.addEventListener("mousedown", handler);
-    document.addEventListener("touchstart", handler);
-    return () => {
-      document.removeEventListener("mousedown", handler);
-      document.removeEventListener("touchstart", handler);
-    };
-  }, []);
+  //   document.addEventListener("mousedown", handler);
+  //   document.addEventListener("touchstart", handler);
+  //   return () => {
+  //     document.removeEventListener("mousedown", handler);
+  //     document.removeEventListener("touchstart", handler);
+  //   };
+  // }, []);
 
   useEffect(() => {
     if (!userId) {
@@ -193,18 +193,16 @@ export function NotificationFeed({
       prev.map((n) => (n.id === item.id ? { ...n, is_read: true } : n)),
     );
 
-    try {
-      await NotificationService.markAsRead(item.id);
-    } catch (err) {
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === item.id ? { ...n, is_read: false } : n)),
-      );
-    }
-
     if (item.related_post_id) {
       router.push(`/posts/${item.related_post_id}`);
     } else if (item.sender) {
       router.push(`/${item.sender}`);
+    }
+
+    try {
+      await NotificationService.markAsRead(item.id);
+    } catch (err) {
+      console.error("Failed to mark as read", err);
     }
   };
 
@@ -238,7 +236,10 @@ export function NotificationFeed({
 
         <div className="relative" ref={menuRef}>
           <button
-            onClick={() => setMenuOpen((o) => !o)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setMenuOpen((o) => !o);
+            }}
             className="flex items-center justify-center w-9 h-9 rounded-lg border border-border bg-transparent hover:bg-muted transition-colors text-muted-foreground"
             aria-label="Notification options"
           >
@@ -283,7 +284,10 @@ export function NotificationFeed({
         {(["all", "unread"] as Tab[]).map((t) => (
           <button
             key={t}
-            onClick={() => setTab(t)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setTab(t);
+            }}
             className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full border text-sm transition-all ${
               tab === t
                 ? "bg-foreground text-background border-foreground font-medium"

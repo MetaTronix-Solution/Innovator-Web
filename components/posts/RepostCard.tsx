@@ -14,7 +14,9 @@ interface RepostCardProps {
 const RepostCard = ({ post, formatRelativeTime }: RepostCardProps) => {
   const shared = post.shared_post_details;
 
-  const repostCaption = post.content || post.caption || "";
+  const hasRepostCaption = post.content && post.content.trim().length > 0;
+
+  const repostCaption = post.content || "";
 
   const originalCaption = shared?.content || shared?.caption || "";
 
@@ -76,7 +78,7 @@ const RepostCard = ({ post, formatRelativeTime }: RepostCardProps) => {
 
   return (
     <div className="w-full">
-      {repostCaption ? (
+      {hasRepostCaption ? (
         <div className="px-4 pb-3">
           <p className="text-[15px] text-foreground/90 leading-relaxed">
             {repostCaption}

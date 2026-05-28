@@ -24,6 +24,7 @@ const ReelVideo = memo(({ src, poster, className }: ReelVideoProps) => {
     const observer = new IntersectionObserver(
       async ([entry]) => {
         if (entry.isIntersecting) {
+          containerRef.current?.focus();
           try {
             await video.play();
           } catch (err) {
@@ -71,9 +72,36 @@ const ReelVideo = memo(({ src, poster, className }: ReelVideoProps) => {
     lastTap.current = now;
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!videoRef.current) return;
+
+    switch (e.key) {
+      case "ArrowUp":
+        e.preventDefault();
+        videoRef.current.volume = Math.min(1, videoRef.current.volume + 0.1);
+        break;
+      case "ArrowDown":
+        e.preventDefault();
+        videoRef.current.volume = Math.max(0, videoRef.current.volume - 0.1);
+        break;
+      case " ":
+      case "k":
+        e.preventDefault();
+        togglePlay();
+        break;
+      case "m":
+        e.preventDefault();
+        videoRef.current.muted = !videoRef.current.muted;
+        setIsMuted(videoRef.current.muted);
+        break;
+    }
+  };
+
   return (
     <div
       ref={containerRef}
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
       className={`relative w-full h-full bg-black overflow-hidden flex items-center justify-center ${className}`}
     >
       <video

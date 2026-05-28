@@ -59,12 +59,52 @@ const LazyVideo = memo(
     };
 
     const togglePlay = () => {
+      setTimeout(() => {
+        containerRef.current?.focus();
+      }, 0);
+
       if (!videoRef.current) return;
-      if (videoRef.current.paused) videoRef.current.play();
-      else videoRef.current.pause();
+
+      if (videoRef.current.paused) {
+        videoRef.current.play();
+      } else {
+        videoRef.current.pause();
+      }
 
       setShowFeedback(true);
       setTimeout(() => setShowFeedback(false), 600);
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+      if (!videoRef.current) return;
+
+      switch (e.key) {
+        case "ArrowUp":
+          e.preventDefault();
+          videoRef.current.volume = Math.min(1, videoRef.current.volume + 0.1);
+          break;
+        case "ArrowDown":
+          e.preventDefault();
+          videoRef.current.volume = Math.max(0, videoRef.current.volume - 0.1);
+          break;
+        case " ":
+          e.preventDefault();
+          togglePlay();
+          break;
+        case "ArrowLeft":
+          e.preventDefault();
+          skip(-5);
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          skip(5);
+          break;
+        case "m":
+          e.preventDefault();
+          videoRef.current.muted = !videoRef.current.muted;
+          setIsMuted(videoRef.current.muted);
+          break;
+      }
     };
 
     const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -99,6 +139,9 @@ const LazyVideo = memo(
     return (
       <div
         ref={containerRef}
+        tabIndex={0}
+        onKeyDown={handleKeyDown}
+        onMouseEnter={() => containerRef.current?.focus()}
         className={`relative bg-black group w-full flex items-center justify-center overflow-hidden ${className}`}
         style={{ aspectRatio: "auto" }}
       >

@@ -17,12 +17,11 @@ import {
   User,
   FileText,
   MoreHorizontal,
+  PlusCircle,
 } from "lucide-react";
-import { Button } from "../ui/button";
 import { usePathname, useRouter } from "next/navigation";
 import { authService } from "@/lib/services/authService";
 import { clearCredentials } from "@/lib/store/features/authSlice";
-import { ThemeToggle } from "../ThemeToggle";
 import SearchBar from "../SearchBar";
 import UserDropdown from "../UserDropdown";
 import { signOut } from "next-auth/react";
@@ -34,6 +33,7 @@ import { NotificationItem } from "@/types/notification";
 interface NavItemProps {
   icon: React.ReactElement<{ size?: number; strokeWidth?: number }>;
   href: string;
+  title: string;
   active?: boolean;
 }
 
@@ -43,6 +43,7 @@ const Navbar = () => {
   const dispatch = useDispatch();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [initialNotifications, setInitialNotifications] = useState<
     NotificationItem[]
@@ -50,6 +51,7 @@ const Navbar = () => {
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const notifRef = useRef<HTMLDivElement>(null);
 
   const { user } = useSelector((state: RootState) => state.auth);
 
@@ -87,10 +89,10 @@ const Navbar = () => {
         setIsDropdownOpen(false);
       }
     };
-    if (isDropdownOpen)
-      document.addEventListener("mousedown", handleClickOutside);
+
+    document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isDropdownOpen]);
+  }, []);
 
   const getProfileImage = () => {
     const rawAvatarPath = user?.profile?.avatar || user?.profile_image;
@@ -112,25 +114,43 @@ const Navbar = () => {
     }
   };
 
-  const [notifOpen, setNotifOpen] = useState(false);
-  const notifRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
-        setNotifOpen(false);
+      const target = e.target as HTMLElement;
+
+      const isBellClick =
+        target.closest('[aria-label="Notification options"]') ||
+        target.closest(".bell-icon-container");
+
+      const isInsideDropdown = target.closest(".notification-dropdown");
+
+      if (isBellClick || isInsideDropdown) {
+        return;
       }
+
+      setNotifOpen(false);
     };
-    if (notifOpen) document.addEventListener("click", handler);
-    return () => document.removeEventListener("click", handler);
-  }, [notifOpen]);
+
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   const navLinks = [
-    { icon: <Home />, href: "/", label: "Home", exact: true },
-    { icon: <PlaySquare />, href: "/reels", label: "Reels" },
-    { icon: <Store />, href: "/products", label: "Shop" },
-    { icon: <BookOpen />, href: "/courses", label: "Academy" },
-    { icon: <FileText />, href: "/research", label: "Library" },
+    { icon: <Home />, href: "/", title: "Home", label: "Home", exact: true },
+    { icon: <PlaySquare />, href: "/reels", title: "Reels", label: "Reels" },
+    { icon: <Store />, href: "/products", title: "Shop", label: "Shop" },
+    {
+      icon: <BookOpen />,
+      href: "/courses",
+      title: "Academy",
+      label: "Academy",
+    },
+    {
+      icon: <FileText />,
+      href: "/research",
+      title: "Library",
+      label: "Library",
+    },
   ];
 
   const tabBarLinks = [
@@ -172,6 +192,7 @@ const Navbar = () => {
           <div className="hidden md:flex items-center justify-center flex-[1.5] h-full gap-1">
             {navLinks.map((link) => (
               <NavItem
+                title={link.title}
                 key={link.href}
                 icon={link.icon}
                 href={link.href}
@@ -185,6 +206,13 @@ const Navbar = () => {
           </div>
           <div className="flex items-center justify-end flex-1 gap-1 md:gap-2">
             <div className="hidden sm:flex items-center gap-1 md:gap-2">
+              <button
+                onClick={() => router.push("/reels/create")}
+                className="p-2 bg-zinc-800 rounded-full hover:scale-105"
+                title="Create Reel"
+              >
+                <PlusCircle className="text-gray-300" size={20} />
+              </button>
               <SearchBar />
               <Link href="/messages" aria-label="Open chats selection panel">
                 <IconButton
@@ -196,9 +224,9 @@ const Navbar = () => {
                 <div
                   onClick={(e) => {
                     e.stopPropagation();
-                    setNotifOpen((o) => !o);
+                    setNotifOpen((prev) => !prev);
                   }}
-                  className="relative flex items-center justify-center w-8 h-8 md:w-10 md:h-10 bg-secondary text-secondary-foreground rounded-full cursor-pointer hover:bg-accent transition-colors border border-transparent active:scale-95"
+                  className="bell-icon-container relative flex items-center justify-center w-8 h-8 md:w-10 md:h-10 bg-secondary text-secondary-foreground rounded-full cursor-pointer hover:bg-accent transition-colors border border-transparent active:scale-95"
                 >
                   <Bell size={24} />
                   {unreadCount > 0 && (
@@ -208,7 +236,10 @@ const Navbar = () => {
                   )}
                 </div>
                 {notifOpen && (
-                  <div className="fixed top-[70px] right-32 w-[320px] 2xl:w-[380px] h-[calc(100vh-72px)] z-40 bg-card border-l border-border rounded-3xl shadow-xl overflow-y-auto no-scrollbar">
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    className="fixed top-[70px] right-32 w-[320px] 2xl:w-[380px] h-[calc(100vh-72px)] z-40 bg-card border-l border-border rounded-3xl shadow-xl overflow-y-auto no-scrollbar notification-dropdown"
+                  >
                     <div className="p-4">
                       <NotificationFeed
                         initialNotifications={initialNotifications}
@@ -231,7 +262,7 @@ const Navbar = () => {
               </Link>
               <div className="relative" ref={notifRef}>
                 <div
-                  onClick={() => setNotifOpen((o) => !o)}
+                  onClick={() => setNotifOpen(!notifOpen)}
                   className="relative flex items-center justify-center w-8 h-8 bg-secondary text-secondary-foreground rounded-full cursor-pointer hover:bg-accent transition-colors active:scale-95"
                 >
                   <Bell size={18} />
@@ -263,7 +294,10 @@ const Navbar = () => {
               className="relative shrink-0 hidden sm:block"
             >
               <div
-                onClick={() => setIsDropdownOpen((o) => !o)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsDropdownOpen((prev) => !prev);
+                }}
                 className="relative w-8 h-8 md:w-10 md:h-10 rounded-full bg-secondary text-secondary-foreground border border-border cursor-pointer active:scale-95 transition-all flex items-center justify-center overflow-hidden shrink-0 p-0"
               >
                 {profileImage ? (
@@ -285,12 +319,14 @@ const Navbar = () => {
                 </div>
               </div>
               {isDropdownOpen && (
-                <UserDropdown
-                  user={user}
-                  onLogout={handleLogout}
-                  getProfileImage={getProfileImage}
-                  onClose={() => setIsDropdownOpen(false)}
-                />
+                <div onClick={(e) => e.stopPropagation()}>
+                  <UserDropdown
+                    user={user}
+                    onLogout={handleLogout}
+                    getProfileImage={getProfileImage}
+                    onClose={() => setIsDropdownOpen(false)}
+                  />
+                </div>
               )}
             </div>
           </div>
@@ -394,17 +430,23 @@ const Navbar = () => {
   );
 };
 
-const NavItem = ({ icon, href, active = false }: NavItemProps) => (
-  <Link
-    href={href}
-    className={`flex items-center justify-center w-16 lg:w-24 h-full cursor-pointer border-b-4 transition-all ${
-      active
-        ? "border-primary text-primary"
-        : "border-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-    }`}
-  >
-    {React.cloneElement(icon, { size: 24, strokeWidth: active ? 2.5 : 2 })}
-  </Link>
+const NavItem = ({ icon, title, href, active = false }: NavItemProps) => (
+  <div className="relative group flex items-center justify-center h-full">
+    <div className="absolute top-full mt-2 px-4 py-1 bg-primary text-secondary-foreground text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+      {title}
+    </div>
+
+    <Link
+      href={href}
+      className={`flex items-center justify-center w-16 lg:w-24 h-full cursor-pointer border-b-4 transition-all ${
+        active
+          ? "border-primary text-primary"
+          : "border-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+      }`}
+    >
+      {React.cloneElement(icon, { size: 24, strokeWidth: active ? 2.5 : 2 })}
+    </Link>
+  </div>
 );
 
 interface IconButtonProps {

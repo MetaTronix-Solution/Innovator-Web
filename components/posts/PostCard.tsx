@@ -353,6 +353,7 @@ const PostCard = ({ post }: { post: any; index?: number }) => {
             isOwnPost={isOwnPost}
             content={caption}
             userId={post.user_id}
+            username={post.username}
             onDeleted={handleDeleted}
             onEditClick={() => {
               setEditContent(caption);

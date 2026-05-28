@@ -80,19 +80,16 @@ const UserSuggestion = () => {
     <div className="flex flex-col">
       <div className="divide-y divide-border/40">
         {visibleUsers.map((user) => (
-          /* Made this relative so the Link overlay anchors correctly */
           <div
             key={user.user_id}
             className="flex items-center justify-between p-3 transition-colors hover:bg-accent/40 relative group"
           >
-            {/* Invisible full-card Link for perfect semantic navigation */}
             <Link
               href={`/${user.user_id}`}
               className="absolute inset-0 z-0"
               aria-label={`View ${user.full_name || user.username}'s profile`}
             />
 
-            {/* Left Column Content: Placed inside pointer-events-none container so it doesn't intercept clicks */}
             <div className="flex items-center gap-3 min-w-0 z-10 pointer-events-none">
               <div className="relative h-10 w-10 shrink-0 rounded-full bg-muted border border-border flex items-center justify-center overflow-hidden group-hover:border-primary/50 transition-all shadow-sm">
                 {user.avatar && user.avatar !== "null" ? (

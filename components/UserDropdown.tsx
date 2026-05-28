@@ -50,22 +50,6 @@ const UserDropdown = ({
   );
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (isMobile) return;
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        onClose();
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isMobile, onClose]);
-
   const handleNavigate = (path: string) => {
     onClose();
     if (onNavigate) onNavigate();
@@ -79,6 +63,7 @@ const UserDropdown = ({
   return (
     <div
       ref={dropdownRef}
+      onClick={(e) => e.stopPropagation()}
       className="w-full md:absolute md:top-12 md:right-0 md:w-[360px] md:bg-card md:border md:border-border md:shadow-2xl md:rounded-xl overflow-hidden z-[60] p-4 animate-in fade-in zoom-in-95 duration-200"
     >
       <div className="p-2 mb-4 rounded-lg border border-border bg-background/50">

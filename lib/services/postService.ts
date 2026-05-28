@@ -2,7 +2,7 @@ export const repostPost = async (postId: string, caption: string) => {
   const response = await fetch(`/api/posts/${postId}/repost`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ caption }),
+    body: JSON.stringify({ content: caption }),
   });
 
   const result = await response.json();
