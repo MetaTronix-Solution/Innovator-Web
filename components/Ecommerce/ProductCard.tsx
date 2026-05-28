@@ -99,8 +99,10 @@ export default function ProductCard({
         <Button
           onClick={handleCartClick}
           disabled={cartLoading || isOutOfStock}
-          className={`w-full h-12 rounded-2xl font-bold transition-all duration-300 ${
-            isInCart ? "bg-zinc-800 text-white hover:bg-zinc-700" : "bg-primary"
+          className={`w-full h-12 rounded-2xl bottom-0 font-bold transition-all duration-300 cursor-pointer ${
+            isInCart
+              ? "bg-secondary-foreground text-secondary hover:bg-secondary-foreground/90"
+              : "bg-primary"
           }`}
         >
           {cartLoading ? (

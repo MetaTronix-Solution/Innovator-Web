@@ -271,9 +271,10 @@ const ProfilePage = () => {
               <>
                 <Button
                   onClick={() => router.push(`/messages/${targetId}`)}
-                  className="p-4.5 rounded-3xl"
+                  className="p-2 md:p-4.5 rounded-full md:rounded-3xl"
                 >
-                  <Send size={14} /> Message
+                  <Send size={14} />
+                  <span className="hidden md-flex">Message</span>
                 </Button>
                 <FollowToggle
                   username=""
@@ -397,7 +398,7 @@ const ProfilePage = () => {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-1 mb-10 gap-2 md:gap-4">
           {activeTab === "posts" ? (
             userPosts.length > 0 ? (
               userPosts.map((post: any) => (
@@ -425,6 +426,7 @@ const ProfilePage = () => {
             <EmptyState message="No reels to show yet." />
           )}
         </div>
+        <div className="mb-10"></div>
       </div>
     </div>
   );

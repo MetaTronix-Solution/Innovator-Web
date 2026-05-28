@@ -92,7 +92,7 @@ const ReelCard = ({ reel, post }: ReelCardProps) => {
   }, []);
 
   return (
-    <div className="relative w-[400px] h-full rounded-3xl overflow-hidden">
+    <div className="relative w-[400px] h-full rounded-sm md:rounded-3xl overflow-hidden">
       <div className="absolute inset-0 z-0">
         {videoSrc ? (
           <ReelVideo

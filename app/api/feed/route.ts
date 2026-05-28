@@ -5,9 +5,9 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 export async function GET(request: NextRequest) {
   const cookieStore = await cookies();
-  const accessToken = cookieStore.get("accessToken")?.value;
+  const token = cookieStore.get("accessToken")?.value;
 
-  if (!accessToken) {
+  if (!token) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
   const res = await fetch(
     `${BACKEND_URL}/api/feed/?limit=${limit}${cursorParam}`,
     {
-      headers: { Authorization: `Bearer ${accessToken}` },
+      headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     },
   );

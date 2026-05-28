@@ -121,8 +121,8 @@ const Navbar = () => {
         setNotifOpen(false);
       }
     };
-    if (notifOpen) document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    if (notifOpen) document.addEventListener("click", handler);
+    return () => document.removeEventListener("click", handler);
   }, [notifOpen]);
 
   const navLinks = [
@@ -152,7 +152,7 @@ const Navbar = () => {
 
       <nav className="sticky top-0 z-50 w-full bg-card border-b border-border shadow-sm">
         <div
-          className={`max-w-[1440px] mx-auto px-2 md:px-6 flex items-center justify-between h-16 ${pathname === "/" ? "flex" : "hidden md:flex"}`}
+          className={`max-w-[1440px] mx-auto px-2 md:px-6 flex items-center justify-between h-10 md:h-16 ${pathname === "/" ? "flex" : "hidden md:flex"}`}
         >
           <div className="flex items-center cursor-pointer flex-1 gap-2">
             <Link href="/" className="shrink-0 flex items-center gap-1">
@@ -168,7 +168,7 @@ const Navbar = () => {
               </p>
             </Link>
           </div>
-          {/* Desktop nav links */}
+
           <div className="hidden md:flex items-center justify-center flex-[1.5] h-full gap-1">
             {navLinks.map((link) => (
               <NavItem
@@ -194,7 +194,10 @@ const Navbar = () => {
               </Link>
               <div className="relative" ref={notifRef}>
                 <div
-                  onClick={() => setNotifOpen((o) => !o)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setNotifOpen((o) => !o);
+                  }}
                   className="relative flex items-center justify-center w-8 h-8 md:w-10 md:h-10 bg-secondary text-secondary-foreground rounded-full cursor-pointer hover:bg-accent transition-colors border border-transparent active:scale-95"
                 >
                   <Bell size={24} />
@@ -239,7 +242,10 @@ const Navbar = () => {
                   )}
                 </div>
                 {notifOpen && (
-                  <div className="fixed top-[70px] right-2 w-[calc(100vw-16px)] h-[calc(100vh-80px)] z-40 bg-card border border-border rounded-2xl shadow-xl overflow-y-auto no-scrollbar">
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    className="fixed top-[70px] right-2 w-[calc(100vw-16px)] h-[calc(100vh-80px)] z-40 bg-card border border-border rounded-2xl shadow-xl overflow-y-auto no-scrollbar"
+                  >
                     <div className="p-4">
                       <NotificationFeed
                         initialNotifications={initialNotifications}
@@ -258,7 +264,7 @@ const Navbar = () => {
             >
               <div
                 onClick={() => setIsDropdownOpen((o) => !o)}
-                className="relative w-10 h-10 rounded-full bg-secondary text-secondary-foreground border border-border cursor-pointer active:scale-95 transition-all flex items-center justify-center overflow-hidden shrink-0 p-0"
+                className="relative w-8 h-8 md:w-10 md:h-10 rounded-full bg-secondary text-secondary-foreground border border-border cursor-pointer active:scale-95 transition-all flex items-center justify-center overflow-hidden shrink-0 p-0"
               >
                 {profileImage ? (
                   <Image

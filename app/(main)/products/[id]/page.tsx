@@ -230,7 +230,7 @@ export default function ProductDetailPage() {
           {isOutOfStock ? (
             <button
               disabled
-              className="w-full py-4 rounded-2xl bg-zinc-200 dark:bg-zinc-800 text-zinc-400 font-semibold flex items-center justify-center gap-2 cursor-not-allowed"
+              className="w-full py-4 rounded-xl bg-zinc-200 dark:bg-zinc-800 text-zinc-400 font-semibold flex items-center justify-center gap-2 cursor-not-allowed"
             >
               <Ban size={18} /> Out of Stock
             </button>
@@ -239,7 +239,7 @@ export default function ProductDetailPage() {
               variant="secondary"
               onClick={handleCartClick}
               disabled={cartLoading}
-              className="w-full p-6 bg-green-500 hover:bg-green-600"
+              className="w-full p-6 cursor-pointer"
             >
               {cartLoading ? (
                 <Loader2 size={18} className="animate-spin" />
@@ -252,7 +252,7 @@ export default function ProductDetailPage() {
             <Button
               onClick={handleCartClick}
               disabled={cartLoading}
-              className="w-full p-6"
+              className="w-full p-6 cursor-pointer"
             >
               {cartLoading ? (
                 <Loader2 size={18} className="animate-spin" />

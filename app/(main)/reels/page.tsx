@@ -106,7 +106,7 @@ export default function ReelsPage() {
         {reels.map((reel) => (
           <section
             key={reel.id}
-            className="w-full h-[calc(100vh-64px)] snap-start flex items-center justify-center py-4"
+            className="w-full h-full snap-start flex items-center justify-center relative md:py-2"
           >
             <ReelCard reel={reel} />
           </section>

@@ -91,13 +91,17 @@ export function NotificationFeed({
   }, []);
 
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
+    const handler = (e: MouseEvent | TouchEvent) => {
+      if (menuRef.current && menuRef.current.contains(e.target as Node)) return;
+      setMenuOpen(false);
     };
+
     document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("touchstart", handler);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("touchstart", handler);
+    };
   }, []);
 
   useEffect(() => {
@@ -252,7 +256,10 @@ export function NotificationFeed({
           </button>
 
           {menuOpen && (
-            <div className="absolute right-0 top-full mt-1.5 z-20 min-w-[180px] rounded-lg border border-border bg-popover shadow-md py-1">
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="absolute right-0 top-full mt-1.5 z-20 min-w-[180px] rounded-lg border border-border bg-popover shadow-md py-1"
+            >
               <button
                 onClick={markAllRead}
                 className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors text-left"
@@ -304,7 +311,10 @@ export function NotificationFeed({
             return (
               <div
                 key={item.id}
-                onClick={() => markRead(item)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  markRead(item);
+                }}
                 className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${
                   item.is_read
                     ? "bg-card border-border hover:bg-muted/50"
