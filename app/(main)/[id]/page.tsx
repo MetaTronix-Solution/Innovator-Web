@@ -19,8 +19,14 @@ const STATIC_ROUTES = new Set([
   "settings",
 ]);
 
-export default function Page({ params }: { params: { id: string } }) {
-  if (STATIC_ROUTES.has(params.id)) {
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+
+  if (STATIC_ROUTES.has(id)) {
     notFound();
   }
 

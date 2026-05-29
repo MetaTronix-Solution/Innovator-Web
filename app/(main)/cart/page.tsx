@@ -66,7 +66,6 @@ const clearCartCache = () => {
   } catch {}
 };
 
-// ── Skeleton (outside component to avoid render-time creation error) ──────────
 const SkeletonCart = () => (
   <div className="flex flex-col gap-4">
     {Array.from({ length: 3 }).map((_, i) => (
@@ -426,7 +425,6 @@ export default function CartPage() {
             ))}
           </div>
 
-          {/* Order Summary */}
           <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200 dark:border-zinc-800 shadow-sm">
             <h3 className="font-bold mb-4">Order Summary</h3>
             <div className="space-y-3 mb-6">

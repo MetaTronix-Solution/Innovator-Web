@@ -12,8 +12,8 @@ import { PaymentMethodStep } from "@/components/payments/PaymentMethodStep";
 type Step = 1 | 2 | 3 | 4;
 
 const STEPS = [
-  { id: 1, label: "Shipping address" },
-  { id: 2, label: "Shipping method" },
+  { id: 1, label: "Customer Information" },
+  { id: 2, label: "Payment method" },
   { id: 3, label: "Payment" },
   { id: 4, label: "Review & place order" },
 ];
@@ -202,7 +202,6 @@ function PaymentStep({
         </div>
       )}
 
-      {/* Navigation button to Review step */}
       <button
         onClick={onContinue}
         className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-xl hover:bg-primary/90 transition-all"

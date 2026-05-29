@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     if (cursor) params.set("cursor", cursor);
     if (userId) params.set("user", userId);
 
-    const backendUrl = `${BACKEND_URL}/api/reels/${params.toString() ? `?${params.toString()}` : ""}`;
+    const backendUrl = `${BASE_URL}/api/reels/${params.toString() ? `?${params.toString()}` : ""}`;
 
     const response = await fetch(backendUrl, {
       method: "GET",
@@ -51,30 +51,29 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const formData = await request.formData();
+export async function POST(req: NextRequest) {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("accessToken")?.value;
 
-    const response = await fetch(`${BACKEND_URL}/api/reels/`, {
-      method: "POST",
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      return NextResponse.json(
-        { error: errorData.message || "Failed to create reel" },
-        { status: response.status },
-      );
-    }
-
-    const data = await response.json();
-    return NextResponse.json(data, { status: 201 });
-  } catch (error) {
-    console.error("Error creating reel:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+  if (!token) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
+
+  const formData = await req.formData();
+
+  const response = await fetch(`${BASE_URL}/api/reels/`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    return NextResponse.json(data, { status: response.status });
+  }
+
+  return NextResponse.json(data, { status: response.status });
 }
