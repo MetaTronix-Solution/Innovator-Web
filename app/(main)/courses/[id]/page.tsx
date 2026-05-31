@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, PlayCircle, Lock } from "lucide-react";
+import { FileText, PlayCircle, Lock, BookA, Book } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 import React, { useState, useEffect } from "react";
 import Image from "next/image"; // Added Image import
@@ -44,6 +44,22 @@ function LessonsTab({
 }) {
   const videos = contents.filter(isVideo);
 
+  if (videos.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
+        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
+          <PlayCircle size={24} className="text-muted-foreground/40" />
+        </div>
+        <p className="text-sm font-medium text-foreground">
+          No lessons available
+        </p>
+        <p className="text-xs text-muted-foreground mt-1">
+          Check back later for new content.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="divide-y divide-border">
       {videos.map((lesson, idx) => (
@@ -83,6 +99,22 @@ function DocsTab({
 }) {
   const docs = contents.filter(isDoc);
 
+  if (docs.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
+        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
+          <Book size={24} className="text-muted-foreground/40" />
+        </div>
+        <p className="text-sm font-medium text-foreground">
+          No Documents available
+        </p>
+        <p className="text-xs text-muted-foreground mt-1">
+          Check back later for new content.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="px-4 py-3 space-y-2.5">
       {docs.map((doc, idx) => (
@@ -116,7 +148,7 @@ function AboutTab({
   onEnroll: () => void;
 }) {
   return (
-    <div className="px-4 py-4 space-y-5">
+    <div className="px-1 py-2 md:px-4 md:py-4 space-y-5">
       {!isEnrolled ? (
         <div className="p-4 rounded-2xl bg-primary/10 border border-primary/20">
           <h3 className="text-sm font-bold text-primary mb-1">

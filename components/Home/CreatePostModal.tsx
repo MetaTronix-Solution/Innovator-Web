@@ -5,7 +5,6 @@ import Image from "next/image";
 import {
   X,
   Image as ImageIcon,
-  Smile,
   Loader2,
   Globe2,
   User,
@@ -15,6 +14,7 @@ import {
 import { toast } from "sonner";
 import { useDispatch } from "react-redux";
 import { addPostToTop } from "@/lib/store/features/postsSlice";
+import { Button } from "../ui/button";
 
 interface Category {
   id: string;
@@ -40,6 +40,9 @@ export default function CreatePostModal({
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
     null,
   );
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -190,9 +193,9 @@ export default function CreatePostModal({
               <p className="font-bold text-sm">
                 {user?.full_name || user?.username}
               </p>
-              <div className="flex items-center gap-1 text-xs bg-secondary px-2 py-1 rounded-md w-fit">
+              {/* <div className="flex items-center gap-1 text-xs bg-secondary px-2 py-1 rounded-md w-fit">
                 <Globe2 className="w-3 h-3" /> <span>Public</span>
-              </div>
+              </div> */}
             </div>
           </div>
 
@@ -273,7 +276,6 @@ export default function CreatePostModal({
           )}
         </div>
 
-        {/* Footer */}
         <div className="p-6 pt-2 space-y-4">
           <div className="flex items-center justify-between p-3 border rounded-xl bg-muted/20">
             <span className="text-sm font-semibold px-2">Add to your post</span>
@@ -292,18 +294,15 @@ export default function CreatePostModal({
               >
                 <ImageIcon className="w-6 h-6" />
               </button>
-              <button className="p-2 hover:bg-accent rounded-full text-amber-500 transition-all hover:scale-110">
-                <Smile className="w-6 h-6" />
-              </button>
             </div>
           </div>
-          <button
+          <Button
             onClick={handlePostSubmit}
             disabled={isLoading || (!content.trim() && mediaFiles.length === 0)}
-            className="w-full py-3 bg-primary text-primary-foreground font-bold rounded-xl hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+            className="w-full p-6 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
           >
             {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Post"}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

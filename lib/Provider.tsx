@@ -2,10 +2,25 @@
 
 import { SessionProvider, useSession } from "next-auth/react";
 import React, { useEffect, useRef } from "react";
-import { Provider, useDispatch } from "react-redux";
-import { persistor, store } from "./store/store";
+import { Provider, useDispatch, useSelector } from "react-redux";
+import { persistor, RootState, store } from "./store/store";
 import { setCredentials, clearCredentials } from "./store/features/authSlice";
 import { PersistGate } from "redux-persist/integration/react";
+
+export function ThemeSync() {
+  const mode = useSelector((state: RootState) => state.theme.mode);
+
+  useEffect(() => {
+    const root = window.document.documentElement;
+    if (mode === "dark") {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+  }, [mode]);
+
+  return null;
+}
 
 function AuthHydrator({ children }: { children: React.ReactNode }) {
   const dispatch = useDispatch();
@@ -79,6 +94,7 @@ function AppProvider({ children }: { children: React.ReactNode }) {
     <SessionProvider>
       <Provider store={store}>
         <PersistGate loading={null} persistor={persistor}>
+          <ThemeSync />
           <AuthHydrator>{children}</AuthHydrator>
         </PersistGate>
       </Provider>

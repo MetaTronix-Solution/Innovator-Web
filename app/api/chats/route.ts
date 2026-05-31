@@ -14,11 +14,10 @@ export async function GET(request: NextRequest) {
     }
 
     const token = tokenCookie.value;
-
     const { searchParams } = new URL(request.url);
     const withUser = searchParams.get("with_user");
 
-    let upstreamUrl = "http://36.253.137.34:8005/api/chats/";
+    let upstreamUrl = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/chats/`;
     if (withUser) {
       upstreamUrl += `?with_user=${encodeURIComponent(withUser)}`;
     }
@@ -41,16 +40,78 @@ export async function GET(request: NextRequest) {
     const chatData = await response.json();
 
     if (withUser) {
-      return NextResponse.json({
-        token: token,
-        messages: chatData,
-      });
+      return NextResponse.json({ token, messages: chatData });
     }
 
-    // If fetching the multi-user summary list, return the raw array directly
     return NextResponse.json(chatData);
   } catch (error) {
     console.error("Proxy route handling exception:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const cookieStore = await cookies();
+    const tokenCookie = cookieStore.get("accessToken");
+
+    if (!tokenCookie || !tokenCookie.value) {
+      return NextResponse.json(
+        { error: "Unauthorized: Access token missing" },
+        { status: 401 },
+      );
+    }
+
+    const token = tokenCookie.value;
+    const contentType = request.headers.get("content-type") || "";
+
+    let upstreamResponse: Response;
+
+    if (contentType.includes("multipart/form-data")) {
+      const formData = await request.formData();
+
+      upstreamResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/chats/`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        },
+      );
+    } else {
+      const body = await request.json();
+
+      upstreamResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/chats/`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(body),
+        },
+      );
+    }
+
+    if (!upstreamResponse.ok) {
+      const errorText = await upstreamResponse.text();
+      console.error("Upstream POST error:", errorText);
+      return NextResponse.json(
+        { error: "Upstream server error", detail: errorText },
+        { status: upstreamResponse.status },
+      );
+    }
+
+    const data = await upstreamResponse.json();
+    return NextResponse.json(data, { status: upstreamResponse.status });
+  } catch (error) {
+    console.error("POST proxy exception:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 },

@@ -65,10 +65,10 @@ export default function BlockedUsersPage() {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto min-h-screen bg-background text-foreground pb-20">
-      <div className="flex items-center gap-3 px-4 py-4 border-b border-border sticky top-0 bg-background z-10">
+    <div className="w-full max-w-2xl mx-auto min-h-screen bg-background text-foreground pb-[env(safe-area-inset-bottom)]">
+      <div className="flex items-center gap-3 px-4 py-2 border-b border-border sticky top-0 bg-background z-10">
         <button
-          onClick={() => router.push("/")}
+          onClick={() => router.back()}
           className="p-2 rounded-xl hover:bg-accent transition-colors"
         >
           <ArrowLeft size={20} />

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import Script from "next/script";
 import AppProvider from "@/lib/Provider";
 
 const inter = Inter({
@@ -24,8 +25,36 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.className}  h-full antialiased`}>
-      <body className="min-h-full flex flex-col">
+    <html
+      lang="en"
+      className={`${inter.className}  h-full antialiased`}
+      suppressHydrationWarning
+    >
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
+        <Script
+          id="theme-script"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+                (function() {
+                  try {
+                    const persisted = localStorage.getItem('persist:root');
+                    if (persisted) {
+                      const state = JSON.parse(persisted);
+                      const themeState = state.theme ? JSON.parse(state.theme) : null;
+                      if (themeState && themeState.mode === 'dark') {
+                        document.documentElement.classList.add('dark');
+                      } else {
+                        document.documentElement.classList.remove('dark');
+                      }
+                    } else {
+                      document.documentElement.classList.add('dark');
+                    }
+                  } catch (e) {}
+                })();
+              `,
+          }}
+        />
         <AppProvider>{children}</AppProvider>
       </body>
     </html>

@@ -24,16 +24,16 @@ export default function MainLayout({
 
   const hasRedirected = useRef(false);
 
-  useEffect(() => {
-    const root = window.document.documentElement;
-    if (mode === "light") {
-      root.classList.add("light");
-      root.classList.remove("dark");
-    } else {
-      root.classList.add("dark");
-      root.classList.remove("light");
-    }
-  }, [mode]);
+  // useEffect(() => {
+  //   const root = window.document.documentElement;
+  //   if (mode === "light") {
+  //     root.classList.add("light");
+  //     root.classList.remove("dark");
+  //   } else {
+  //     root.classList.add("dark");
+  //     root.classList.remove("light");
+  //   }
+  // }, [mode]);
 
   useEffect(() => {
     if (

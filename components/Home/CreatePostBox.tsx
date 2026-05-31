@@ -45,7 +45,7 @@ const CreatePostBox = () => {
   };
 
   return (
-    <div className="bg-card rounded-xl shadow-sm border border-border p-3 md:p-4 mb-4">
+    <div className="bg-card rounded-md shadow-sm border border-border p-2 md:p-4 mb-2 md:mb-4">
       <input
         type="file"
         ref={fileInputRef}
@@ -70,7 +70,7 @@ const CreatePostBox = () => {
                 unoptimized
               />
             ) : (
-              <User size={26} className="text-muted-foreground/60" />
+              <User size={24} className="text-muted-foreground/60" />
             )}
           </div>
         </Link>

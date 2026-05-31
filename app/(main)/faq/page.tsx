@@ -207,10 +207,10 @@ export default function FAQPage() {
           </button>
         </div>
         <div className="max-w-2xl mx-auto text-center relative z-10">
-          <h1 className="text-5xl font-extrabold tracking-tight mb-6">
+          <h1 className="text-3xl font-extrabold tracking-tight mb-4">
             Help & Support
           </h1>
-          <p className="text-muted-foreground text-lg mb-8">
+          <p className="text-muted-foreground text-md mb-6">
             Got questions? We've got answers. Browse our knowledge base or get
             in touch.
           </p>

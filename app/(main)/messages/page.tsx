@@ -46,7 +46,6 @@ export default function MessagesPage() {
       const res = await fetch("/api/users/mutual-users");
       if (res.ok) {
         const data = await res.json();
-        // API returns { mutual_friends_count, mutual_friends: [...] }
         const friends: MutualUser[] = data.mutual_friends ?? data ?? [];
         setMutualUsers(friends);
       }

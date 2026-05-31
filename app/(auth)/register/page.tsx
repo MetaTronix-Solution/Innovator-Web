@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { registerSchema } from "@/lib/validation/auth";
 import { authService } from "@/lib/services/authService";
 import { ZodError } from "zod";
+import { EyeIcon, EyeOffIcon } from "lucide-react";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -25,6 +26,7 @@ export default function RegisterPage() {
   });
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
+  const [showPassword, setShowPassword] = useState<boolean>(false);
   const [showOTP, setShowOTP] = useState(false);
   const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
@@ -124,7 +126,7 @@ export default function RegisterPage() {
                   value={formData.username}
                   onChange={handleChange}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring outline-none"
-                  placeholder="deepak_dev"
+                  placeholder="Enter a username"
                 />
               </div>
 
@@ -135,7 +137,7 @@ export default function RegisterPage() {
                   value={formData.full_name}
                   onChange={handleChange}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring outline-none"
-                  placeholder="Deepak Shrestha"
+                  placeholder="Enter your name"
                 />
               </div>
 
@@ -147,7 +149,7 @@ export default function RegisterPage() {
                   value={formData.email}
                   onChange={handleChange}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring outline-none"
-                  placeholder="example@gmail.com"
+                  placeholder="Enter your email"
                 />
               </div>
 
@@ -190,26 +192,52 @@ export default function RegisterPage() {
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">Password *</label>
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "password" : "text"}
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showPassword ? (
+                      <EyeOffIcon className="h-4 w-4" />
+                    ) : (
+                      <EyeIcon className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">
                   Confirm Password *
                 </label>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "password" : "text"}
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showPassword ? (
+                      <EyeOffIcon className="h-4 w-4" />
+                    ) : (
+                      <EyeIcon className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
               </div>
 
               <Button
@@ -221,7 +249,6 @@ export default function RegisterPage() {
               </Button>
             </form>
           ) : (
-            /* VERIFICATION FORM */
             <form onSubmit={handleVerify} className="space-y-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Enter 6-digit OTP</label>
@@ -248,7 +275,6 @@ export default function RegisterPage() {
             </form>
           )}
 
-          {/* Social login and footer only shown on registration page */}
           {!showOTP && (
             <>
               <div className="relative py-2">

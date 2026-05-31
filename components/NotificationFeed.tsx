@@ -6,12 +6,14 @@ import { NotificationService } from "@/lib/services/notificationService";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "./ui/button";
-import { Check } from "lucide-react";
+import { Check, LayoutGrid, MoreVertical } from "lucide-react";
+import { getMediaUrl } from "@/lib/utils/getMediaUrl";
 
 interface NotificationFeedProps {
   initialNotifications: NotificationItem[];
   userId: string;
   token?: string;
+  onUnreadCountChange?: (count: number) => void;
 }
 
 type Tab = "all" | "unread";
@@ -57,6 +59,7 @@ export function NotificationFeed({
   initialNotifications,
   userId,
   token,
+  onUnreadCountChange,
 }: NotificationFeedProps) {
   const [notifications, setNotifications] =
     useState<NotificationItem[]>(initialNotifications);
@@ -90,19 +93,19 @@ export function NotificationFeed({
     return date.toLocaleDateString();
   }, []);
 
-  // useEffect(() => {
-  //   const handler = (e: MouseEvent | TouchEvent) => {
-  //     if (menuRef.current && menuRef.current.contains(e.target as Node)) return;
-  //     setMenuOpen(false);
-  //   };
+  const updateUnreadCount = useCallback(
+    (notifs: NotificationItem[]) => {
+      if (onUnreadCountChange) {
+        const count = notifs.filter((n) => !n.is_read).length;
+        onUnreadCountChange(count);
+      }
+    },
+    [onUnreadCountChange],
+  );
 
-  //   document.addEventListener("mousedown", handler);
-  //   document.addEventListener("touchstart", handler);
-  //   return () => {
-  //     document.removeEventListener("mousedown", handler);
-  //     document.removeEventListener("touchstart", handler);
-  //   };
-  // }, []);
+  useEffect(() => {
+    updateUnreadCount(initialNotifications);
+  }, [initialNotifications, updateUnreadCount]);
 
   useEffect(() => {
     if (!userId) {
@@ -146,7 +149,11 @@ export function NotificationFeed({
         if (cancelled) return;
         try {
           const data = JSON.parse(event.data);
-          setNotifications((prev) => [data, ...prev]);
+          setNotifications((prev) => {
+            const next = [data, ...prev];
+            updateUnreadCount(next);
+            return next;
+          });
         } catch (err) {
           console.error("Failed to parse WS message:", err);
         }
@@ -189,9 +196,13 @@ export function NotificationFeed({
   }, [userId, token]);
 
   const markRead = async (item: NotificationItem) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === item.id ? { ...n, is_read: true } : n)),
-    );
+    setNotifications((prev) => {
+      const next = prev.map((n) =>
+        n.id === item.id ? { ...n, is_read: true } : n,
+      );
+      updateUnreadCount(next);
+      return next;
+    });
 
     if (item.related_post_id) {
       router.push(`/posts/${item.related_post_id}`);
@@ -240,20 +251,10 @@ export function NotificationFeed({
               e.stopPropagation();
               setMenuOpen((o) => !o);
             }}
-            className="flex items-center justify-center w-9 h-9 rounded-lg border border-border bg-transparent hover:bg-muted transition-colors text-muted-foreground"
+            className="flex items-center justify-center w-8 h-8 rounded-lg border border-border bg-transparent hover:bg-muted transition-colors text-muted-foreground"
             aria-label="Notification options"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-            >
-              <circle cx="12" cy="5" r="1.5" />
-              <circle cx="12" cy="12" r="1.5" />
-              <circle cx="12" cy="19" r="1.5" />
-            </svg>
+            <MoreVertical />
           </button>
 
           {menuOpen && (
@@ -261,18 +262,19 @@ export function NotificationFeed({
               onClick={(e) => e.stopPropagation()}
               className="absolute right-0 top-full mt-1.5 z-20 min-w-[180px] rounded-lg border border-border bg-popover shadow-md py-1"
             >
-              <button
+              <Button
                 onClick={markAllRead}
                 className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors text-left"
               >
                 <Check size={16} />
                 Mark all as read
-              </button>
+              </Button>
               <Button
                 variant="secondary"
-                className="w-full p-2"
+                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors text-left"
                 onClick={() => router.push("/notifications")}
               >
+                <LayoutGrid size={16} />
                 View all
               </Button>
             </div>
@@ -329,7 +331,7 @@ export function NotificationFeed({
                   {item.sender_avatar ? (
                     <div className="w-10 h-10 rounded-full overflow-hidden border border-border relative">
                       <Image
-                        src={item.sender_avatar}
+                        src={getMediaUrl(item.sender_avatar) || ""}
                         alt={item.sender_username ?? "Sender avatar"}
                         fill
                         className="object-cover"

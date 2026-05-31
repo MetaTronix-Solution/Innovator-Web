@@ -274,7 +274,7 @@ const ProfilePage = () => {
                   className="p-2 md:p-4.5 rounded-full md:rounded-3xl"
                 >
                   <Send size={14} />
-                  <span className="hidden md-flex">Message</span>
+                  <span className="hidden md:flex">Message</span>
                 </Button>
                 <FollowToggle
                   username=""

@@ -58,39 +58,37 @@ export default function ProductCard({
   return (
     <div
       onClick={() => router.push(`/products/${product.id}`)}
-      className="group bg-white dark:bg-zinc-900 rounded-[2rem] p-4 flex flex-col transition-all duration-500 
-                 shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.12)] 
-                 border border-zinc-100 dark:border-zinc-800 hover:-translate-y-2 cursor-pointer"
+      className="group bg-card rounded-md p-2 flex flex-col transition-all duration-500 
+                 border border-border hover:-translate-y-2 hover:border-primary cursor-pointer"
     >
-      <div className="relative aspect-square mb-4 rounded-3xl bg-zinc-50 dark:bg-zinc-800 overflow-hidden">
+      <div className="relative aspect-square mb-2 rounded-xl overflow-hidden">
         <Image
           src={getMediaUrl(product.image) || "/placeholder-product.png"}
           alt={product.name}
           fill
           loading="eager"
-          className="object-contain p-4 group-hover:scale-110 transition-transform duration-500"
+          className="object-contain p-2 group-hover:scale-110 transition-transform duration-500"
           unoptimized
         />
       </div>
 
       <div className="flex flex-col gap-1 px-1">
-        <h3 className="font-bold text-lg leading-tight text-zinc-900 dark:text-zinc-50 line-clamp-1">
+        <h3 className="font-bold text-md leading-tight text-foreground line-clamp-1">
           {product.name}
         </h3>
-        <p className="text-foreground text-sm">
+        <p className="text-foreground text-xs">
           {product.category_details?.name}
         </p>
 
-        <div className="text-xl font-bold mt-2 font-mono text-zinc-900 dark:text-white">
+        <div className="text-md font-bold mt-2 font-mono text-foreground">
           Rs {price}
         </div>
       </div>
 
-      {/* Action Area */}
-      <div className="mt-4 flex flex-col gap-2">
-        <div className="text-xs font-medium text-zinc-400">
+      <div className="mt-2 flex flex-col gap-2">
+        <div className="text-xs font-medium">
           {isOutOfStock ? (
-            <span className="text-red-500">Out of Stock</span>
+            <span className="text-destructive">Out of Stock</span>
           ) : (
             <span className="text-emerald-500">In Stock</span>
           )}
@@ -99,9 +97,9 @@ export default function ProductCard({
         <Button
           onClick={handleCartClick}
           disabled={cartLoading || isOutOfStock}
-          className={`w-full h-12 rounded-2xl bottom-0 font-bold transition-all duration-300 cursor-pointer ${
+          className={`w-full h-12 rounded-sm md:rounded-md bottom-0 font-bold transition-all duration-300 cursor-pointer ${
             isInCart
-              ? "bg-secondary-foreground text-secondary hover:bg-secondary-foreground/90"
+              ? "bg-foreground text-secondary hover:bg-secondary-foreground/90"
               : "bg-primary"
           }`}
         >

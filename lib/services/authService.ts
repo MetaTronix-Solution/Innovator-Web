@@ -9,7 +9,6 @@ export const authService = {
     const data = await response.json();
 
     if (!response.ok) {
-      // Throw the error message from the server or a fallback
       throw new Error(data.error || "Login failed");
     }
 

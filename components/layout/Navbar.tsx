@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/lib/store/store";
 import Image from "next/image";
@@ -41,13 +41,17 @@ const Navbar = () => {
   const router = useRouter();
   const pathname = usePathname();
   const dispatch = useDispatch();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [notifOpen, setNotifOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
+
   const [initialNotifications, setInitialNotifications] = useState<
     NotificationItem[]
   >([]);
+
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(
+    initialNotifications.filter((n) => !n.is_read).length,
+  );
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -135,6 +139,10 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  const handleUnreadCountChange = useCallback((count: number) => {
+    setUnreadCount(count);
+  }, []);
+
   const navLinks = [
     { icon: <Home />, href: "/", title: "Home", label: "Home", exact: true },
     { icon: <PlaySquare />, href: "/reels", title: "Reels", label: "Reels" },
@@ -208,11 +216,12 @@ const Navbar = () => {
             <div className="hidden sm:flex items-center gap-1 md:gap-2">
               <button
                 onClick={() => router.push("/reels/create")}
-                className="p-2 bg-zinc-800 rounded-full hover:scale-105"
+                className="p-2 rounded-full hover:bg-accent hover:scale-105"
                 title="Create Reel"
               >
-                <PlusCircle className="text-gray-300" size={20} />
+                <PlusCircle className="text-secondary-foreground" size={24} />
               </button>
+
               <SearchBar />
               <Link href="/messages" aria-label="Open chats selection panel">
                 <IconButton
@@ -226,7 +235,7 @@ const Navbar = () => {
                     e.stopPropagation();
                     setNotifOpen((prev) => !prev);
                   }}
-                  className="bell-icon-container relative flex items-center justify-center w-8 h-8 md:w-10 md:h-10 bg-secondary text-secondary-foreground rounded-full cursor-pointer hover:bg-accent transition-colors border border-transparent active:scale-95"
+                  className="bell-icon-container relative flex items-center justify-center w-8 h-8 md:w-10 md:h-10  text-muted-foreground rounded-full cursor-pointer hover:bg-accent hover:scale-105 transition-colors border border-transparent active:scale-95"
                 >
                   <Bell size={24} />
                   {unreadCount > 0 && (
@@ -245,6 +254,7 @@ const Navbar = () => {
                         initialNotifications={initialNotifications}
                         userId={user?.id || user?.uuid || ""}
                         token={user?.accessToken ?? undefined}
+                        onUnreadCountChange={handleUnreadCountChange}
                       />
                     </div>
                   </div>
@@ -263,7 +273,7 @@ const Navbar = () => {
               <div className="relative" ref={notifRef}>
                 <div
                   onClick={() => setNotifOpen(!notifOpen)}
-                  className="relative flex items-center justify-center w-8 h-8 bg-secondary text-secondary-foreground rounded-full cursor-pointer hover:bg-accent transition-colors active:scale-95"
+                  className="relative flex items-center justify-center w-8 h-8 bg-secondary text-muted-foreground rounded-full cursor-pointer hover:bg-accent transition-colors active:scale-95"
                 >
                   <Bell size={18} />
                   {unreadCount > 0 && (
@@ -311,7 +321,7 @@ const Navbar = () => {
                 ) : (
                   <User
                     size={22}
-                    className="bg-secondary text-secondary-foreground block leading-none"
+                    className="bg-secondary text-muted-foreground block leading-none"
                   />
                 )}
                 <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-accent text-accent-foreground rounded-full border border-card flex items-center justify-center">
@@ -459,7 +469,7 @@ const IconButton = ({ icon, active = false }: IconButtonProps) => (
     className={`flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full cursor-pointer transition-all border border-transparent active:scale-95 ${
       active
         ? "bg-primary text-primary-foreground font-medium shadow-sm"
-        : "bg-secondary text-secondary-foreground hover:bg-accent"
+        : "text-muted-foreground hover:bg-accent hover:scale-105"
     }`}
   >
     {React.cloneElement(icon, { size: 24 })}

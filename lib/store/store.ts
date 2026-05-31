@@ -25,8 +25,9 @@ const appReducer = combineReducers({
 
 const rootReducer = (state: any, action: any) => {
   if (action.type === "auth/clearCredentials") {
-    storage.removeItem("persist:root");
-    state = undefined;
+    const { theme } = state;
+
+    state = { theme };
   }
   return appReducer(state, action);
 };

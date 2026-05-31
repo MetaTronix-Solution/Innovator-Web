@@ -4,11 +4,14 @@ import { useState } from "react";
 import MetadataForm, { ReelForm } from "@/components/Reels/create/MetadataForm";
 import UploadZone from "@/components/Reels/create/UploadZone";
 import VideoPreview from "@/components/Reels/create/VideoPreview";
+import { useRouter } from "next/navigation";
 
 const MAX_FILE_SIZE_MB = 500;
 const ACCEPTED_TYPES = ["video/mp4", "video/quicktime"];
 
 export default function CreateReelPage() {
+  const router = useRouter();
+
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoSrc, setVideoSrc] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
@@ -47,27 +50,6 @@ export default function CreateReelPage() {
     setForm((f) => ({ ...f, thumbnail: null }));
   };
 
-  // const handleSubmit = () => {
-  //   if (!videoFile) return;
-  //   setUploadState({ status: "uploading", progress: 0, message: "" });
-
-  //   const interval = setInterval(() => {
-  //     setUploadState((prev) => {
-  //       const nextProgress = prev.progress + 10;
-  //       if (nextProgress >= 100) {
-  //         clearInterval(interval);
-  //         setTimeout(
-  //           () =>
-  //             setUploadState({ status: "success", progress: 100, message: "" }),
-  //           1000,
-  //         );
-  //         return { ...prev, status: "processing", progress: 100 };
-  //       }
-  //       return { ...prev, progress: nextProgress };
-  //     });
-  //   }, 300);
-  // };
-
   const handleSubmit = async () => {
     if (!videoFile) return;
 
@@ -89,6 +71,7 @@ export default function CreateReelPage() {
       }
 
       setUploadState({ status: "success", progress: 100, message: "" });
+      setTimeout(() => router.push("/reels"), 1000);
     } catch (err) {
       setUploadState({
         status: "error",

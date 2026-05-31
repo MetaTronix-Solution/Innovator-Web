@@ -16,6 +16,8 @@ import {
   CheckCheck,
   Loader2,
 } from "lucide-react";
+import Image from "next/image";
+import { getMediaUrl } from "@/lib/utils/getMediaUrl";
 
 interface Course {
   id: string;
@@ -311,16 +313,17 @@ function CourseCard({
   return (
     <div
       onClick={onClick}
-      className="group bg-white dark:bg-zinc-900 rounded-[2rem] border border-zinc-100 dark:border-zinc-800 overflow-hidden cursor-pointer
-                 shadow-[0_4px_20px_rgb(0,0,0,0.04)] hover:shadow-[0_16px_40px_rgb(0,0,0,0.10)]
-                 hover:-translate-y-1.5 transition-all duration-300"
+      className="group bg-card rounded-md border border-border overflow-hidden cursor-pointer
+                 hover:-translate-y-1.5 hover:border-primary transition-all duration-300"
     >
       <div className="relative aspect-video bg-gradient-to-br from-orange-100 to-amber-50 dark:from-zinc-800 dark:to-zinc-900 overflow-hidden">
         {course.thumbnail ? (
-          <img
-            src={course.thumbnail}
+          <Image
+            src={getMediaUrl(course.thumbnail) || ""}
             alt={course.title}
+            fill
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            unoptimized
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
@@ -351,7 +354,7 @@ function CourseCard({
         )}
       </div>
 
-      <div className="p-5">
+      <div className="p-2">
         <p className="text-[10px] font-bold text-orange-500 uppercase tracking-wider mb-1.5">
           {typeof course.category === "object"
             ? (course.category as any)?.name
@@ -385,7 +388,7 @@ function CourseCard({
               {Number(course.rating || 0).toFixed(1)}
             </span>
           </div>
-          <div className="flex items-center gap-1.5 text-xs font-bold text-orange-600 dark:text-orange-400 group-hover:gap-2.5 transition-all">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-primary/95 group-hover:gap-2.5 transition-all">
             {course.price != null && Number(course.price) > 0
               ? `Rs ${Number(course.price).toLocaleString()}`
               : "Free"}
@@ -592,7 +595,7 @@ export default function CoursePage() {
   }
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-4 py-2 bg-background font-sans min-h-screen">
+    <div className="w-full max-w-5xl mx-auto px-2 py-1 md:px-4 md:py-2 bg-background font-sans min-h-screen">
       <div className="flex items-center gap-2 mb-5">
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 w-4 h-4" />
@@ -631,7 +634,7 @@ export default function CoursePage() {
       )}
 
       {bootstrapping ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
           {Array.from({ length: LIMIT }).map((_, i) => (
             <SkeletonCard key={i} />
           ))}
@@ -655,7 +658,7 @@ export default function CoursePage() {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {filteredCourses.map((course) => (
             <CourseCard
               key={course.id}

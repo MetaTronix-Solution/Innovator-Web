@@ -88,12 +88,15 @@ const ReactionButton = memo(
             {reaction ? (
               <span className="text-lg leading-none">{reaction.emoji}</span>
             ) : (
-              <ThumbsUp size={isVertical ? 24 : 18} />
+              <ThumbsUp
+                className="text-secondary"
+                size={isVertical ? 24 : 18}
+              />
             )}
           </div>
 
           <span
-            className="cursor-pointer  hover:underline text-xs"
+            className="cursor-pointer text-secondary hover:underline text-xs"
             onClick={(e) => {
               e.stopPropagation();
               onCountClick?.();

@@ -28,7 +28,6 @@ export async function GET(req: NextRequest) {
   }
 
   const data = await res.json();
-  console.log(data);
 
   if (Array.isArray(data)) {
     return NextResponse.json({ results: data, hasMore: false });

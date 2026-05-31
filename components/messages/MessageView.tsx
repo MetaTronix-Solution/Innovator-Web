@@ -11,10 +11,13 @@ import {
   Send,
   Loader2,
   Trash2,
+  Clock,
+  Search,
 } from "lucide-react";
 import { getMediaUrl } from "@/lib/utils/getMediaUrl";
 import { useChatBridge } from "@/lib/hooks/useChatBridge";
 import { MutualUser } from "@/app/(main)/messages/page";
+import { MediaBubble, MediaUploadButton } from "./MediaUploadButton";
 
 interface ChatMessage {
   id: string;
@@ -26,6 +29,7 @@ interface ChatMessage {
   text?: string;
   body?: string;
   content?: string;
+  attachment?: string | null;
   created_at: string;
 }
 
@@ -52,6 +56,149 @@ interface MessagesViewProps {
   onClose: () => void;
 }
 
+const PALETTE = [
+  "bg-amber-100 text-amber-700",
+  "bg-blue-100 text-blue-700",
+  "bg-emerald-100 text-emerald-700",
+  "bg-purple-100 text-purple-700",
+  "bg-rose-100 text-rose-700",
+  "bg-sky-100 text-sky-700",
+  "bg-fuchsia-100 text-fuchsia-700",
+  "bg-lime-100 text-lime-700",
+];
+
+function avatarColor(id: string) {
+  let n = 0;
+  for (let i = 0; i < id.length; i++) n += id.charCodeAt(i);
+  return PALETTE[n % PALETTE.length];
+}
+
+function Avatar({
+  src,
+  name,
+  id,
+  size = 40,
+  online = false,
+  dotSize = 10,
+}: {
+  src?: string | null;
+  name: string;
+  id: string;
+  size?: number;
+  online?: boolean;
+  dotSize?: number;
+}) {
+  const resolved = getMediaUrl(src);
+  return (
+    <div
+      className="relative shrink-0 rounded-full flex items-center justify-center font-medium"
+      style={{ width: size, height: size, fontSize: size * 0.35 }}
+    >
+      {resolved ? (
+        <Image
+          src={resolved}
+          alt={name}
+          width={size}
+          height={size}
+          className="w-full h-full object-cover rounded-full"
+          unoptimized
+        />
+      ) : (
+        <div
+          className={`w-full h-full flex items-center justify-center rounded-full ${avatarColor(id)}`}
+        >
+          {name[0]?.toUpperCase() || "?"}
+        </div>
+      )}
+      {online && (
+        <span
+          className="absolute bottom-0 right-0 rounded-full bg-green-500 border-2 border-background z-10"
+          style={{
+            width: dotSize + 4,
+            height: dotSize + 4,
+            transform: "translate(10%, 10%)",
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function DateSeparator({ date }: { date: string }) {
+  return (
+    <div className="flex items-center justify-center gap-3 my-1">
+      {/* <div className="flex-1 h-px bg-border/40" /> */}
+      <span className="text-[11px] text-center text-muted-foreground/60 font-medium whitespace-nowrap">
+        {date}
+      </span>
+      {/* <div className="flex-1 h-px bg-border/40" /> */}
+    </div>
+  );
+}
+
+function TypingIndicator() {
+  return (
+    <div className="flex items-end gap-2">
+      <div className="flex items-center gap-1 bg-card border border-border/60 px-3.5 py-2.5 rounded-2xl rounded-bl-sm">
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce"
+            style={{
+              animationDelay: `${i * 0.15}s`,
+              animationDuration: "0.9s",
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function formatTime(iso: string) {
+  if (!iso) return "";
+  try {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "";
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  } catch {
+    return "";
+  }
+}
+
+function formatDateLabel(iso: string) {
+  if (!iso) return "";
+  try {
+    const d = new Date(iso);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (d.toDateString() === today.toDateString()) return "Today";
+    if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
+    return d.toLocaleDateString([], { month: "short", day: "numeric" });
+  } catch {
+    return "";
+  }
+}
+
+function groupMessages(messages: ChatMessage[], currentUserId: string) {
+  const groups: {
+    senderId: string;
+    messages: ChatMessage[];
+    isMine: boolean;
+  }[] = [];
+  messages.forEach((msg) => {
+    const isMine = String(msg.sender) === String(currentUserId);
+    const last = groups[groups.length - 1];
+    if (last && String(last.senderId) === String(msg.sender)) {
+      last.messages.push(msg);
+    } else {
+      groups.push({ senderId: String(msg.sender), messages: [msg], isMine });
+    }
+  });
+  return groups;
+}
+
 export default function MessagesView({
   conversations: rawConversations = [],
   mutualUsers = [],
@@ -70,6 +217,7 @@ export default function MessagesView({
   const { user } = useSelector((state: any) => state.auth);
   const currentUserId = user?.id || "";
   const currentUserIdRef = useRef(currentUserId);
+
   useEffect(() => {
     currentUserIdRef.current = currentUserId;
   }, [currentUserId]);
@@ -82,33 +230,49 @@ export default function MessagesView({
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [autoDelete24h, setAutoDelete24h] = useState(false);
+  const [search, setSearch] = useState("");
+  const [showScrollBtn, setShowScrollBtn] = useState(false);
+  const [hasMediaFiles, setHasMediaFiles] = useState(false);
+  const mediaSendRef = useRef<(() => Promise<void>) | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const messagesBodyRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const getChatName = (chat: ActiveChatUser) =>
-    chat.name || chat.full_name || chat.username || "User";
-  const getChatAvatar = (chat: ActiveChatUser) =>
-    chat.avatar || chat.profile_picture || null;
-  const getChatActiveStatus = (chat: ActiveChatUser) =>
-    !!(chat.active || chat.is_active);
-  const getChatLastMsg = (chat: ActiveChatUser) =>
-    chat.lastMsg || chat.last_message || "";
+  const getChatName = (c: ActiveChatUser) =>
+    c.name || c.full_name || c.username || "User";
+  const getChatAvatar = (c: ActiveChatUser) =>
+    c.avatar || c.profile_picture || null;
+  const getChatActiveStatus = (c: ActiveChatUser) =>
+    !!(c.active || c.is_active);
+  const getChatLastMsg = (c: ActiveChatUser) =>
+    c.lastMsg || c.last_message || "";
 
   const allConversations: ActiveChatUser[] =
     tempChat && !conversations.find((c) => String(c.id) === String(tempChat.id))
       ? [tempChat, ...conversations]
       : conversations;
 
-  const currentChat = allConversations.find(
-    (chat) => String(chat.id) === String(activeChatId),
-  );
+  const filteredConversations = search.trim()
+    ? allConversations.filter((c) =>
+        getChatName(c).toLowerCase().includes(search.toLowerCase()),
+      )
+    : allConversations;
 
+  const currentChat = allConversations.find(
+    (c) => String(c.id) === String(activeChatId),
+  );
   const activeRoomId = currentChat?.conversation_id || activeChatId;
 
   const getLiveOnlineStatus = (userId: string, fallback: boolean) =>
     mutualUsers.find((u) => String(u.id) === String(userId))?.online_status ??
     fallback;
+
+  const getUnreadCount = (chat: ActiveChatUser) =>
+    localUnread[chat.id] !== undefined
+      ? localUnread[chat.id]
+      : (chat.unread ?? 0);
 
   const markAsRead = useCallback((chatId: string) => {
     setLocalUnread((prev) => ({ ...prev, [chatId]: 0 }));
@@ -119,24 +283,28 @@ export default function MessagesView({
     }).catch(() => {});
   }, []);
 
-  const handleStartChat = (u: MutualUser) => {
-    const existing = conversations.find((c) => String(c.id) === String(u.id));
-    if (!existing) {
-      setTempChat({
-        id: u.id,
-        name: u.full_name || u.username || "User",
-        avatar: u.avatar,
-        active: u.online_status,
-      });
-    }
-    markAsRead(u.id);
-    setActiveChatId(u.id);
-  };
+  const handleOpenChat = useCallback(
+    (userId: string, meta?: Partial<ActiveChatUser>) => {
+      const existsInConversations = conversations.some(
+        (c) => String(c.id) === String(userId),
+      );
+      const existsInTemp = tempChat && String(tempChat.id) === String(userId);
+      if (!existsInConversations && !existsInTemp && meta) {
+        setTempChat({ id: userId, ...meta });
+      }
+      markAsRead(userId);
+      setActiveChatId(userId);
+      setTimeout(() => inputRef.current?.focus(), 100);
+    },
+    [conversations, tempChat, markAsRead],
+  );
 
-  const handleOpenChat = (chatId: string) => {
-    markAsRead(chatId);
-    setActiveChatId(chatId);
-  };
+  const handleStartChat = (u: MutualUser) =>
+    handleOpenChat(u.id, {
+      name: u.full_name || u.username || "User",
+      avatar: u.avatar,
+      active: u.online_status,
+    });
 
   const handleCloseChat = () => {
     setActiveChatId(null);
@@ -147,7 +315,6 @@ export default function MessagesView({
   const handleIncomingMessage = useCallback((data: any) => {
     if (data.type !== "chat_message") return;
     if (String(data.sender) === String(currentUserIdRef.current)) return;
-
     setMessages((prev) => [
       ...prev,
       {
@@ -170,56 +337,74 @@ export default function MessagesView({
     handleIncomingMessage,
   );
 
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
+  }, []);
+
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    scrollToBottom();
+  }, [messages, scrollToBottom]);
+
+  useEffect(() => {
+    const el = messagesBodyRef.current;
+    if (!el) return;
+    const handler = () => {
+      const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+      setShowScrollBtn(distFromBottom > 200);
+    };
+    el.addEventListener("scroll", handler);
+    return () => el.removeEventListener("scroll", handler);
+  }, [activeChatId]);
 
   useEffect(() => {
     if (!activeChatId) {
       setMessages([]);
       return;
     }
-
-    const fetchChatHistory = async () => {
+    const fetchHistory = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`/api/chats/?with_user=${activeChatId}`);
-        if (response.ok) {
-          const data = await response.json();
-          let rawMessages = [];
+        const res = await fetch(`/api/chats/?with_user=${activeChatId}`);
+        if (res.ok) {
+          const data = await res.json();
+          let raw: ChatMessage[] = [];
           if (data && typeof data === "object" && "messages" in data) {
-            rawMessages = Array.isArray(data.messages) ? data.messages : [];
+            raw = Array.isArray(data.messages) ? data.messages : [];
           } else if (Array.isArray(data)) {
-            rawMessages = data;
+            raw = data;
           }
-          const sortedMessages = rawMessages.sort(
-            (a: ChatMessage, b: ChatMessage) =>
-              new Date(a.created_at).getTime() -
-              new Date(b.created_at).getTime(),
+          setMessages(
+            [...raw].sort(
+              (a, b) =>
+                new Date(a.created_at).getTime() -
+                new Date(b.created_at).getTime(),
+            ),
           );
-          setMessages(sortedMessages);
         }
-      } catch (error) {
-        console.error("Network communication error:", error);
+      } catch (err) {
+        console.error("Fetch chat history error:", err);
       } finally {
         setLoading(false);
+        setTimeout(() => scrollToBottom("instant"), 50);
       }
     };
+    fetchHistory();
+  }, [activeChatId, scrollToBottom]);
 
-    fetchChatHistory();
-  }, [activeChatId]);
-
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!typeMessage.trim() || !activeChatId) return;
 
+    if (hasMediaFiles && mediaSendRef.current) {
+      await mediaSendRef.current();
+    }
+
+    if (!typeMessage.trim() || !activeChatId) return;
     sendMessage({
       message: typeMessage.trim(),
       sender_id: currentUserId,
       receiver_id: activeChatId,
       expire_after_24h: autoDelete24h,
     });
-
     setMessages((prev) => [
       ...prev,
       {
@@ -229,7 +414,6 @@ export default function MessagesView({
         created_at: new Date().toISOString(),
       },
     ]);
-
     setTypeMessage("");
   };
 
@@ -244,436 +428,521 @@ export default function MessagesView({
       });
       handleCloseChat();
     } catch (err) {
-      console.error("Failed to delete conversation:", err);
+      console.error("Delete conversation error:", err);
     } finally {
       setDeleteLoading(false);
     }
   };
 
-  const handleActionClick = (type: "image/*" | "video/*") => {
-    if (fileInputRef.current) {
-      fileInputRef.current.accept = type;
-      fileInputRef.current.click();
-    }
-  };
+  const grouped = groupMessages(messages, currentUserId);
 
-  const formatTime = (isoString: string) => {
-    if (!isoString) return "";
-    try {
-      const date = new Date(isoString);
-      if (isNaN(date.getTime())) return "";
-      return date.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    } catch {
-      return "";
-    }
-  };
+  let lastDateLabel = "";
+  type RenderedItem =
+    | { type: "date"; label: string; key: string }
+    | { type: "group"; group: (typeof grouped)[0]; key: string };
 
-  const getUnreadCount = (chat: ActiveChatUser) =>
-    localUnread[chat.id] !== undefined
-      ? localUnread[chat.id]
-      : (chat.unread ?? 0);
+  const renderedItems: RenderedItem[] = [];
+  grouped.forEach((group, gi) => {
+    const firstMsg = group.messages[0];
+    const label = formatDateLabel(firstMsg.created_at);
+    if (label && label !== lastDateLabel) {
+      lastDateLabel = label;
+      renderedItems.push({ type: "date", label, key: `date-${gi}` });
+    }
+    renderedItems.push({ type: "group", group, key: `group-${gi}` });
+  });
+
+  const totalUnread = allConversations.reduce(
+    (sum, c) => sum + getUnreadCount(c),
+    0,
+  );
 
   return (
-    <div className="flex h-[calc(100vh-72px)] w-full bg-background font-sans antialiased">
+    <div className="flex h-[calc(100vh-72px)] w-full bg-background font-sans antialiased overflow-hidden">
       <div
-        className={`flex flex-col bg-background transition-all duration-300 ${
+        className={`flex flex-col bg-background transition-all duration-300 ease-in-out border-r border-border/60 shrink-0 ${
           activeChatId === null
-            ? "w-full"
-            : "w-[80px] sm:w-[220px] md:w-[240px] border-r border-border/60 shrink-0"
+            ? "w-full md:w-[300px]"
+            : "hidden md:flex md:w-[280px]" // ← hide on mobile when chat open, fixed width on desktop
         }`}
       >
-        <div className="hidden md:flex p-4 h-[65px] flex items-center justify-between border-b border-border/60">
-          <h2 className="text-lg font-black tracking-tight text-foreground">
-            Messages
-          </h2>
-          {activeChatId === null && (
-            <button
-              onClick={onClose}
-              className="p-1.5 rounded-full bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-            >
-              <X size={16} />
-            </button>
-          )}
+        <div className="flex items-center justify-between px-4 h-[60px] border-b border-border/60 shrink-0">
+          <div className="hidden md:flex items-center gap-2">
+            <h2 className="text-[15px] font-semibold text-foreground">
+              Messages
+            </h2>
+            {totalUnread > 0 && (
+              <span className="min-w-[18px] h-[18px] bg-orange-500 text-white text-[10px] font-semibold rounded-full flex items-center justify-center px-1">
+                {totalUnread}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5">
+            {activeChatId === null && (
+              <button
+                onClick={onClose}
+                className="w-7 h-7 rounded-full border border-border/60 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
         </div>
 
-        {activeChatId === null ? (
-          <div className="flex-1 overflow-y-auto p-4 space-y-6 no-scrollbar">
-            {/* People you know */}
-            {mutualUsers.length > 0 && (
-              <div>
-                <h3 className="text-xs font-bold text-muted-foreground/80 uppercase tracking-wider mb-3">
-                  People you know ({mutualUsers.length})
-                </h3>
-                <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar">
-                  {mutualUsers.map((u: MutualUser) => {
-                    const resolvedAvatar = getMediaUrl(u.avatar);
-                    const displayName = u.full_name || u.username || "User";
-                    return (
-                      <div
-                        key={u.id}
-                        onClick={() => handleStartChat(u)}
-                        className="flex flex-col items-center space-y-1.5 cursor-pointer text-center group min-w-[65px]"
-                      >
-                        <div className="relative w-12 h-12 rounded-full bg-muted border-2 border-border group-hover:border-orange-500 transition-colors flex items-center justify-center font-bold text-sm text-foreground overflow-hidden">
-                          {resolvedAvatar ? (
-                            <Image
-                              src={resolvedAvatar}
-                              alt={displayName}
-                              width={48}
-                              height={48}
-                              className="w-full h-full object-cover rounded-full"
-                              unoptimized
-                            />
-                          ) : (
-                            displayName[0]?.toUpperCase() || "?"
-                          )}
-                          {u.online_status && (
-                            <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-background rounded-full z-10" />
-                          )}
-                        </div>
-                        <span className="text-xs font-medium text-foreground truncate max-w-[70px]">
-                          {displayName.split(" ")[0]}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Recent Chats */}
-            <div>
-              <h3 className="text-xs font-bold text-muted-foreground/80 uppercase tracking-wider mb-2">
-                Recent Chats
-              </h3>
-              {conversations.length === 0 ? (
-                <p className="text-xs text-muted-foreground p-2">
-                  No conversations yet.{" "}
-                  {mutualUsers.length > 0 && (
-                    <span className="text-orange-500 font-medium">
-                      Start one from "People you know" above!
-                    </span>
-                  )}
-                </p>
-              ) : (
-                <div className="divide-y divide-border/40">
-                  {conversations.map((chat: ActiveChatUser) => {
-                    const resolvedAvatar = getMediaUrl(getChatAvatar(chat));
-                    const displayName = getChatName(chat);
-                    const isOnline = getLiveOnlineStatus(
-                      chat.id,
-                      getChatActiveStatus(chat),
-                    );
-                    const unreadCount = getUnreadCount(chat);
-                    return (
-                      <div
-                        key={chat.id}
-                        onClick={() => handleOpenChat(chat.id)}
-                        className="flex items-center gap-3 py-3 hover:bg-muted/30 px-2 rounded-xl cursor-pointer transition-colors"
-                      >
-                        <div className="relative w-11 h-11 rounded-full bg-muted border border-border flex items-center justify-center font-bold text-sm text-muted-foreground shrink-0 overflow-hidden">
-                          {resolvedAvatar ? (
-                            <Image
-                              src={resolvedAvatar}
-                              alt={displayName}
-                              width={44}
-                              height={44}
-                              className="w-full h-full object-cover rounded-full"
-                              unoptimized
-                            />
-                          ) : (
-                            displayName[0]?.toUpperCase() || "?"
-                          )}
-                          {isOnline && (
-                            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border border-background rounded-full z-10" />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-0.5">
-                            <span className="text-sm font-bold text-foreground truncate">
-                              {displayName}
-                            </span>
-                            <span className="text-[10px] text-muted-foreground">
-                              {chat.time || ""}
-                            </span>
-                          </div>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {getChatLastMsg(chat)}
-                          </p>
-                        </div>
-                        {unreadCount > 0 && (
-                          <span className="w-4 h-4 bg-orange-500 text-white font-bold text-[9px] flex items-center justify-center rounded-full">
-                            {unreadCount}
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+        {activeChatId === null && (
+          <div className="px-3 py-2.5 border-b border-border/60 hidden md:block">
+            <div className="relative">
+              <Search
+                size={13}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50"
+              />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search messages…"
+                className="w-full h-8 rounded-full bg-muted/50 border border-border/60 pl-8 pr-3 text-xs text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-1 focus:ring-orange-500/30 transition"
+              />
             </div>
           </div>
-        ) : (
-          /* CONDENSED SIDEBAR */
-          <div className="flex-1 overflow-y-auto divide-y divide-border/10 no-scrollbar">
-            {allConversations.map((chat: ActiveChatUser) => {
-              const resolvedAvatar = getMediaUrl(getChatAvatar(chat));
-              const displayName = getChatName(chat);
-              const isOnline = getLiveOnlineStatus(
-                chat.id,
-                getChatActiveStatus(chat),
-              );
-              const unreadCount = getUnreadCount(chat);
-              return (
-                <div
-                  key={chat.id}
-                  onClick={() => handleOpenChat(chat.id)}
-                  className={`flex items-center justify-center sm:justify-start gap-3 p-3 sm:p-4 cursor-pointer transition-colors relative ${
-                    String(activeChatId) === String(chat.id)
-                      ? "bg-accent/40 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-orange-500"
-                      : "hover:bg-muted/30"
-                  }`}
-                >
-                  <div className="relative w-10 h-10 rounded-full bg-muted border border-border flex items-center justify-center font-bold text-sm text-muted-foreground shrink-0 overflow-hidden">
-                    {resolvedAvatar ? (
-                      <Image
-                        src={resolvedAvatar}
-                        alt={displayName}
-                        width={40}
-                        height={40}
-                        className="w-full h-full object-cover rounded-full"
-                        unoptimized
-                      />
-                    ) : (
-                      displayName[0]?.toUpperCase() || "?"
-                    )}
-                    {isOnline && (
-                      <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border border-background rounded-full z-10" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0 hidden sm:block">
-                    <div className="flex items-center justify-between mb-0.5">
-                      <span className="text-xs md:text-sm font-bold text-foreground truncate">
-                        {displayName}
+        )}
+
+        {mutualUsers.length > 0 && (
+          <div className="border-b border-border/60 shrink-0">
+            <div className="px-4 pt-3 pb-1">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60 mb-2.5">
+                People you know
+              </p>
+
+              <div className="flex flex-row gap-4 overflow-x-auto no-scrollbar pb-3">
+                {mutualUsers.map((u) => {
+                  const isOnline = u.online_status;
+                  const displayName = u.full_name || u.username || "User";
+
+                  return (
+                    <button
+                      key={u.id}
+                      onClick={() => handleStartChat(u)}
+                      className="flex flex-col items-center gap-1.5 group shrink-0 focus:outline-none"
+                    >
+                      <div className="p-1">
+                        <div
+                          className={`relative rounded-full transition-transform group-hover:scale-105 ${
+                            isOnline
+                              ? "ring-2 ring-green-400"
+                              : "ring-2 ring-border/30"
+                          }`}
+                        >
+                          <Avatar
+                            src={u.avatar}
+                            name={displayName}
+                            id={u.id}
+                            size={44}
+                            online={isOnline}
+                            dotSize={10}
+                          />
+                        </div>
+                      </div>
+                      <span className="text-[11px] text-muted-foreground/80 truncate max-w-[52px]">
+                        {displayName.split(" ")[0]}
                       </span>
-                      <div className="flex items-center gap-1 pl-1">
-                        <span className="text-[10px] text-muted-foreground/70">
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="flex-1 overflow-y-auto no-scrollbar">
+          {/* 1. Render Active Conversations */}
+          {filteredConversations.length > 0 && (
+            <div className="pb-2">
+              {filteredConversations.map((chat) => {
+                const isActive = String(activeChatId) === String(chat.id);
+                const isOnline = getLiveOnlineStatus(
+                  chat.id,
+                  getChatActiveStatus(chat),
+                );
+                const unread = getUnreadCount(chat);
+                const displayName = getChatName(chat);
+
+                return (
+                  <button
+                    key={chat.id}
+                    onClick={() => handleOpenChat(chat.id)}
+                    className={`w-full flex items-center gap-3 px-3 py-3 cursor-pointer transition-colors text-left relative focus:outline-none ${
+                      isActive
+                        ? "bg-muted/60 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-orange-500 before:rounded-r-full"
+                        : "hover:bg-muted/30"
+                    }`}
+                  >
+                    <Avatar
+                      src={getChatAvatar(chat)}
+                      name={displayName}
+                      id={chat.id}
+                      size={40}
+                      online={isOnline}
+                      dotSize={10}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span
+                          className={`text-[13px] truncate ${unread > 0 ? "font-semibold text-foreground" : "font-medium text-foreground"}`}
+                        >
+                          {displayName}
+                        </span>
+                        <span className="text-[11px] text-muted-foreground/60 ml-2 shrink-0">
                           {chat.time || ""}
                         </span>
-                        {unreadCount > 0 && (
-                          <span className="w-4 h-4 bg-orange-500 text-white font-bold text-[9px] flex items-center justify-center rounded-full">
-                            {unreadCount}
+                      </div>
+                      <div className="flex items-center justify-between gap-1">
+                        <p
+                          className={`text-xs truncate ${unread > 0 ? "text-foreground font-medium" : "text-muted-foreground/70"}`}
+                        >
+                          {getChatLastMsg(chat)}
+                        </p>
+                        {unread > 0 && (
+                          <span className="min-w-[18px] h-[18px] bg-orange-500 text-white text-[10px] font-semibold rounded-full flex items-center justify-center px-1 shrink-0">
+                            {unread}
                           </span>
                         )}
                       </div>
                     </div>
-                    <p className="text-xs text-muted-foreground/80 truncate">
-                      {getChatLastMsg(chat)}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* 2. Always show "Start a new chat" section for mutuals without a chat */}
+          <div className="border-t border-border/60">
+            <div className="px-4 py-3 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+              Start a new chat
+            </div>
+
+            {mutualUsers.map((u) => {
+              // Don't show if they are already in the filteredConversations list
+              const hasExistingChat = filteredConversations.some(
+                (c) => String(c.id) === String(u.id),
+              );
+
+              if (hasExistingChat) return null;
+
+              return (
+                <button
+                  key={u.id}
+                  onClick={() => handleStartChat(u)}
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors text-left"
+                >
+                  <Avatar
+                    src={u.avatar}
+                    name={u.full_name || u.username || "User"}
+                    id={u.id}
+                    size={40}
+                    online={u.online_status}
+                    dotSize={10}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-medium text-foreground">
+                      {u.full_name || u.username || "User"}
+                    </p>
+                    <p className="text-[11px] text-orange-500 font-medium">
+                      Start conversation
                     </p>
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
-        )}
+        </div>
       </div>
 
-      {/* CHAT PANEL */}
+      {activeChatId === null && (
+        <div className="hidden md:flex flex-1 flex-col items-center justify-center bg-muted/10 gap-3">
+          <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center">
+            <Send
+              size={28}
+              className="text-muted-foreground/40 rotate-[-10deg]"
+            />
+          </div>
+          <p className="text-sm font-medium text-foreground">Your messages</p>
+          <p className="text-xs text-muted-foreground">
+            Select a conversation or start a new one
+          </p>
+        </div>
+      )}
+
       {activeChatId !== null && currentChat && (
-        <div className="flex-1 flex flex-col bg-background relative min-w-0">
-          <div className="px-4 py-3 h-[65px] border-b border-border/60 flex items-center justify-between bg-background">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="relative w-9 h-9 rounded-full bg-muted border border-border flex items-center justify-center font-bold text-xs text-muted-foreground shrink-0 overflow-hidden">
-                {getMediaUrl(getChatAvatar(currentChat)) ? (
-                  <Image
-                    src={getMediaUrl(getChatAvatar(currentChat))!}
-                    alt={getChatName(currentChat)}
-                    width={36}
-                    height={36}
-                    className="w-full h-full object-cover rounded-full"
-                    unoptimized
-                  />
-                ) : (
-                  getChatName(currentChat)[0]?.toUpperCase() || "?"
-                )}
+        <div className="flex-1 flex flex-col bg-background relative min-w-0 overflow-hidden">
+          <div className="px-4 h-[60px] border-b border-border/60 flex items-center gap-3 shrink-0 bg-background">
+            <button
+              onClick={handleCloseChat}
+              className="md:hidden w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted/50 text-muted-foreground transition-colors"
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M19 12H5M12 5l-7 7 7 7" />
+              </svg>
+            </button>
+            <Avatar
+              src={getChatAvatar(currentChat)}
+              name={getChatName(currentChat)}
+              id={currentChat.id}
+              size={36}
+              online={getLiveOnlineStatus(
+                currentChat.id,
+                getChatActiveStatus(currentChat),
+              )}
+              dotSize={9}
+            />
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] font-semibold text-foreground leading-tight truncate">
+                {getChatName(currentChat)}
+              </p>
+              <p className="text-[11px] font-medium leading-tight">
                 {getLiveOnlineStatus(
                   currentChat.id,
                   getChatActiveStatus(currentChat),
-                ) && (
-                  <span className="absolute bottom-0 right-0 w-2 h-2 bg-green-500 border border-background rounded-full z-10" />
+                ) ? (
+                  <span className="text-green-500">Active now</span>
+                ) : (
+                  <span className="text-muted-foreground/60">Offline</span>
                 )}
-              </div>
-              <div className="min-w-0">
-                <h3 className="text-xs md:text-sm font-bold text-foreground leading-tight truncate">
-                  {getChatName(currentChat)}
-                </h3>
-                <span className="text-[10px] text-muted-foreground/80 font-medium">
-                  {getLiveOnlineStatus(
-                    currentChat.id,
-                    getChatActiveStatus(currentChat),
-                  )
-                    ? "Active now"
-                    : "Offline"}
-                </span>
-              </div>
+              </p>
             </div>
-
-            <div className="flex items-center gap-1 text-muted-foreground shrink-0">
+            <div className="flex items-center gap-1 shrink-0">
               <button
-                type="button"
-                onClick={() => setAutoDelete24h(!autoDelete24h)}
-                className={`text-[10px] font-bold px-2.5 py-1 rounded-full border transition-all flex items-center gap-1.5 mr-1 ${
+                onClick={() => setAutoDelete24h((v) => !v)}
+                className={`hidden sm:flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-full border transition-all ${
                   autoDelete24h
-                    ? "bg-orange-500/10 border-orange-500 text-orange-600 dark:text-orange-400"
-                    : "bg-muted/40 border-border text-muted-foreground"
+                    ? "bg-orange-500/10 border-orange-500/50 text-orange-600 dark:text-orange-400"
+                    : "bg-muted/40 border-border/60 text-muted-foreground"
                 }`}
               >
-                <span
-                  className={`w-1.5 h-1.5 rounded-full ${autoDelete24h ? "bg-orange-500 animate-pulse" : "bg-muted-foreground/40"}`}
+                <Clock
+                  size={11}
+                  className={autoDelete24h ? "text-orange-500" : ""}
                 />
-                {autoDelete24h ? "24h Auto-Delete ON" : "Keep Messages"}
+                {autoDelete24h ? "24h on" : "24h off"}
               </button>
               <button
                 onClick={handleDeleteConversation}
                 disabled={deleteLoading}
-                className="p-2 hover:bg-muted text-muted-foreground hover:text-destructive rounded-full transition-colors disabled:opacity-40"
+                className="w-8 h-8 rounded-full hover:bg-muted/50 flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors disabled:opacity-40"
               >
                 {deleteLoading ? (
-                  <Loader2 size={15} className="animate-spin" />
+                  <Loader2 size={14} className="animate-spin" />
                 ) : (
-                  <Trash2 size={15} />
+                  <Trash2 size={14} />
                 )}
               </button>
               <button
                 onClick={handleCloseChat}
-                className="p-2 hover:bg-muted text-muted-foreground hover:text-destructive rounded-full transition-colors ml-0.5"
+                className="hidden md:flex w-8 h-8 rounded-full hover:bg-muted/50 items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
               >
-                <X size={16} />
+                <X size={15} />
               </button>
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-muted/5 no-scrollbar">
+          <div
+            ref={messagesBodyRef}
+            className="flex-1 overflow-y-auto no-scrollbar px-4 py-4 space-y-1 bg-muted/5 relative"
+          >
             {loading ? (
               <div className="flex h-full items-center justify-center">
-                <div className="h-6 w-6 animate-spin rounded-full border-2 border-orange-500 border-t-transparent" />
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-orange-500 border-t-transparent" />
               </div>
             ) : messages.length === 0 ? (
-              <div className="flex h-full flex-col items-center justify-center text-muted-foreground space-y-1">
-                <p className="text-sm font-bold">No messages here yet</p>
-                <p className="text-xs text-center px-4 max-w-[280px]">
-                  Say hi to {getChatName(currentChat).split(" ")[0]}!
-                </p>
+              <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
+                <Avatar
+                  src={getChatAvatar(currentChat)}
+                  name={getChatName(currentChat)}
+                  id={currentChat.id}
+                  size={56}
+                />
+                <div>
+                  <p className="text-sm font-semibold text-foreground">
+                    {getChatName(currentChat)}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    No messages yet — say hello!
+                  </p>
+                </div>
               </div>
             ) : (
-              messages.map((msg) => {
-                const isMyMessage =
-                  String(msg.sender) === String(currentUserId);
-                const textBody =
-                  msg.message || msg.text || msg.body || msg.content || "";
-                const senderName =
-                  msg.sender_full_name ||
-                  (currentChat ? getChatName(currentChat) : "User");
-                const senderAvatar = getMediaUrl(
-                  msg.sender_avatar ||
-                    (isMyMessage ? user?.avatar : getChatAvatar(currentChat)),
-                );
+              <>
+                {renderedItems.map((item) => {
+                  if (item.type === "date") {
+                    return <DateSeparator key={item.key} date={item.label} />;
+                  }
+                  const { group } = item;
+                  const firstMsg = group.messages[0];
+                  const lastMsg = group.messages[group.messages.length - 1];
+                  const senderName =
+                    firstMsg.sender_full_name ||
+                    (group.isMine ? "You" : getChatName(currentChat));
+                  const senderAvatarSrc = group.isMine
+                    ? user?.avatar
+                    : firstMsg.sender_avatar || getChatAvatar(currentChat);
 
-                return isMyMessage ? (
-                  <div
-                    key={msg.id}
-                    className="flex flex-col items-end max-w-[85%] ml-auto animate-in fade-in slide-in-from-bottom-2 duration-200"
-                  >
-                    <div className="bg-gradient-to-r from-orange-700 to-orange-600 text-white px-3.5 py-2 rounded-2xl rounded-br-none text-xs md:text-sm shadow-sm text-left">
-                      {textBody}
-                    </div>
-                    {formatTime(msg.created_at) && (
-                      <span className="text-[9px] text-muted-foreground/70 mt-1 mr-1 font-medium">
-                        {formatTime(msg.created_at)}
-                      </span>
-                    )}
-                  </div>
-                ) : (
-                  <div
-                    key={msg.id}
-                    className="flex items-end gap-2 max-w-[85%] animate-in fade-in slide-in-from-bottom-2 duration-200"
-                  >
-                    <div className="w-6 h-6 rounded-full bg-muted border border-border flex items-center justify-center font-bold text-muted-foreground text-[9px] shrink-0 overflow-hidden relative">
-                      {senderAvatar ? (
-                        <Image
-                          src={senderAvatar}
-                          alt="Avatar"
-                          width={24}
-                          height={24}
-                          className="w-full h-full object-cover"
-                          unoptimized
-                        />
-                      ) : (
-                        senderName[0]?.toUpperCase() || "?"
-                      )}
-                    </div>
-                    <div>
-                      <div className="bg-card text-foreground border border-border/60 px-3.5 py-2 rounded-2xl rounded-bl-none text-xs md:text-sm shadow-sm">
-                        {textBody}
+                  return (
+                    <div
+                      key={item.key}
+                      className={`flex items-end gap-2 mb-2 ${
+                        group.isMine ? "flex-row-reverse" : "flex-row"
+                      }`}
+                    >
+                      <div className="shrink-0 self-end mb-1">
+                        {!group.isMine ? (
+                          <Avatar
+                            src={senderAvatarSrc}
+                            name={senderName}
+                            id={String(firstMsg.sender)}
+                            size={26}
+                          />
+                        ) : (
+                          <div className="w-[26px]" />
+                        )}
                       </div>
-                      {formatTime(msg.created_at) && (
-                        <span className="text-[9px] text-muted-foreground/70 mt-1 block ml-1 font-medium">
-                          {formatTime(msg.created_at)}
-                        </span>
-                      )}
+
+                      <div
+                        className={`flex flex-col gap-[3px] max-w-[68%] ${
+                          group.isMine ? "items-end" : "items-start"
+                        }`}
+                      >
+                        {group.messages.map((msg, mi) => {
+                          const isFirst = mi === 0;
+                          const isLast = mi === group.messages.length - 1;
+                          const textBody =
+                            msg.message ||
+                            msg.text ||
+                            msg.body ||
+                            msg.content ||
+                            "";
+                          return (
+                            <div key={msg.id} className="w-full">
+                              {msg.attachment ? (
+                                <MediaBubble
+                                  attachment={msg.attachment}
+                                  isMine={group.isMine}
+                                />
+                              ) : (
+                                <div
+                                  className={`inline-block px-3.5 py-2 text-[13px] leading-relaxed break-words max-w-full ${
+                                    group.isMine
+                                      ? "bg-orange-600 text-white"
+                                      : "bg-card text-foreground border border-border/60"
+                                  } ${
+                                    group.isMine
+                                      ? isFirst && isLast
+                                        ? "rounded-2xl rounded-br-[5px]"
+                                        : isFirst
+                                          ? "rounded-2xl rounded-br-[5px] rounded-bl-2xl"
+                                          : isLast
+                                            ? "rounded-2xl rounded-br-[5px]"
+                                            : "rounded-[10px] rounded-r-[5px]"
+                                      : isFirst && isLast
+                                        ? "rounded-2xl rounded-bl-[5px]"
+                                        : isFirst
+                                          ? "rounded-2xl rounded-bl-[5px] rounded-br-2xl"
+                                          : isLast
+                                            ? "rounded-2xl rounded-bl-[5px]"
+                                            : "rounded-[10px] rounded-l-[5px]"
+                                  }`}
+                                >
+                                  {textBody}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                        {formatTime(lastMsg.created_at) && (
+                          <p
+                            className={`text-[10px] text-muted-foreground/50 font-medium mt-0.5 ${
+                              group.isMine ? "text-right mr-1" : "ml-1"
+                            }`}
+                          >
+                            {formatTime(lastMsg.created_at)}
+                            {group.isMine && <span className="ml-1">✓✓</span>}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })
+                  );
+                })}
+              </>
             )}
             <div ref={messagesEndRef} />
+
+            {showScrollBtn && (
+              <button
+                onClick={() => scrollToBottom("smooth")}
+                className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-orange-500 text-white text-xs font-semibold px-4 py-1.5 rounded-full shadow-sm hover:bg-orange-600 transition-colors z-10"
+              >
+                ↓ New messages
+              </button>
+            )}
           </div>
 
-          <div className="p-3 border-t border-border/60 bg-background">
+          <div className="shrink-0 px-3 py-2.5 border-t border-border/60 bg-background">
+            <input ref={fileInputRef} type="file" className="hidden" />
             <form
               onSubmit={handleSendMessage}
-              className="flex items-center gap-2 bg-muted/40 border border-border/80 rounded-xl px-3 py-2"
+              className="flex items-center gap-2"
             >
-              <button
-                type="button"
-                className="text-muted-foreground/80 hover:text-foreground transition-colors shrink-0"
-              >
-                <Plus size={16} />
-              </button>
-              <button
-                onClick={() => handleActionClick("image/*")}
-                type="button"
-                className="text-muted-foreground/80 hover:text-foreground transition-colors shrink-0 mr-0.5"
-              >
-                <ImageIcon size={16} />
-              </button>
-              <input
-                type="text"
-                value={typeMessage}
-                disabled={loading || (!!activeChatId && !isSendReady)}
-                onChange={(e) => setTypeMessage(e.target.value)}
-                placeholder={`Message ${getChatName(currentChat).split(" ")[0]}...`}
-                className="flex-1 bg-transparent border-none outline-none text-xs md:text-sm text-foreground placeholder:text-muted-foreground/50 min-w-0"
-              />
-              <button
-                type="button"
-                className="text-muted-foreground/80 hover:text-foreground transition-colors shrink-0"
-              >
-                <Smile size={16} />
-              </button>
+              <div className="flex-1 flex items-center gap-2 bg-muted/40 border border-border/80 rounded-2xl px-3 py-2 focus-within:border-orange-500/40 transition-colors">
+                <button
+                  type="button"
+                  className="text-muted-foreground/70 hover:text-foreground transition-colors shrink-0"
+                >
+                  <Plus size={16} />
+                </button>
+
+                <MediaUploadButton
+                  activeChatId={activeChatId}
+                  disabled={loading || !isSendReady}
+                  onSent={(newMsg) => {
+                    setMessages((prev) => [...prev, newMsg]);
+                  }}
+                  onHasFilesChange={setHasMediaFiles}
+                  triggerSendRef={mediaSendRef}
+                />
+
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={typeMessage}
+                  disabled={loading || (!!activeChatId && !isSendReady)}
+                  onChange={(e) => setTypeMessage(e.target.value)}
+                  placeholder={`Message ${getChatName(currentChat).split(" ")[0]}…`}
+                  className="flex-1 bg-transparent border-none outline-none text-[13px] text-foreground placeholder:text-muted-foreground/40 min-w-0"
+                />
+                <button
+                  type="button"
+                  className="text-muted-foreground/70 hover:text-foreground transition-colors shrink-0"
+                >
+                  <Smile size={16} />
+                </button>
+              </div>
               <button
                 type="submit"
                 disabled={
-                  !typeMessage.trim() ||
+                  (!typeMessage.trim() && !hasMediaFiles) ||
                   loading ||
                   (!!activeChatId && !isSendReady)
                 }
-                className="p-1.5 rounded-lg bg-orange-600 text-white disabled:opacity-30 hover:bg-orange-500 transition-colors shrink-0 flex items-center justify-center"
+                className="w-9 h-9 rounded-full bg-orange-600 text-white flex items-center justify-center hover:bg-orange-500 disabled:opacity-30 transition-all active:scale-95 shrink-0"
               >
-                <Send size={12} />
+                <Send size={14} />
               </button>
             </form>
           </div>
