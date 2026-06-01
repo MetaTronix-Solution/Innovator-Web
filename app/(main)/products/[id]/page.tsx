@@ -20,6 +20,7 @@ import { addToCart, removeFromCart } from "@/lib/store/features/cartSlice";
 import { Product } from "@/types/product";
 import { Button } from "@/components/ui/button";
 import { getMediaUrl } from "@/lib/utils/getMediaUrl";
+import { ur } from "zod/v4/locales";
 
 export default function ProductDetailPage() {
   const dispatch = useDispatch();
@@ -102,11 +103,13 @@ export default function ProductDetailPage() {
   const getImages = (product: Product): string[] => {
     const imgs = (product as any).images;
     if (Array.isArray(imgs) && imgs.length > 0) {
-      return imgs.map((img: any) =>
-        typeof img === "string"
-          ? getMediaUrl(img)
-          : getMediaUrl(img.image ?? img.url ?? ""),
-      );
+      return imgs
+        .map((img: any) =>
+          typeof img === "string"
+            ? getMediaUrl(img)
+            : getMediaUrl(img.image ?? img.url ?? ""),
+        )
+        .filter((url): url is string => url !== null);
     }
     const single = getMediaUrl(product.image);
     return single ? [single] : ["/placeholder-product.png"];
