@@ -12,6 +12,9 @@ import {
   Pencil,
   Trash2,
   X,
+  Edit,
+  Ban,
+  Copy,
 } from "lucide-react";
 import { getMediaUrl } from "@/lib/utils/getMediaUrl";
 import ReelVideo from "./ReelVideo";
@@ -23,6 +26,7 @@ import SharePostModal from "@/components/SharePostModal";
 import ReactionButton from "../posts/ReactionButton";
 import ReelCommentsDrawer from "./ReelCommentDrawer";
 import ReelReactionsDrawer from "./ReelReactonsDrawer";
+import { toast } from "sonner";
 
 interface ReelCardProps {
   reel: any;
@@ -153,6 +157,23 @@ const ReelCard = ({ reel, post }: ReelCardProps) => {
 
   const handleShare = useCallback(() => setIsShareModalOpen(true), []);
 
+  const handleBlock = () => {};
+
+  const handleCopyLink = async () => {
+    try {
+      const url = window.location.href;
+
+      await navigator.clipboard.writeText(url);
+
+      toast.success("Link copied to clipboard!");
+
+      setShowMenu(false);
+    } catch (err) {
+      console.error("Failed to copy link:", err);
+      toast.error("Failed to copy link");
+    }
+  };
+
   return (
     <div className="relative w-[400px] h-full rounded-sm md:rounded-3xl overflow-hidden">
       <div className="absolute inset-0 z-0">
@@ -189,7 +210,7 @@ const ReelCard = ({ reel, post }: ReelCardProps) => {
           onClick={handleShare}
           className="p-2 rounded-full cursor-pointer text-muted-foreground transition-all hover:scale-110"
         >
-          <Send size={20} className="text-secondary" />
+          <Send size={20} className="text-muted-foreground" />
         </button>
 
         <SharePostModal
@@ -207,7 +228,7 @@ const ReelCard = ({ reel, post }: ReelCardProps) => {
             <MoreHorizontal
               size={24}
               strokeWidth={1.8}
-              className="text-secondary drop-shadow-lg"
+              className="text-muted-foreground drop-shadow-lg"
             />
           </button>
 
@@ -235,9 +256,22 @@ const ReelCard = ({ reel, post }: ReelCardProps) => {
                   </button>
                 </>
               ) : (
-                <div className="px-4 py-3 text-sm text-white/40 text-center select-none">
-                  No actions available
-                </div>
+                <>
+                  <button
+                    onClick={handleCopyLink}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white hover:bg-white/10 transition-colors"
+                  >
+                    <Copy size={15} />
+                    Copy
+                  </button>
+                  <button
+                    onClick={handleBlock}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                  >
+                    <Ban size={15} />
+                    Block user
+                  </button>
+                </>
               )}
             </div>
           )}
@@ -258,7 +292,6 @@ const ReelCard = ({ reel, post }: ReelCardProps) => {
         )}
       </div>
 
-      {/* Bottom info */}
       <div className="absolute bottom-0 left-0 right-0 z-10 px-4 pt-16 pb-6 bg-gradient-to-t from-black/90 via-black/40 to-transparent">
         <div className="flex items-center gap-2.5 mb-2">
           <Link
@@ -322,7 +355,6 @@ const ReelCard = ({ reel, post }: ReelCardProps) => {
         )}
       </div>
 
-      {/* Edit caption modal */}
       {isEditing && (
         <div className="absolute inset-0 z-50 bg-black/80 flex items-center justify-center p-6">
           <div className="bg-neutral-900 rounded-2xl p-5 w-full border border-white/10 flex flex-col gap-4">
@@ -402,11 +434,11 @@ function ActionBtn({
       onClick={onClick}
       className="flex flex-col items-center gap-1 group"
     >
-      <span className="text-secondary drop-shadow-lg group-hover:scale-110 transition-transform">
+      <span className="text-muted-foreground drop-shadow-lg group-hover:scale-110 transition-transform">
         {icon}
       </span>
       {label !== undefined && (
-        <span className="text-secondary text-xs font-semibold drop-shadow">
+        <span className="text-muted-foreground text-xs font-semibold drop-shadow">
           {label}
         </span>
       )}

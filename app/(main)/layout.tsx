@@ -88,7 +88,7 @@ export default function MainLayout({
           <aside className="hidden xl:block w-[280px] 2xl:w-[320px] sticky top-[72px] h-[calc(100vh-72px)] overflow-y-auto no-scrollbar">
             <LeftSidebar />
           </aside>
-          <main className="w-full max-w-[680px] min-w-0 px-2 md:px-0">
+          <main className="w-full max-w-[680px] min-w-0 px-2 md:px-4">
             {children}
           </main>
           <aside className="hidden lg:block w-[300px] 2xl:w-[350px] sticky top-[72px] h-[calc(100vh-72px)] overflow-y-auto no-scrollbar">

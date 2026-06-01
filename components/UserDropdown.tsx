@@ -64,7 +64,7 @@ const UserDropdown = ({
     <div
       ref={dropdownRef}
       onClick={(e) => e.stopPropagation()}
-      className="w-full md:absolute md:top-12 md:right-0 md:w-[360px] md:bg-card md:border md:border-border md:shadow-2xl md:rounded-xl overflow-hidden z-[60] p-4 animate-in fade-in zoom-in-95 duration-200"
+      className="w-full md:absolute md:top-12 md:right-0 md:w-[360px] md:bg-card md:border md:border-border md:shadow-2xl md:rounded-xl overflow-hidden z-[60] p-2 md:p-4 animate-in fade-in zoom-in-95 duration-200"
     >
       <div className="p-2 mb-4 rounded-lg border border-border bg-background/50">
         <Link
@@ -192,7 +192,7 @@ const MenuLink = ({
       <div className="w-8 h-8 flex items-center justify-center bg-secondary rounded-full">
         {icon}
       </div>
-      <span className="text-sm font-semibold text-foreground">{label}</span>
+      <span className="text-sm font-medium text-foreground">{label}</span>
     </div>
     {hasArrow && (
       <ChevronDown

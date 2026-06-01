@@ -9,7 +9,6 @@ import {
   Home,
   PlaySquare,
   Store,
-  MessageCircle,
   Bell,
   ChevronDown,
   BookOpen,
@@ -18,6 +17,8 @@ import {
   FileText,
   MoreHorizontal,
   PlusCircle,
+  ShoppingBag,
+  MessageSquare,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { authService } from "@/lib/services/authService";
@@ -146,18 +147,18 @@ const Navbar = () => {
   const navLinks = [
     { icon: <Home />, href: "/", title: "Home", label: "Home", exact: true },
     { icon: <PlaySquare />, href: "/reels", title: "Reels", label: "Reels" },
-    { icon: <Store />, href: "/products", title: "Shop", label: "Shop" },
+    { icon: <ShoppingBag />, href: "/products", title: "Shop", label: "Shop" },
     {
       icon: <BookOpen />,
       href: "/courses",
-      title: "Academy",
-      label: "Academy",
+      title: "E-learning",
+      label: "E-learning",
     },
     {
       icon: <FileText />,
       href: "/research",
-      title: "Library",
-      label: "Library",
+      title: "Research Paper",
+      label: "Research Papers",
     },
   ];
 
@@ -214,6 +215,7 @@ const Navbar = () => {
           </div>
           <div className="flex items-center justify-end flex-1 gap-1 md:gap-2">
             <div className="hidden sm:flex items-center gap-1 md:gap-2">
+              <SearchBar />
               <button
                 onClick={() => router.push("/reels/create")}
                 className="p-2 rounded-full hover:bg-accent hover:scale-105"
@@ -222,13 +224,6 @@ const Navbar = () => {
                 <PlusCircle className="text-secondary-foreground" size={24} />
               </button>
 
-              <SearchBar />
-              <Link href="/messages" aria-label="Open chats selection panel">
-                <IconButton
-                  icon={<MessageCircle />}
-                  active={pathname === "/messages"}
-                />
-              </Link>
               <div className="relative" ref={notifRef}>
                 <div
                   onClick={(e) => {
@@ -239,8 +234,8 @@ const Navbar = () => {
                 >
                   <Bell size={24} />
                   {unreadCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground flex items-center justify-center border border-card shadow animate-pulse">
-                      {unreadCount}
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-[14px] px-[3px] rounded-full bg-destructive text-[8px] text-accent font-bold flex items-center justify-center border border-card shadow">
+                      {unreadCount > 9 ? "9+" : unreadCount}
                     </span>
                   )}
                 </div>
@@ -267,7 +262,7 @@ const Navbar = () => {
                 <div
                   className={`relative flex items-center justify-center w-8 h-8 rounded-full cursor-pointer transition-colors active:scale-95 ${pathname === "/messages" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-accent"}`}
                 >
-                  <MessageCircle size={18} />
+                  <MessageSquare size={18} />
                 </div>
               </Link>
               <div className="relative" ref={notifRef}>
@@ -308,7 +303,7 @@ const Navbar = () => {
                   e.stopPropagation();
                   setIsDropdownOpen((prev) => !prev);
                 }}
-                className="relative w-8 h-8 md:w-10 md:h-10 rounded-full bg-secondary text-secondary-foreground border border-border cursor-pointer active:scale-95 transition-all flex items-center justify-center overflow-hidden shrink-0 p-0"
+                className="relative w-8 h-8 lg:w-9 lg:h-9 rounded-full bg-secondary text-secondary-foreground border border-border cursor-pointer active:scale-95 transition-all flex items-center justify-center overflow-hidden shrink-0 p-0"
               >
                 {profileImage ? (
                   <Image
@@ -410,18 +405,19 @@ const Navbar = () => {
       {isMobileMenuOpen && (
         <div
           ref={menuRef}
-          className="md:hidden fixed inset-0 z-[60] bg-card border-l border-border shadow-2xl animate-in slide-in-from-right duration-300 p-4 w-full h-full overflow-y-auto"
+          className="md:hidden fixed inset-0 z-[60] bg-card border-l border-border shadow-2xl animate-in slide-in-from-right duration-300 p-2 w-full h-full overflow-y-auto"
         >
-          <div className="grid grid-cols-1 gap-1">
-            <div className="flex justify-end mb-4">
-              <button
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="p-2 rounded-full hover:bg-accent text-muted-foreground"
-              >
-                <X size={24} />
-              </button>
-            </div>
+          <div className="flex justify-between items-center mb-2">
+            <h2 className="text-lg px-2 font-semibold text-foreground">Menu</h2>
+            <button
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="p-2 rounded-full hover:bg-accent text-muted-foreground transition-colors"
+            >
+              <X size={24} />
+            </button>
+          </div>
 
+          <div className="grid grid-cols-1 gap-1">
             <UserDropdown
               user={user}
               onLogout={() => {

@@ -82,8 +82,8 @@ const FollowToggle = ({
           disabled:opacity-50 disabled:cursor-not-allowed
           ${
             isFollowed
-              ? "bg-white/20 border-white/40 text-white hover:bg-white/10"
-              : "border-white text-white hover:bg-white hover:text-black"
+              ? "bg-secondary-foreground border-white/40 text-secondary "
+              : "border-white text-white hover:bg-primary hover:text-black"
           }
         `}
       >

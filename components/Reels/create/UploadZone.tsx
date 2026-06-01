@@ -1,3 +1,4 @@
+import { Video } from "lucide-react";
 import React, { useState, useRef, useCallback } from "react";
 
 interface UploadZoneProps {
@@ -58,7 +59,7 @@ export default function UploadZone({ onFileSelect, error }: UploadZoneProps) {
         className="w-18 h-18 rounded-full bg-linear-to-br from-primary to-pink-500 flex items-center justify-center text-4xl"
         aria-hidden="true"
       >
-        🎬
+        <Video className="h-9 w-9 text-secondary" />
       </div>
 
       <div className="text-center">

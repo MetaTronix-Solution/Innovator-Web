@@ -595,7 +595,7 @@ export default function CoursePage() {
   }
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-2 py-1 md:px-4 md:py-2 bg-background font-sans min-h-screen">
+    <div className="w-full max-w-5xl mx-auto py-1 md:py-2 bg-background font-sans min-h-screen">
       <div className="flex items-center gap-2 mb-5">
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 w-4 h-4" />

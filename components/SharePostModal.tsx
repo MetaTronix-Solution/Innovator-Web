@@ -61,7 +61,7 @@ export default function SharePostModal({
   const fetchFollowers = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/followers");
+      const res = await fetch("/api/users/mutual-users");
       const data = await res.json();
 
       if (Array.isArray(data)) {

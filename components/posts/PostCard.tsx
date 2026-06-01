@@ -296,7 +296,7 @@ const PostCard = ({ post }: { post: any; index?: number }) => {
     <>
       <div
         ref={cardRef}
-        className="bg-card border  border-border rounded-sm md:rounded-2xl overflow-hidden shadow-sm mb-1 md:mb-2 transition-all hover:shadow-md"
+        className="bg-card border border-border rounded-sm md:rounded-2xl overflow-hidden shadow-sm mb-1 md:mb-2 transition-all hover:shadow-md"
       >
         <div className="p-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">

@@ -59,7 +59,7 @@ export default function ProductCard({
     <div
       onClick={() => router.push(`/products/${product.id}`)}
       className="group bg-card rounded-md p-2 flex flex-col transition-all duration-500 
-                 border border-border hover:-translate-y-2 hover:border-primary cursor-pointer"
+                 border border-border hover:-translate-y-2 hover:border-primary "
     >
       <div className="relative aspect-square mb-2 rounded-xl overflow-hidden">
         <Image
@@ -98,13 +98,17 @@ export default function ProductCard({
           onClick={handleCartClick}
           disabled={cartLoading || isOutOfStock}
           className={`w-full h-12 rounded-sm md:rounded-md bottom-0 font-bold transition-all duration-300 cursor-pointer ${
-            isInCart
-              ? "bg-foreground text-secondary hover:bg-secondary-foreground/90"
-              : "bg-primary"
+            isOutOfStock
+              ? "bg-muted text-muted-foreground cursor-not-allowed"
+              : isInCart
+                ? "bg-foreground text-secondary hover:bg-secondary-foreground/90"
+                : "bg-primary"
           }`}
         >
           {cartLoading ? (
             <Loader2 className="animate-spin" />
+          ) : isOutOfStock ? (
+            <span className="flex items-center gap-2">Out of Stock</span>
           ) : isInCart ? (
             <span className="flex items-center gap-2">
               <Check size={16} /> Added!

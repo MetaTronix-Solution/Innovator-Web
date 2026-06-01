@@ -219,13 +219,18 @@ export function NotificationFeed({
 
   const markAllRead = async () => {
     const prev = notifications;
-    setNotifications((n) => n.map((n) => ({ ...n, is_read: true })));
+    const next = notifications.map((n) => ({ ...n, is_read: true }));
+
+    setNotifications(next);
+    updateUnreadCount(next);
     setMenuOpen(false);
+
     try {
       await NotificationService.markAllAsRead(userId);
     } catch (err) {
       console.error("Failed to mark all as read:", err);
       setNotifications(prev);
+      updateUnreadCount(prev);
     }
   };
 

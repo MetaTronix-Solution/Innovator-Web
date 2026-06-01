@@ -22,7 +22,7 @@ export function ThemeToggle() {
             <Moon size={18} className="animate-in zoom-in duration-300" />
           )}
         </div>
-        <span className="text-sm font-semibold text-foreground">
+        <span className="text-sm font-medium text-foreground">
           {mode === "dark" ? "Light Mode" : "Dark Mode"}
         </span>
       </div>
