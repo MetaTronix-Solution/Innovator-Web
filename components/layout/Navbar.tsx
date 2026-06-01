@@ -46,13 +46,10 @@ const Navbar = () => {
   const [initialNotifications, setInitialNotifications] = useState<
     NotificationItem[]
   >([]);
-
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(
-    initialNotifications.filter((n) => !n.is_read).length,
-  );
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -94,9 +91,22 @@ const Navbar = () => {
         setIsDropdownOpen(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const isBellClick =
+        target.closest('[aria-label="Notification options"]') ||
+        target.closest(".bell-icon-container");
+      const isInsideDropdown = target.closest(".notification-dropdown");
+      if (isBellClick || isInsideDropdown) return;
+      setNotifOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, []);
 
   const getProfileImage = () => {
@@ -118,27 +128,6 @@ const Navbar = () => {
       router.refresh();
     }
   };
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-
-      const isBellClick =
-        target.closest('[aria-label="Notification options"]') ||
-        target.closest(".bell-icon-container");
-
-      const isInsideDropdown = target.closest(".notification-dropdown");
-
-      if (isBellClick || isInsideDropdown) {
-        return;
-      }
-
-      setNotifOpen(false);
-    };
-
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
 
   const handleUnreadCountChange = useCallback((count: number) => {
     setUnreadCount(count);
@@ -183,6 +172,7 @@ const Navbar = () => {
         <div
           className={`max-w-[1440px] mx-auto px-2 md:px-6 flex items-center justify-between h-10 md:h-16 ${pathname === "/" ? "flex" : "hidden md:flex"}`}
         >
+          {/* Logo */}
           <div className="flex items-center cursor-pointer flex-1 gap-2">
             <Link href="/" className="shrink-0 flex items-center gap-1">
               <Image
@@ -198,6 +188,7 @@ const Navbar = () => {
             </Link>
           </div>
 
+          {/* Desktop nav links */}
           <div className="hidden md:flex items-center justify-center flex-[1.5] h-full gap-1">
             {navLinks.map((link) => (
               <NavItem
@@ -213,6 +204,7 @@ const Navbar = () => {
               />
             ))}
           </div>
+
           <div className="flex items-center justify-end flex-1 gap-1 md:gap-2">
             <div className="hidden sm:flex items-center gap-1 md:gap-2">
               <SearchBar />
@@ -224,13 +216,14 @@ const Navbar = () => {
                 <PlusCircle className="text-secondary-foreground" size={24} />
               </button>
 
+              {/* Desktop bell — inline dropdown */}
               <div className="relative" ref={notifRef}>
                 <div
                   onClick={(e) => {
                     e.stopPropagation();
                     setNotifOpen((prev) => !prev);
                   }}
-                  className="bell-icon-container relative flex items-center justify-center w-8 h-8 md:w-10 md:h-10  text-muted-foreground rounded-full cursor-pointer hover:bg-accent hover:scale-105 transition-colors border border-transparent active:scale-95"
+                  className="bell-icon-container relative flex items-center justify-center w-8 h-8 md:w-10 md:h-10 text-muted-foreground rounded-full cursor-pointer hover:bg-accent hover:scale-105 transition-colors border border-transparent active:scale-95"
                 >
                   <Bell size={24} />
                   {unreadCount > 0 && (
@@ -257,43 +250,35 @@ const Navbar = () => {
               </div>
             </div>
 
+            {/* Mobile: messages + bell (routes to /notifications) */}
             <div className="flex sm:hidden items-center gap-1">
               <Link href="/messages" aria-label="Messages">
                 <div
-                  className={`relative flex items-center justify-center w-8 h-8 rounded-full cursor-pointer transition-colors active:scale-95 ${pathname === "/messages" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-accent"}`}
+                  className={`relative flex items-center justify-center w-8 h-8 rounded-full cursor-pointer transition-colors active:scale-95 ${
+                    pathname === "/messages"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-secondary text-secondary-foreground hover:bg-accent"
+                  }`}
                 >
                   <MessageSquare size={18} />
                 </div>
               </Link>
-              <div className="relative" ref={notifRef}>
-                <div
-                  onClick={() => setNotifOpen(!notifOpen)}
-                  className="relative flex items-center justify-center w-8 h-8 bg-secondary text-muted-foreground rounded-full cursor-pointer hover:bg-accent transition-colors active:scale-95"
-                >
-                  <Bell size={18} />
-                  {unreadCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground flex items-center justify-center border border-card shadow animate-pulse">
-                      {unreadCount}
-                    </span>
-                  )}
-                </div>
-                {notifOpen && (
-                  <div
-                    onClick={(e) => e.stopPropagation()}
-                    className="fixed top-[70px] right-2 w-[calc(100vw-16px)] h-[calc(100vh-80px)] z-40 bg-card border border-border rounded-2xl shadow-xl overflow-y-auto no-scrollbar"
-                  >
-                    <div className="p-4">
-                      <NotificationFeed
-                        initialNotifications={initialNotifications}
-                        userId={user?.id || user?.uuid || ""}
-                        token={user?.accessToken ?? undefined}
-                      />
-                    </div>
-                  </div>
+
+              {/* Mobile bell — navigates to /notifications */}
+              <div
+                onClick={() => router.push("/notifications")}
+                className="relative flex items-center justify-center w-8 h-8 bg-secondary text-muted-foreground rounded-full cursor-pointer hover:bg-accent transition-colors active:scale-95"
+              >
+                <Bell size={18} />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground flex items-center justify-center border border-card shadow animate-pulse">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
                 )}
               </div>
             </div>
 
+            {/* Avatar dropdown (desktop only) */}
             <div
               ref={dropdownRef}
               className="relative shrink-0 hidden sm:block"
@@ -338,6 +323,7 @@ const Navbar = () => {
         </div>
       </nav>
 
+      {/* Mobile bottom tab bar */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border">
         <div className="flex items-center justify-around h-16 px-2">
           {tabBarLinks.map((link) => {
@@ -373,6 +359,7 @@ const Navbar = () => {
             );
           })}
 
+          {/* More button */}
           <button
             onClick={() => setIsMobileMenuOpen((o) => !o)}
             className="flex flex-col items-center justify-center gap-1 flex-1 h-full relative group"
@@ -402,13 +389,14 @@ const Navbar = () => {
         />
       </div>
 
+      {/* Mobile slide-in menu */}
       {isMobileMenuOpen && (
         <div
           ref={menuRef}
           className="md:hidden fixed inset-0 z-[60] bg-card border-l border-border shadow-2xl animate-in slide-in-from-right duration-300 p-2 w-full h-full overflow-y-auto"
         >
           <div className="flex justify-between items-center mb-2">
-            <h2 className="text-lg px-2 font-semibold text-foreground">Menu</h2>
+            <h2 className="text-lg font-semibold text-foreground">Menu</h2>
             <button
               onClick={() => setIsMobileMenuOpen(false)}
               className="p-2 rounded-full hover:bg-accent text-muted-foreground transition-colors"
@@ -416,7 +404,6 @@ const Navbar = () => {
               <X size={24} />
             </button>
           </div>
-
           <div className="grid grid-cols-1 gap-1">
             <UserDropdown
               user={user}
@@ -441,7 +428,6 @@ const NavItem = ({ icon, title, href, active = false }: NavItemProps) => (
     <div className="absolute top-full mt-2 px-4 py-1 bg-primary text-secondary-foreground text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
       {title}
     </div>
-
     <Link
       href={href}
       className={`flex items-center justify-center w-16 lg:w-24 h-full cursor-pointer border-b-4 transition-all ${
@@ -452,23 +438,6 @@ const NavItem = ({ icon, title, href, active = false }: NavItemProps) => (
     >
       {React.cloneElement(icon, { size: 24, strokeWidth: active ? 2.5 : 2 })}
     </Link>
-  </div>
-);
-
-interface IconButtonProps {
-  icon: React.ReactElement<{ size?: number }>;
-  active?: boolean;
-}
-
-const IconButton = ({ icon, active = false }: IconButtonProps) => (
-  <div
-    className={`flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full cursor-pointer transition-all border border-transparent active:scale-95 ${
-      active
-        ? "bg-primary text-primary-foreground font-medium shadow-sm"
-        : "text-muted-foreground hover:bg-accent hover:scale-105"
-    }`}
-  >
-    {React.cloneElement(icon, { size: 24 })}
   </div>
 );
 
