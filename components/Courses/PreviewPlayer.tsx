@@ -41,13 +41,6 @@ export function PreviewPlayer({ content }: { content: Content }) {
           allow="autoplay; fullscreen"
           loading="lazy"
         />
-        <button
-          onClick={handleFullscreen}
-          title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
-          className="absolute bottom-3 right-3 z-10 bg-black/60 hover:bg-black/80 text-white rounded-lg p-1.5 transition-all backdrop-blur-sm"
-        >
-          <Maximize2 size={15} />
-        </button>
       </div>
     );
   }
