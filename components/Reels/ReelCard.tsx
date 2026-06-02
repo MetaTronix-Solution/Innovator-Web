@@ -12,7 +12,6 @@ import {
   Pencil,
   Trash2,
   X,
-  Edit,
   Ban,
   Copy,
 } from "lucide-react";

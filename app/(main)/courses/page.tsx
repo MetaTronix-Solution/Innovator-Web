@@ -235,7 +235,6 @@ export default function CoursePage() {
 
   return (
     <div className="w-full max-w-5xl mx-auto py-1 md:py-2 bg-background font-sans min-h-screen">
-      {/* Search + notification */}
       <div className="flex items-center gap-2 mb-5">
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 w-4 h-4" />
@@ -255,7 +254,6 @@ export default function CoursePage() {
         </button>
       </div>
 
-      {/* Category filter — only shows categories present in fetched courses */}
       {categories.length > 0 && (
         <div className="flex items-center gap-2 mb-7 overflow-x-auto pb-1 no-scrollbar">
           {["All", ...categories].map((cat) => (
@@ -274,7 +272,6 @@ export default function CoursePage() {
         </div>
       )}
 
-      {/* Course grid */}
       {bootstrapping ? (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
           {Array.from({ length: LIMIT }).map((_, i) => (
@@ -300,7 +297,7 @@ export default function CoursePage() {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-15">
           {filteredCourses.map((course) => (
             <CourseCard
               key={course.id}
@@ -311,7 +308,6 @@ export default function CoursePage() {
         </div>
       )}
 
-      {/* Load-more skeletons */}
       {loadingMore && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-5">
           <SkeletonCard />
@@ -319,7 +315,6 @@ export default function CoursePage() {
         </div>
       )}
 
-      {/* Infinite scroll sentinel */}
       <div ref={sentinelRef} className="h-1" />
 
       <NotificationsPanel

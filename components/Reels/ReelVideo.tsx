@@ -7,144 +7,147 @@ interface ReelVideoProps {
   src: string;
   poster?: string;
   className?: string;
+  onScroll?: (direction: "up" | "down") => void;
 }
 
-const ReelVideo = memo(({ src, poster, className }: ReelVideoProps) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+const ReelVideo = memo(
+  ({ src, poster, className, onScroll }: ReelVideoProps) => {
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
 
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [showHeart, setShowHeart] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [showHeart, setShowHeart] = useState(false);
+    const [isMuted, setIsMuted] = useState(false);
 
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
+    useEffect(() => {
+      const video = videoRef.current;
+      if (!video) return;
 
-    const observer = new IntersectionObserver(
-      async ([entry]) => {
-        if (entry.isIntersecting) {
-          containerRef.current?.focus();
-          try {
-            await video.play();
-          } catch (err) {
-            if (err instanceof Error && err.name !== "AbortError") {
-              if (!video.muted) {
-                video.muted = true;
-                await video.play();
+      const observer = new IntersectionObserver(
+        async ([entry]) => {
+          if (entry.isIntersecting) {
+            containerRef.current?.focus();
+            try {
+              await video.play();
+            } catch (err) {
+              if (err instanceof Error && err.name !== "AbortError") {
+                if (!video.muted) {
+                  video.muted = true;
+                  await video.play();
+                }
               }
             }
+          } else {
+            video.pause();
           }
-        } else {
-          video.pause();
-        }
-      },
-      { threshold: 0.6 },
-    );
+        },
+        { threshold: 0.6 },
+      );
 
-    if (containerRef.current) observer.observe(containerRef.current);
+      if (containerRef.current) observer.observe(containerRef.current);
 
-    return () => {
-      observer.disconnect();
-      if (video) video.pause();
-    };
-  }, []);
+      return () => {
+        observer.disconnect();
+        if (video) video.pause();
+      };
+    }, []);
 
-  const togglePlay = useCallback(() => {
-    if (!videoRef.current) return;
-    if (videoRef.current.paused) {
-      videoRef.current.play();
-    } else {
-      videoRef.current.pause();
-    }
-  }, []);
+    const togglePlay = useCallback(() => {
+      if (!videoRef.current) return;
+      if (videoRef.current.paused) {
+        videoRef.current.play();
+      } else {
+        videoRef.current.pause();
+      }
+    }, []);
 
-  const lastTap = useRef<number>(0);
-  const handleTouch = () => {
-    const now = Date.now();
-    if (now - lastTap.current < 300) {
-      setShowHeart(true);
-      setTimeout(() => setShowHeart(false), 800);
-      // Trigger your Like API here
-    } else {
-      togglePlay();
-    }
-    lastTap.current = now;
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!videoRef.current) return;
-
-    switch (e.key) {
-      case "ArrowUp":
-        e.preventDefault();
-        videoRef.current.volume = Math.min(1, videoRef.current.volume + 0.1);
-        break;
-      case "ArrowDown":
-        e.preventDefault();
-        videoRef.current.volume = Math.max(0, videoRef.current.volume - 0.1);
-        break;
-      case " ":
-      case "k":
-        e.preventDefault();
+    const lastTap = useRef<number>(0);
+    const handleTouch = () => {
+      const now = Date.now();
+      if (now - lastTap.current < 300) {
+        setShowHeart(true);
+        setTimeout(() => setShowHeart(false), 800);
+        // Trigger your Like API here
+      } else {
         togglePlay();
-        break;
-      case "m":
-        e.preventDefault();
-        videoRef.current.muted = !videoRef.current.muted;
-        setIsMuted(videoRef.current.muted);
-        break;
-    }
-  };
+      }
+      lastTap.current = now;
+    };
 
-  return (
-    <div
-      ref={containerRef}
-      tabIndex={0}
-      onKeyDown={handleKeyDown}
-      className={`relative w-full h-full bg-black overflow-hidden flex items-center justify-center ${className}`}
-    >
-      <video
-        ref={videoRef}
-        src={src}
-        poster={poster}
-        playsInline
-        autoPlay
-        muted={isMuted}
-        className="w-full h-full object-contain"
-        onClick={handleTouch}
-        onPlay={() => setIsPlaying(true)}
-        onPause={() => setIsPlaying(false)}
-      />
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+      if (!videoRef.current) return;
 
-      {!isPlaying && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-          <div className="bg-black/20 backdrop-blur-sm p-5 rounded-full">
-            <div className="w-0 h-0 border-y-[15px] border-y-transparent border-l-[25px] border-l-white ml-2" />
+      switch (e.key) {
+        case "ArrowUp":
+          e.preventDefault();
+          onScroll?.("up");
+          break;
+        case "ArrowDown":
+          e.preventDefault();
+          onScroll?.("down");
+          break;
+        case " ":
+        case "k":
+          e.preventDefault();
+          togglePlay();
+          break;
+        case "m":
+          e.preventDefault();
+          videoRef.current.muted = !videoRef.current.muted;
+          setIsMuted(videoRef.current.muted);
+          break;
+      }
+    };
+
+    return (
+      <div
+        ref={containerRef}
+        tabIndex={0}
+        onKeyDown={handleKeyDown}
+        className={`relative w-full h-full bg-black overflow-hidden flex items-center justify-center ${className}`}
+      >
+        <video
+          ref={videoRef}
+          src={src}
+          poster={poster}
+          playsInline
+          autoPlay
+          muted={isMuted}
+          className="w-full h-full object-contain"
+          onClick={handleTouch}
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
+        />
+
+        {!isPlaying && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+            <div className="bg-black/20 backdrop-blur-sm p-5 rounded-full">
+              <div className="w-0 h-0 border-y-[15px] border-y-transparent border-l-[25px] border-l-white ml-2" />
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {showHeart && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-          <Heart
-            size={100}
-            className="text-white fill-white animate-reel-heart"
+        {showHeart && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+            <Heart
+              size={100}
+              className="text-white fill-white animate-reel-heart"
+            />
+          </div>
+        )}
+
+        <div className="absolute bottom-0 left-0 w-full h-[2px] bg-white/20 z-20">
+          <div
+            className="h-full bg-white/60 transition-all duration-100 ease-linear"
+            style={{
+              width: `${videoRef.current ? (videoRef.current.currentTime / videoRef.current.duration) * 100 : 0}%`,
+            }}
           />
         </div>
-      )}
-
-      <div className="absolute bottom-0 left-0 w-full h-[2px] bg-white/20 z-20">
-        <div
-          className="h-full bg-white/60 transition-all duration-100 ease-linear"
-          style={{
-            width: `${videoRef.current ? (videoRef.current.currentTime / videoRef.current.duration) * 100 : 0}%`,
-          }}
-        />
       </div>
-    </div>
-  );
-});
+    );
+  },
+);
 
 ReelVideo.displayName = "ReelVideo";
 
