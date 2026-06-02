@@ -20,7 +20,6 @@ import { addToCart, removeFromCart } from "@/lib/store/features/cartSlice";
 import { Product } from "@/types/product";
 import { Button } from "@/components/ui/button";
 import { getMediaUrl } from "@/lib/utils/getMediaUrl";
-import { ur } from "zod/v4/locales";
 
 export default function ProductDetailPage() {
   const dispatch = useDispatch();

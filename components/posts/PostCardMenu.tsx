@@ -68,10 +68,15 @@ export default function PostCardMenu({
     }
   };
 
-  const handleCopyText = () => {
-    navigator.clipboard.writeText(content);
-    toast.success("Copied to clipboard");
-    setOpen(false);
+  const handleCopyText = async () => {
+    try {
+      await navigator.clipboard.writeText(content);
+      toast.success("Copied to clipboard");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to copy");
+    } finally {
+      setOpen(false);
+    }
   };
 
   const handleInitiateBlock = () => {

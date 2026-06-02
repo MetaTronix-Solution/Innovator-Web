@@ -216,7 +216,6 @@ const Navbar = () => {
                 <PlusCircle className="text-secondary-foreground" size={24} />
               </button>
 
-              {/* Desktop bell — inline dropdown */}
               <div className="relative" ref={notifRef}>
                 <div
                   onClick={(e) => {
@@ -250,7 +249,6 @@ const Navbar = () => {
               </div>
             </div>
 
-            {/* Mobile: messages + bell (routes to /notifications) */}
             <div className="flex sm:hidden items-center gap-1">
               <Link href="/messages" aria-label="Messages">
                 <div
@@ -264,7 +262,6 @@ const Navbar = () => {
                 </div>
               </Link>
 
-              {/* Mobile bell — navigates to /notifications */}
               <div
                 onClick={() => router.push("/notifications")}
                 className="relative flex items-center justify-center w-8 h-8 bg-secondary text-muted-foreground rounded-full cursor-pointer hover:bg-accent transition-colors active:scale-95"
@@ -323,7 +320,6 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* Mobile bottom tab bar */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border">
         <div className="flex items-center justify-around h-16 px-2">
           {tabBarLinks.map((link) => {
@@ -359,7 +355,6 @@ const Navbar = () => {
             );
           })}
 
-          {/* More button */}
           <button
             onClick={() => setIsMobileMenuOpen((o) => !o)}
             className="flex flex-col items-center justify-center gap-1 flex-1 h-full relative group"

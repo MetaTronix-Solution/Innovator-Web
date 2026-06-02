@@ -8,7 +8,7 @@ import React, {
   useCallback,
 } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Search, SlidersHorizontal, ShoppingBag, Bell } from "lucide-react";
+import { Search, ShoppingBag, Bell } from "lucide-react";
 
 import ProductCard from "@/components/Ecommerce/ProductCard";
 import { RootState } from "@/lib/store/store";
