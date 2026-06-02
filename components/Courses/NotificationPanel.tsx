@@ -3,6 +3,15 @@
 import { Bell, Check, CheckCheck, Loader2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+interface Notification {
+  id: string | number;
+  title?: string;
+  message?: string;
+  body?: string;
+  is_read: boolean;
+  created_at?: string;
+}
+
 export function NotificationsPanel({
   open,
   onClose,
