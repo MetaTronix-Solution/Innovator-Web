@@ -463,7 +463,7 @@ export default function MessagesView({
             : "hidden md:flex md:w-[280px]"
         }`}
       >
-        <div className="hidden md:block flex items-center justify-between px-4 h-[60px] border-b border-border/60 shrink-0">
+        <div className="hidden md:flex items-center justify-between px-4 h-[40px] border-b border-border/60 shrink-0">
           <div className="hidden md:flex items-center gap-2">
             <h2 className="text-[15px] font-semibold text-foreground">
               Messages

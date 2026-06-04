@@ -4,7 +4,7 @@ export interface NotificationItem {
   sender: string;
   sender_username: string;
   sender_avatar: string | null;
-  type: "system" | "repost" | "like" | "follow";
+  type: "system" | "repost" | "like" | "follow" | "chat_message";
   title: string;
   message: string;
   related_post_id: string | null;

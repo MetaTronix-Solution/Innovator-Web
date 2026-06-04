@@ -30,6 +30,7 @@ import Link from "next/link";
 import CommentButton from "./CommentButton";
 import RepostButton from "./RepostButton";
 import { useSession } from "next-auth/react";
+import { formatRelativeTime } from "@/lib/utils/formatRelativeTime";
 
 export const renderedPosts = new Set<string>();
 
@@ -47,6 +48,7 @@ const PostCard = ({ post }: { post: any; index?: number }) => {
   const wasRendered = renderedPosts.has(post.id);
   const [isVisible, setIsVisible] = useState(wasRendered);
   const [showReactionsModal, setShowReactionsModal] = useState(false);
+
   const [localCount, setLocalCount] = useState<number>(post.like_count ?? 0);
   const [localReaction, setLocalReaction] = useState<string | null>(
     post.current_user_reaction ?? null,
@@ -57,11 +59,6 @@ const PostCard = ({ post }: { post: any; index?: number }) => {
     post.content || post.caption || "",
   );
   const [isSavingEdit, setIsSavingEdit] = useState(false);
-
-  useEffect(() => {
-    setLocalReaction(post.current_user_reaction ?? null);
-    setLocalCount(post.like_count ?? 0);
-  }, [post.id, post.current_user_reaction, post.like_count]);
 
   const cardRef = useRef<HTMLDivElement>(null);
   const dispatch = useDispatch();
@@ -95,21 +92,6 @@ const PostCard = ({ post }: { post: any; index?: number }) => {
   useEffect(() => {
     if (showComments) handleFetchComments();
   }, [showComments]);
-
-  const formatRelativeTime = useCallback((dateString: string) => {
-    if (!dateString) return "Just now";
-    const date = new Date(dateString);
-    const diffInSeconds = Math.floor((Date.now() - date.getTime()) / 1000);
-    if (diffInSeconds < 60) return "Just now";
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400)
-      return `${Math.floor(diffInSeconds / 3600)}h ago`;
-    if (diffInSeconds < 604800) {
-      const days = Math.floor(diffInSeconds / 86400);
-      return `${days}${days === 1 ? " day" : " days"} ago`;
-    }
-    return date.toLocaleDateString();
-  }, []);
 
   const handleFetchComments = useCallback(async () => {
     setIsLoadingComments(true);
@@ -146,37 +128,21 @@ const PostCard = ({ post }: { post: any; index?: number }) => {
     [newComment, post.id, post.type],
   );
 
-  const fetchReactionCount = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/posts/${post.id}/reactions-list/`);
-      if (!res.ok) return;
-      const data = await res.json();
-      const reactions = Array.isArray(data) ? data : (data.results ?? []);
-      setLocalCount(reactions.length);
-      const myReaction = reactions.find((r: any) => r.user === currentUser?.id);
-      const finalReaction = myReaction?.type ?? null;
-      setLocalReaction(finalReaction);
-      dispatch(
-        togglePostReaction({
-          postId: post.id,
-          reactionType: finalReaction,
-        }),
-      );
-    } catch {}
-  }, [post.id, currentUser?.id, dispatch]);
-
-  useEffect(() => {
-    if (isVisible) fetchReactionCount();
-  }, [isVisible]);
-
   const handleReact = useCallback(
     async (reactionType: string | null) => {
       const prevReaction = localReaction;
+      const prevCount = localCount;
+
+      const newCount =
+        reactionType === null
+          ? Math.max(0, prevCount - 1)
+          : prevReaction === null
+            ? prevCount + 1
+            : prevCount;
 
       setLocalReaction(reactionType);
-      dispatch(
-        togglePostReaction({ postId: post.id, reactionType: reactionType }),
-      );
+      setLocalCount(newCount);
+      dispatch(togglePostReaction({ postId: post.id, reactionType }));
 
       try {
         const res = await fetch("/api/reactions", {
@@ -190,17 +156,16 @@ const PostCard = ({ post }: { post: any; index?: number }) => {
         });
 
         if (!res.ok) throw new Error("Failed to sync");
-
-        fetchReactionCount();
       } catch (err) {
         setLocalReaction(prevReaction);
+        setLocalCount(prevCount);
         dispatch(
           togglePostReaction({ postId: post.id, reactionType: prevReaction }),
         );
         toast.error("Could not update reaction.");
       }
     },
-    [post.id, post.type, dispatch, fetchReactionCount, localReaction],
+    [post.id, post.type, dispatch, localReaction, localCount],
   );
 
   const handleRepostSubmit = useCallback(async () => {

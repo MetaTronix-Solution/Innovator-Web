@@ -18,9 +18,9 @@ export async function POST(req: NextRequest) {
     const { user_id } = await req.json();
 
     const response = await fetch(
-      `${BACKEND_URL}/api/notifications/mark-all-as-read/`,
+      `${BACKEND_URL}/api/notifications/mark-all-read/`,
       {
-        method: "POST",
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,

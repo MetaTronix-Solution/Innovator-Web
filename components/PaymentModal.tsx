@@ -42,7 +42,6 @@ export function PaymentModal({
         <div className="py-4 space-y-4">
           <div className="space-y-2">
             <Label className="text-sm font-medium">Select Payment Method</Label>
-            {/* Khalti Option */}
             <div className="flex items-center gap-3 p-4 border-2 border-purple-600 rounded-xl bg-purple-50 dark:bg-purple-950/20 cursor-pointer">
               <div className="h-8 w-8 rounded-lg bg-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
                 K

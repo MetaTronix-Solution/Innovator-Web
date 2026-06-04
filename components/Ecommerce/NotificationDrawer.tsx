@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Bell, X, Loader2 } from "lucide-react";
+import { Bell, X, Loader2, Check, CheckCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface Notification {
@@ -30,6 +30,7 @@ export default function NotificationDrawer({
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [markingAll, setMarkingAll] = useState(false);
   const router = useRouter();
 
   const fetchNotifications = useCallback(async () => {
@@ -50,6 +51,76 @@ export default function NotificationDrawer({
   useEffect(() => {
     if (open) fetchNotifications();
   }, [open, fetchNotifications]);
+
+  // const markAsRead = async (id: string) => {
+  //   setNotifications((prev) =>
+  //     prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)),
+  //   );
+  //   try {
+  //     const res = await fetch(`/api/products/notifications//mark-as-read`, {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ notification_id: id }),
+  //     });
+  //     if (!res.ok) throw new Error();
+  //   } catch {
+  //     // Revert on failure
+  //     setNotifications((prev) =>
+  //       prev.map((n) => (n.id === id ? { ...n, is_read: false } : n)),
+  //     );
+  //   }
+  // };
+
+  // const markAllAsRead = async () => {
+  //   const prev = notifications;
+  //   setMarkingAll(true);
+  //   setNotifications((n) => n.map((n) => ({ ...n, is_read: true })));
+  //   try {
+  //     const res = await fetch("/api/products/notifications/mark-all-as-read", {
+  //       method: "POST",
+  //     });
+  //     if (!res.ok) throw new Error();
+  //   } catch {
+  //     setNotifications(prev);
+  //   } finally {
+  //     setMarkingAll(false);
+  //   }
+  // };
+
+  const markAsRead = async (id: string | number) => {
+    try {
+      await fetch("/api/products/notifications/mark-as-read", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notification_id: id }),
+      });
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)),
+      );
+    } catch {}
+  };
+
+  const markAllRead = async () => {
+    setMarkingAll(true);
+    try {
+      await fetch("/api/products/notifications/mark-all-as-read", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+      });
+      setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+    } catch {
+    } finally {
+      setMarkingAll(false);
+    }
+  };
+
+  const handleNotificationClick = async (n: Notification) => {
+    if (!n.is_read) await markAsRead(n.id);
+    if (n.data?.product_id) {
+      onClose();
+      setTimeout(() => router.push(`/products/${n.data.product_id}`), 50);
+    }
+  };
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
@@ -84,15 +155,31 @@ export default function NotificationDrawer({
               </span>
             )}
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-xl hover:bg-muted transition-colors"
-          >
-            <X size={18} />
-          </button>
+          <div className="flex items-center gap-1">
+            {unreadCount > 0 && (
+              <button
+                onClick={markAllRead}
+                disabled={markingAll}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-orange-500 hover:bg-orange-500/10 transition-colors disabled:opacity-50"
+                title="Mark all as read"
+              >
+                {markingAll ? (
+                  <Loader2 size={13} className="animate-spin" />
+                ) : (
+                  <CheckCheck size={13} />
+                )}
+                <span>Mark all read</span>
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-xl hover:bg-muted transition-colors"
+            >
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
-        {/* Body */}
         <div className="flex-1 overflow-y-auto no-scrollbar">
           {loading ? (
             <div className="flex items-center justify-center py-20">
@@ -123,27 +210,26 @@ export default function NotificationDrawer({
               {notifications.map((n) => (
                 <li
                   key={n.id}
-                  onClick={() => {
-                    if (n.data?.product_id) {
-                      onClose();
-                      setTimeout(
-                        () => router.push(`/products/${n.data.product_id}`),
-                        50,
-                      );
-                    }
-                  }}
+                  onClick={() => handleNotificationClick(n)}
                   className={`px-5 py-4 flex gap-3 cursor-pointer transition-colors hover:bg-muted/50 ${
                     !n.is_read ? "bg-orange-500/5" : ""
                   }`}
                 >
                   <div className="flex-shrink-0 mt-1.5">
                     <div
-                      className={`w-2 h-2 rounded-full ${n.is_read ? "bg-transparent" : "bg-orange-500"}`}
+                      className={`w-2 h-2 rounded-full ${
+                        n.is_read ? "bg-transparent" : "bg-orange-500"
+                      }`}
                     />
                   </div>
+
                   <div className="flex-1 min-w-0">
                     <p
-                      className={`text-sm leading-snug ${!n.is_read ? "font-semibold" : "font-medium text-muted-foreground"}`}
+                      className={`text-sm leading-snug ${
+                        !n.is_read
+                          ? "font-semibold"
+                          : "font-medium text-muted-foreground"
+                      }`}
                     >
                       {n.title}
                     </p>
@@ -154,6 +240,19 @@ export default function NotificationDrawer({
                       {timeAgo(n.created_at)}
                     </p>
                   </div>
+
+                  {!n.is_read && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        markAsRead(n.id);
+                      }}
+                      className="flex-shrink-0 self-center p-1.5 rounded-lg hover:bg-orange-500/10 text-orange-500 transition-colors"
+                      title="Mark as read"
+                    >
+                      <Check size={14} />
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>

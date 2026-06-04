@@ -207,9 +207,9 @@ const ReelCard = ({ reel, post }: ReelCardProps) => {
 
         <button
           onClick={handleShare}
-          className="p-2 rounded-full cursor-pointer text-muted-foreground transition-all hover:scale-110"
+          className="p-2 rounded-full cursor-pointer text-white transition-all hover:scale-110"
         >
-          <Send size={20} className="text-muted-foreground" />
+          <Send size={20} className="text-white" />
         </button>
 
         <SharePostModal
@@ -227,7 +227,7 @@ const ReelCard = ({ reel, post }: ReelCardProps) => {
             <MoreHorizontal
               size={24}
               strokeWidth={1.8}
-              className="text-muted-foreground drop-shadow-lg"
+              className="text-white drop-shadow-lg"
             />
           </button>
 
@@ -433,11 +433,11 @@ function ActionBtn({
       onClick={onClick}
       className="flex flex-col items-center gap-1 group"
     >
-      <span className="text-muted-foreground drop-shadow-lg group-hover:scale-110 transition-transform">
+      <span className="text-white drop-shadow-lg group-hover:scale-110 transition-transform">
         {icon}
       </span>
       {label !== undefined && (
-        <span className="text-muted-foreground text-xs font-semibold drop-shadow">
+        <span className="text-white text-xs font-semibold drop-shadow">
           {label}
         </span>
       )}

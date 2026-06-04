@@ -115,14 +115,14 @@ export function PaperCard({
               {paper.comments}
             </span>
           </div>
-          <div className="flex items-center gap-1">
+          {/* <div className="flex items-center gap-1">
             <Calendar className="h-3.5 w-3.5" />
             {new Date(paper.publishedAt).toLocaleDateString("en-US", {
               month: "short",
               day: "numeric",
               year: "numeric",
             })}
-          </div>
+          </div> */}
         </div>
       </div>
     </article>

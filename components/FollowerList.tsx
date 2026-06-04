@@ -7,6 +7,7 @@ import FollowButton from "@/components/FollowButton";
 import { useSelector } from "react-redux";
 import { getMediaUrl } from "@/lib/utils/getMediaUrl";
 import { RootState } from "@/lib/store/store";
+import Link from "next/link";
 
 const FollowerList = () => {
   const [followers, setFollowers] = useState<any[]>([]);
@@ -41,7 +42,6 @@ const FollowerList = () => {
   return (
     <div className="divide-y divide-border">
       {followers.map((user: any) => {
-        // Get the avatar URL or null via helper
         const avatarSrc = getMediaUrl(user.profile?.avatar);
 
         return (
@@ -50,8 +50,10 @@ const FollowerList = () => {
             className="flex items-center justify-between p-4 hover:bg-accent/50 transition-all group"
           >
             <div className="flex items-center gap-4">
-              {/* Profile Image Container - styled to match PostBox */}
-              <div className="relative w-14 h-14 rounded-full border-2 border-primary/20 flex items-center justify-center bg-muted overflow-hidden shrink-0 transition-colors group-hover:border-primary">
+              <Link
+                href={`/${user.id}`}
+                className="relative w-14 h-14 rounded-full border-2 border-primary/20 flex items-center justify-center bg-muted overflow-hidden shrink-0 transition-colors group-hover:border-primary"
+              >
                 {avatarSrc ? (
                   <Image
                     src={avatarSrc}
@@ -63,12 +65,15 @@ const FollowerList = () => {
                 ) : (
                   <User size={28} className="text-muted-foreground/60" />
                 )}
-              </div>
+              </Link>
 
               <div className="flex flex-col">
-                <span className="font-bold text-foreground text-sm">
+                <Link
+                  href={`/${user.id}`}
+                  className="font-bold text-foreground text-sm"
+                >
                   {user.full_name || user.username}
-                </span>
+                </Link>
                 <span className="text-xs text-primary/80 font-medium uppercase tracking-wider">
                   {user.profile?.occupation || "Innovator"}
                 </span>

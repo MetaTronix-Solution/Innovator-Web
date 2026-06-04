@@ -8,6 +8,7 @@ import Image from "next/image";
 import { Button } from "./ui/button";
 import { Check, LayoutGrid, MoreVertical } from "lucide-react";
 import { getMediaUrl } from "@/lib/utils/getMediaUrl";
+import { formatRelativeTime } from "@/lib/utils/formatRelativeTime";
 
 interface NotificationFeedProps {
   initialNotifications: NotificationItem[];
@@ -76,22 +77,6 @@ export function NotificationFeed({
 
   const router = useRouter();
   const MAX_RECONNECT = 5;
-
-  const formatRelativeTime = useCallback((dateString: string) => {
-    if (!dateString) return "Just now";
-    const date = new Date(dateString);
-    const diffInSeconds = Math.floor((Date.now() - date.getTime()) / 1000);
-
-    if (diffInSeconds < 60) return "Just now";
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400)
-      return `${Math.floor(diffInSeconds / 3600)}h ago`;
-    if (diffInSeconds < 604800) {
-      const days = Math.floor(diffInSeconds / 86400);
-      return `${days}${days === 1 ? " day" : " days"} ago`;
-    }
-    return date.toLocaleDateString();
-  }, []);
 
   const updateUnreadCount = useCallback(
     (notifs: NotificationItem[]) => {
@@ -234,14 +219,28 @@ export function NotificationFeed({
     }
   };
 
-  const unreadCount = notifications.filter((n) => !n.is_read).length;
+  const deduplicated = notifications.filter(
+    (item, index, self) =>
+      index ===
+      self.findIndex(
+        (n) =>
+          n.sender === item.sender &&
+          n.type === item.type &&
+          n.related_post_id === item.related_post_id,
+      ),
+  );
 
-  const filtered =
+  const unreadCount = deduplicated.filter(
+    (n) => !n.is_read && n.type !== "chat_message",
+  ).length;
+
+  const filtered = (
     tab === "all"
-      ? notifications
+      ? deduplicated
       : tab === "unread"
         ? notifications.filter((n) => !n.is_read)
-        : notifications.filter((n) => n.is_read);
+        : notifications.filter((n) => n.is_read)
+  ).filter((n) => n.type !== "chat_message");
 
   return (
     <div className="w-full max-w-2xl mx-auto">

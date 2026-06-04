@@ -41,12 +41,16 @@ const MediaCarousel = memo(
     const openModal = (index: number) => {
       setCurrentIndex(index);
       setIsExpanded(true);
+      const scrollbarWidth =
+        window.innerWidth - document.documentElement.clientWidth;
       document.body.style.overflow = "hidden";
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
     };
 
     const closeModal = () => {
       setIsExpanded(false);
-      document.body.style.overflow = "unset";
+      document.body.style.overflow = "";
+      document.body.style.paddingRight = "";
     };
 
     if (media.length === 1) {
@@ -54,7 +58,7 @@ const MediaCarousel = memo(
       return (
         <div
           className="w-full bg-muted/20 border-y border-border/40 cursor-pointer"
-          onClick={() => openModal(0)}
+          onClick={() => openModal(0)} // ✅ uncomment this
         >
           <div className="relative w-full h-[400px]">
             <Image
@@ -65,6 +69,36 @@ const MediaCarousel = memo(
               unoptimized
             />
           </div>
+
+          {isExpanded && (
+            <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/95 animate-in fade-in duration-200">
+              <div
+                className="absolute inset-0"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  closeModal();
+                }}
+              />
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  closeModal();
+                }}
+                className="absolute top-6 left-6 z-[1000] p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors"
+              >
+                <X size={24} />
+              </button>
+              <div className="relative w-full max-w-5xl h-[85vh] px-4">
+                <Image
+                  src={fileUrl || ""}
+                  alt="Full View"
+                  fill
+                  className="object-contain"
+                  unoptimized
+                />
+              </div>
+            </div>
+          )}
         </div>
       );
     }

@@ -61,8 +61,6 @@ export const authOptions: NextAuthOptions = {
           user.expiresIn = data.expires_in;
           user.userData = data.user;
 
-          console.log(data);
-
           return true;
         } catch (error: any) {
           if (error.name === "AbortError") {

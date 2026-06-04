@@ -85,7 +85,7 @@ const RepostCard = ({ post, formatRelativeTime }: RepostCardProps) => {
           </p>
         </div>
       ) : (
-        <div className="flex items-center gap-1.5 px-4 pb-2 text-muted-foreground">
+        <div className="flex items-center gap-1.5 px-4 pb-2 text-primary">
           <Repeat2 size={13} />
           <span className="text-xs">Reposted</span>
         </div>
@@ -107,17 +107,14 @@ const RepostCard = ({ post, formatRelativeTime }: RepostCardProps) => {
                 <User size={13} className="text-muted-foreground" />
               )}
             </div>
-            <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+            <div className="flex flex-col min-w-0">
               <span className="text-xs text-muted-foreground">
-                @{shared.username}
+                {shared.username}
               </span>
               {shared.created_at && (
-                <>
-                  <span className="text-muted-foreground/40 text-xs">·</span>
-                  <span className="text-xs text-muted-foreground">
-                    {formatRelativeTime(shared.created_at)}
-                  </span>
-                </>
+                <span className="text-[10px] text-muted-foreground/60">
+                  {formatRelativeTime(shared.created_at)}
+                </span>
               )}
             </div>
           </div>

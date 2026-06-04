@@ -70,7 +70,6 @@ const postsSlice = createSlice({
       if (state.next_cursor === null) {
         state.items = action.payload.results;
       } else {
-        // Dedupe by id on append
         const existingIds = new Set(state.items.map((p) => p.id));
         const newItems = action.payload.results.filter(
           (p) => !existingIds.has(p.id),
@@ -121,12 +120,19 @@ const postsSlice = createSlice({
       const prevReaction = post.current_user_reaction;
       const newReaction = action.payload.reactionType;
 
+      // Update both like_count and reactions_count
       if (!prevReaction && newReaction) {
+        // Adding a new reaction
         post.reactions_count += 1;
+        post.like_count += 1;
       } else if (prevReaction && !newReaction) {
+        // Removing a reaction
         post.reactions_count = Math.max(0, post.reactions_count - 1);
+        post.like_count = Math.max(0, post.like_count - 1);
       }
+      // Switching reaction type: counts stay the same
 
+      // Update reaction_types breakdown
       if (
         post.reaction_types &&
         typeof post.reaction_types === "object" &&
@@ -180,6 +186,7 @@ const postsSlice = createSlice({
         }
       });
     },
+
     removePostsByUser: (state, action: PayloadAction<string>) => {
       state.items = state.items.filter(
         (post) => post.user_id !== action.payload,
