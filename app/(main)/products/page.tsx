@@ -260,7 +260,7 @@ export default function EcommercePage() {
   }
 
   return (
-    <div className="w-full max-w-5xl mx-auto  py:1 md:py-2 bg-background font-sans min-h-screen relative">
+    <div className="w-full max-w-5xl mx-auto px-2 py:1 md:py-2 bg-background font-sans min-h-screen relative">
       <div className="flex items-center gap-2 mb-4">
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 w-5 h-5" />

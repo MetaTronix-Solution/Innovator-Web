@@ -111,7 +111,7 @@ export default function ResearchPage() {
   return (
     <div className="min-h-screen bg-background pb-12">
       <div className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between gap-4">
             <div className="flex items-center gap-2.5">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500">
@@ -129,7 +129,7 @@ export default function ResearchPage() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8 py-8 space-y-6">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           {[
             {
