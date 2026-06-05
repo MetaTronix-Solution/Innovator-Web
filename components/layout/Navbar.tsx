@@ -50,10 +50,12 @@ const Navbar = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [tabBarVisible, setTabBarVisible] = useState(true);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
+  const lastScrollY = useRef(0);
 
   const { user } = useSelector((state: RootState) => state.auth);
 
@@ -107,6 +109,16 @@ const Navbar = () => {
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentY = window.scrollY;
+      setTabBarVisible(currentY < lastScrollY.current || currentY < 10);
+      lastScrollY.current = currentY;
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const getProfileImage = () => {
@@ -275,7 +287,6 @@ const Navbar = () => {
               </div>
             </div>
 
-            {/* Avatar dropdown (desktop only) */}
             <div
               ref={dropdownRef}
               className="relative shrink-0 hidden sm:block"
@@ -320,7 +331,11 @@ const Navbar = () => {
         </div>
       </nav>
 
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border">
+      <div
+        className={`md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border transition-transform duration-300 ${
+          tabBarVisible ? "translate-y-0" : "translate-y-full"
+        }`}
+      >
         <div className="flex items-center justify-around h-16 px-2">
           {tabBarLinks.map((link) => {
             const isActive = link.exact
@@ -384,7 +399,6 @@ const Navbar = () => {
         />
       </div>
 
-      {/* Mobile slide-in menu */}
       {isMobileMenuOpen && (
         <div
           ref={menuRef}

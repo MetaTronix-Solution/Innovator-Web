@@ -446,6 +446,7 @@ const PostCard = ({ post }: { post: any; index?: number }) => {
       {isRepostModalOpen && (
         <RepostModal
           post={post}
+          currentUser={currentUser}
           repostCaption={repostCaption}
           isSubmitting={isSubmitting}
           formatRelativeTime={formatRelativeTime}

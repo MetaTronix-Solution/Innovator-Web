@@ -18,6 +18,7 @@ import {
   ChevronDown,
   Package,
   Calendar,
+  BookOpen,
 } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import ChangePasswordModal from "./ChangePasswordModal";
@@ -143,6 +144,13 @@ const UserDropdown = ({
           icon={<Package size={20} />}
           label="My orders"
           onClick={() => handleNavigate("/orders")}
+          className="md:hidden"
+        />
+
+        <MenuLink
+          icon={<BookOpen size={20} />}
+          label="Research Paper"
+          onClick={() => handleNavigate("/research")}
           className="md:hidden"
         />
 

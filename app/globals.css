@@ -181,3 +181,17 @@
     padding-bottom: env(safe-area-inset-bottom);
   }
 }
+
+.reels-container {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.reels-container::-webkit-scrollbar {
+  display: none;
+}
+
+html,
+body {
+  overflow-x: hidden;
+}

@@ -7,9 +7,9 @@ interface ThemeState {
 const getInitialTheme = (): "dark" | "light" => {
   if (typeof window !== "undefined") {
     const saved = localStorage.getItem("theme") as "dark" | "light";
-    return saved || "dark";
+    return saved || "light";
   }
-  return "dark";
+  return "light";
 };
 
 const initialState: ThemeState = {

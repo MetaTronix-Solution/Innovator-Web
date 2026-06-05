@@ -6,7 +6,6 @@ import { useSession } from "next-auth/react";
 import Navbar from "@/components/layout/Navbar";
 import LeftSidebar from "@/components/layout/LeftSidebar";
 import RightWidgets from "@/components/layout/RightWidgets";
-import { RootState } from "@/lib/store/store";
 import { setCredentials } from "@/lib/store/features/authSlice";
 
 export default function MainLayout({
@@ -20,20 +19,8 @@ export default function MainLayout({
   );
   const { data: session, status: sessionStatus } = useSession();
   const router = useRouter();
-  const { mode } = useSelector((state: RootState) => state.theme);
 
   const hasRedirected = useRef(false);
-
-  // useEffect(() => {
-  //   const root = window.document.documentElement;
-  //   if (mode === "light") {
-  //     root.classList.add("light");
-  //     root.classList.remove("dark");
-  //   } else {
-  //     root.classList.add("dark");
-  //     root.classList.remove("light");
-  //   }
-  // }, [mode]);
 
   useEffect(() => {
     if (
@@ -88,7 +75,7 @@ export default function MainLayout({
           <aside className="hidden xl:block w-[280px] 2xl:w-[320px] sticky top-[72px] h-[calc(100vh-72px)] overflow-y-auto no-scrollbar">
             <LeftSidebar />
           </aside>
-          <main className="w-full max-w-[680px] min-w-0 px-2 md:px-4">
+          <main className="w-full max-w-[680px] min-w-0 md:px-4">
             {children}
           </main>
           <aside className="hidden lg:block w-[300px] 2xl:w-[350px] sticky top-[72px] h-[calc(100vh-72px)] overflow-y-auto no-scrollbar">

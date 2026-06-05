@@ -64,12 +64,10 @@ export default function SharePostModal({
       const res = await fetch("/api/users/mutual-users");
       const data = await res.json();
 
-      if (Array.isArray(data)) {
+      if (data.mutual_friends && Array.isArray(data.mutual_friends)) {
+        setFollowers(data.mutual_friends);
+      } else if (Array.isArray(data)) {
         setFollowers(data);
-      } else if (data.results && Array.isArray(data.results)) {
-        setFollowers(data.results); // Common in Django Rest Framework
-      } else if (data.followers && Array.isArray(data.followers)) {
-        setFollowers(data.followers);
       } else {
         setFollowers([]);
       }
@@ -106,7 +104,6 @@ export default function SharePostModal({
           </button>
         </div>
 
-        {/* Search Followers */}
         <div className="p-3">
           <div className="relative">
             <Search
@@ -122,7 +119,6 @@ export default function SharePostModal({
           </div>
         </div>
 
-        {/* Replace your previous list logic with this */}
         <div className="flex-1 overflow-y-auto p-2 min-h-[200px]">
           {loading ? (
             <div className="flex justify-center p-4 text-sm text-muted-foreground">
@@ -134,8 +130,7 @@ export default function SharePostModal({
                 f.username?.toLowerCase().includes(searchQuery.toLowerCase()),
               )
               .map((follower: any) => {
-                // Generate URL using your helper
-                const avatarSrc = getMediaUrl(follower.profile?.avatar);
+                const avatarSrc = getMediaUrl(follower?.avatar);
 
                 return (
                   <div
@@ -143,7 +138,6 @@ export default function SharePostModal({
                     className="flex items-center justify-between p-2 hover:bg-accent rounded-xl transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      {/* Avatar Container: Styled exactly like CreatePostBox */}
                       <div className="w-10 h-10 relative rounded-full border-2 border-primary/20 flex items-center justify-center bg-muted overflow-hidden shrink-0">
                         {avatarSrc ? (
                           <Image
@@ -171,7 +165,6 @@ export default function SharePostModal({
                       </div>
                     </div>
 
-                    {/* Updated button color to match your screenshots */}
                     <button className="bg-[#ff6b00] hover:bg-[#e66000] text-white px-4 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95">
                       Send
                     </button>
@@ -185,7 +178,6 @@ export default function SharePostModal({
           )}
         </div>
 
-        {/* External Options */}
         <div className="p-4 border-t bg-muted/20 space-y-4">
           <div className="flex justify-around">
             {externalOptions.map((opt) => (

@@ -49,7 +49,7 @@ export default function RootLayout({
                         document.documentElement.classList.remove('dark');
                       }
                     } else {
-                      document.documentElement.classList.add('dark');
+                      document.documentElement.classList.remove('dark');
                     }
                   } catch (e) {}
                 })();

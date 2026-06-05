@@ -183,7 +183,7 @@ const ReelCard = ({ reel, post }: ReelCardProps) => {
             className="w-full h-full object-contain"
           />
         ) : (
-          <div className="w-full h-full bg-neutral-900 animate-pulse" />
+          <div className="w-full h-full object-cover bg-neutral-900 animate-pulse" />
         )}
       </div>
 
