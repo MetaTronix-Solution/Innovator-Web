@@ -56,14 +56,14 @@ export default function UploadZone({ onFileSelect, error }: UploadZoneProps) {
       }`}
     >
       <div
-        className="w-18 h-18 rounded-full bg-linear-to-br from-primary to-pink-500 flex items-center justify-center text-4xl"
+        className="w-15 h-15 rounded-full bg-primary flex items-center justify-center text-4xl"
         aria-hidden="true"
       >
-        <Video className="h-9 w-9 text-secondary" />
+        <Video className="h-8 w-8 text-secondary" />
       </div>
 
       <div className="text-center">
-        <p className="text-foreground text-lg font-semibold mb-1.5">
+        <p className="text-foreground text-md font-semibold mb-1.5">
           {isDragging ? "Drop your video here" : "Drag & drop your video"}
         </p>
         <p className="text-muted-foreground text-sm">

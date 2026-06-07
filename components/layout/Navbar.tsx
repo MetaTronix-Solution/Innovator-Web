@@ -30,6 +30,7 @@ import { getMediaUrl } from "@/lib/utils/getMediaUrl";
 import { NotificationFeed } from "@/components/NotificationFeed";
 import { NotificationService } from "@/lib/services/notificationService";
 import { NotificationItem } from "@/types/notification";
+import CreateReelModal from "../Reels/create/CreateReelModal";
 
 interface NavItemProps {
   icon: React.ReactElement<{ size?: number; strokeWidth?: number }>;
@@ -51,6 +52,7 @@ const Navbar = () => {
   const [notifOpen, setNotifOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [tabBarVisible, setTabBarVisible] = useState(true);
+  const [createReelOpen, setCreateReelOpen] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -221,7 +223,7 @@ const Navbar = () => {
             <div className="hidden sm:flex items-center gap-1 md:gap-2">
               <SearchBar />
               <button
-                onClick={() => router.push("/reels/create")}
+                onClick={() => setCreateReelOpen(true)}
                 className="p-2 rounded-full hover:bg-accent hover:scale-105"
                 title="Create Reel"
               >
@@ -428,6 +430,10 @@ const Navbar = () => {
           </div>
         </div>
       )}
+      <CreateReelModal
+        isOpen={createReelOpen}
+        onClose={() => setCreateReelOpen(false)}
+      />
     </>
   );
 };

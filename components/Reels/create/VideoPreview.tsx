@@ -1,3 +1,4 @@
+import { X } from "lucide-react";
 import React, { useRef, useState } from "react";
 
 interface VideoPreviewProps {
@@ -97,9 +98,9 @@ export default function VideoPreview({
 
       <button
         onClick={onRemove}
-        className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-black/60 text-white hover:bg-red-500/80 transition-colors"
+        className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-black/60 text-white transition-colors"
       >
-        ✕
+        <X className="bg-accent-foreground" />
       </button>
     </div>
   );

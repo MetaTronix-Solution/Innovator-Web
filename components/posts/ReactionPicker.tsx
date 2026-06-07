@@ -3,7 +3,7 @@
 import { memo } from "react";
 
 export const REACTIONS = [
-  { type: "like", emoji: "👍", label: "Like" },
+  { type: "like", emoji: "💡", label: "Inspire" },
   { type: "love", emoji: "❤️", label: "Love" },
   { type: "haha", emoji: "😂", label: "Haha" },
   { type: "wow", emoji: "😮", label: "Wow" },
@@ -32,8 +32,8 @@ const ReactionPicker = memo(
             }}
             className="group flex flex-col items-center transition-transform hover:scale-125 cursor-pointer active:scale-110"
           >
-            <span className="text-2xl leading-none select-none">{emoji}</span>
-            <span className="text-[9px] text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity mt-0.5 font-medium">
+            <span className="text-xl leading-none select-none">{emoji}</span>
+            <span className="text-[7px] text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity mt-0.5 font-medium">
               {label}
             </span>
           </button>
