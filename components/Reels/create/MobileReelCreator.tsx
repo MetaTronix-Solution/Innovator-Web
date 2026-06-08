@@ -39,7 +39,6 @@ interface Props {
   fileError: string | null;
 }
 
-// ── Speed options ─────────────────────────────────────────────────
 const SPEEDS = [
   { label: "0.3×", value: 0.3 },
   { label: "0.5×", value: 0.5 },
@@ -48,7 +47,6 @@ const SPEEDS = [
   { label: "3×", value: 3 },
 ];
 
-// ── Effects ───────────────────────────────────────────────────────
 const EFFECTS = [
   { id: "none", label: "None", filter: "none" },
   { id: "vivid", label: "Vivid", filter: "saturate(1.8) contrast(1.1)" },
@@ -63,7 +61,6 @@ const EFFECTS = [
   },
 ];
 
-// ── Mock music tracks ─────────────────────────────────────────────
 const TRACKS = [
   { id: "1", title: "Trending Beat", artist: "DJ Nova", duration: "0:30" },
   { id: "2", title: "Chill Vibes", artist: "Lo-Fi Studio", duration: "0:45" },
@@ -71,7 +68,6 @@ const TRACKS = [
   { id: "4", title: "Summer Groove", artist: "Beach Sounds", duration: "0:30" },
 ];
 
-// ─────────────────────────────────────────────────────────────────
 export default function MobileReelCreator({
   onClose,
   onFileSelect,
@@ -101,13 +97,19 @@ export default function MobileReelCreator({
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const previewRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (previewRef.current) {
+      previewRef.current.playbackRate = selectedSpeed;
+    }
+  }, [selectedSpeed, videoSrc]);
+
   const mediaRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Start camera preview
   const startCamera = useCallback(async () => {
     try {
       if (streamRef.current) {
@@ -135,12 +137,10 @@ export default function MobileReelCreator({
     };
   }, [screen, startCamera]);
 
-  // Flip camera
   const handleFlip = () => {
     setFacingMode((f) => (f === "user" ? "environment" : "user"));
   };
 
-  // Start/stop recording
   const beginRecording = () => {
     if (!streamRef.current) return;
     chunksRef.current = [];
@@ -187,7 +187,6 @@ export default function MobileReelCreator({
     }
   };
 
-  // Gallery pick
   const handleGalleryPick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -200,14 +199,12 @@ export default function MobileReelCreator({
   const fmtTime = (s: number) =>
     `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
-  // ── SCREEN: capture ───────────────────────────────────────────
   if (screen === "capture")
     return (
       <div
         className="fixed inset-0 z-[70] bg-black flex flex-col"
         style={{ touchAction: "none" }}
       >
-        {/* Camera viewfinder */}
         <div className="relative flex-1 overflow-hidden">
           <video
             ref={videoRef}
@@ -221,7 +218,6 @@ export default function MobileReelCreator({
             }}
           />
 
-          {/* Countdown overlay */}
           {countdown !== null && (
             <div className="absolute inset-0 flex items-center justify-center">
               <span className="text-white text-8xl font-black drop-shadow-lg animate-ping">
@@ -423,7 +419,6 @@ export default function MobileReelCreator({
 
         {/* Bottom controls */}
         <div className="bg-black px-6 pb-safe pb-6 pt-4 flex items-center justify-between gap-4">
-          {/* Gallery */}
           <button
             onClick={() => fileInputRef.current?.click()}
             className="w-14 h-14 rounded-2xl border-2 border-white/30 bg-white/10 flex items-center justify-center"
@@ -505,7 +500,6 @@ export default function MobileReelCreator({
       </div>
     );
 
-  // ── SCREEN: preview ───────────────────────────────────────────
   if (screen === "preview" && videoSrc)
     return (
       <div className="fixed inset-0 z-[70] bg-black flex flex-col">
@@ -518,7 +512,7 @@ export default function MobileReelCreator({
             playsInline
             muted
             className="w-full h-full object-cover"
-            style={{ filter: effect.filter, playbackRate: selectedSpeed }}
+            style={{ filter: effect.filter }}
           />
 
           {/* Top bar */}
@@ -561,7 +555,6 @@ export default function MobileReelCreator({
       </div>
     );
 
-  // ── SCREEN: details ───────────────────────────────────────────
   if (screen === "details")
     return (
       <div className="fixed inset-0 z-[70] bg-background flex flex-col overflow-y-auto">
