@@ -11,7 +11,7 @@ interface CommentInputProps {
   isSubmitting: boolean;
   placeholder?: string;
   autoFocus?: boolean;
-  size?: "sm" | "xs";
+  size?: "sm" | "md" | "xs";
   showCancel?: boolean;
 }
 
@@ -23,7 +23,7 @@ const CommentInput = ({
   isSubmitting,
   placeholder = "Write a comment…",
   autoFocus = false,
-  size = "sm",
+  size = "md",
   showCancel = false,
 }: CommentInputProps) => {
   const isXs = size === "xs";

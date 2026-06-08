@@ -264,6 +264,13 @@ const Navbar = () => {
             </div>
 
             <div className="flex sm:hidden items-center gap-1">
+              <button
+                onClick={() => setCreateReelOpen(true)}
+                className="relative flex items-center justify-center w-8 h-8 bg-secondary text-secondary-foreground rounded-full cursor-pointer hover:bg-accent transition-colors active:scale-95"
+                aria-label="Create Reel"
+              >
+                <PlusCircle size={18} />
+              </button>
               <Link href="/messages" aria-label="Messages">
                 <div
                   className={`relative flex items-center justify-center w-8 h-8 rounded-full cursor-pointer transition-colors active:scale-95 ${

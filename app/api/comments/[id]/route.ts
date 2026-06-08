@@ -40,6 +40,9 @@ export async function DELETE(
     const cookieStore = await cookies();
     const token = cookieStore.get("accessToken")?.value;
 
+    console.log("DELETE comment id:", id);
+    console.log("token:", token);
+
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/comments/${id}/`,
       {
@@ -48,11 +51,21 @@ export async function DELETE(
       },
     );
 
+    console.log("Django response status:", response.status);
+
+    if (response.status === 204 || response.ok) {
+      return new NextResponse(null, { status: 204 });
+    }
+
+    const errorBody = await response.text();
+    console.log("Django error body:", errorBody);
+
     return NextResponse.json(
-      { success: response.ok },
+      { error: "Delete failed" },
       { status: response.status },
     );
-  } catch {
+  } catch (err) {
+    console.error("DELETE error:", err);
     return NextResponse.json({ error: "Delete failed" }, { status: 500 });
   }
 }

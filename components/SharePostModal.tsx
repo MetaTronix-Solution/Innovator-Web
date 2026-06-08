@@ -29,6 +29,7 @@ export default function SharePostModal({
 }: SharePostModalProps) {
   const [followers, setFollowers] = useState<Follower[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [loading, setLoading] = useState(false);
 
   const postUrl = post?.id ? `${window.location.origin}/post/${post.id}` : "";
@@ -41,22 +42,32 @@ export default function SharePostModal({
       name: "WhatsApp",
       color: "bg-green-500",
       url: `https://wa.me/?text=${shareText}%20${postUrl}`,
+      icon: "W",
     },
     {
       name: "Facebook",
       color: "bg-blue-600",
       url: `https://www.facebook.com/sharer/sharer.php?u=${postUrl}`,
+      icon: "f",
     },
     {
       name: "Twitter",
       color: "bg-black",
       url: `https://twitter.com/intent/tweet?text=${shareText}&url=${postUrl}`,
+      icon: "𝕏",
     },
   ];
 
   useEffect(() => {
     if (isOpen) fetchFollowers();
   }, [isOpen]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const fetchFollowers = async () => {
     setLoading(true);
@@ -86,6 +97,12 @@ export default function SharePostModal({
 
   if (!isOpen) return null;
 
+  const filtered = Array.isArray(followers)
+    ? followers.filter((f: any) =>
+        f.username?.toLowerCase().includes(debouncedQuery.toLowerCase()),
+      )
+    : [];
+
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       <div
@@ -112,6 +129,7 @@ export default function SharePostModal({
             />
             <input
               type="text"
+              value={searchQuery}
               placeholder="Search followers..."
               className="w-full bg-muted/50 border rounded-lg py-2 pl-10 pr-4 text-sm focus:outline-none"
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -124,57 +142,55 @@ export default function SharePostModal({
             <div className="flex justify-center p-4 text-sm text-muted-foreground">
               Loading followers...
             </div>
-          ) : Array.isArray(followers) ? (
-            followers
-              .filter((f: any) =>
-                f.username?.toLowerCase().includes(searchQuery.toLowerCase()),
-              )
-              .map((follower: any) => {
-                const avatarSrc = getMediaUrl(follower?.avatar);
+          ) : filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full py-8 text-muted-foreground">
+              <User size={32} className="mb-2 opacity-30" />
+              <p className="text-sm font-medium">
+                {debouncedQuery
+                  ? `No user found with "${debouncedQuery}"`
+                  : "No followers found."}
+              </p>
+            </div>
+          ) : (
+            filtered.map((follower: any) => {
+              const avatarSrc = getMediaUrl(follower?.avatar);
 
-                return (
-                  <div
-                    key={follower.id}
-                    className="flex items-center justify-between p-2 hover:bg-accent rounded-xl transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 relative rounded-full border-2 border-primary/20 flex items-center justify-center bg-muted overflow-hidden shrink-0">
-                        {avatarSrc ? (
-                          <Image
-                            src={avatarSrc}
-                            alt={follower.username}
-                            fill
-                            className="object-cover"
-                            unoptimized
-                          />
-                        ) : (
-                          <User
-                            size={20}
-                            className="text-muted-foreground/60"
-                          />
-                        )}
-                      </div>
-
-                      <div className="overflow-hidden">
-                        <p className="text-sm font-semibold truncate">
-                          {follower.username}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {follower.full_name || follower.username}
-                        </p>
-                      </div>
+              return (
+                <div
+                  key={follower.id}
+                  className="flex items-center justify-between p-2 hover:bg-accent rounded-xl transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 relative rounded-full border-2 border-primary/20 flex items-center justify-center bg-muted overflow-hidden shrink-0">
+                      {avatarSrc ? (
+                        <Image
+                          src={avatarSrc}
+                          alt={follower.username}
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
+                      ) : (
+                        <User size={20} className="text-muted-foreground/60" />
+                      )}
                     </div>
 
-                    <button className="bg-[#ff6b00] hover:bg-[#e66000] text-white px-4 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95">
-                      Send
-                    </button>
+                    <div className="overflow-hidden">
+                      <p className="text-sm font-semibold truncate">
+                        {follower.username}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {follower.full_name || follower.username}
+                      </p>
+                    </div>
                   </div>
-                );
-              })
-          ) : (
-            <div className="text-center p-4 text-xs text-muted-foreground">
-              No followers found.
-            </div>
+
+                  <button className="bg-[#ff6b00] hover:bg-[#e66000] text-white px-4 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95">
+                    Send
+                  </button>
+                </div>
+              );
+            })
           )}
         </div>
 
@@ -191,7 +207,7 @@ export default function SharePostModal({
                 <div
                   className={`${opt.color} w-10 h-10 rounded-full flex items-center justify-center text-white shadow-lg`}
                 >
-                  <Send size={18} />
+                  <span className="text-lg font-bold">{opt.icon}</span>
                 </div>
                 <span className="text-[10px] font-medium">{opt.name}</span>
               </a>

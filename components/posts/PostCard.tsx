@@ -29,7 +29,6 @@ import { RootState } from "@/lib/store/store";
 import Link from "next/link";
 import CommentButton from "./CommentButton";
 import RepostButton from "./RepostButton";
-import { useSession } from "next-auth/react";
 import { formatRelativeTime } from "@/lib/utils/formatRelativeTime";
 
 export const renderedPosts = new Set<string>();
@@ -63,11 +62,9 @@ const PostCard = ({ post }: { post: any; index?: number }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const dispatch = useDispatch();
 
-  const { data: session } = useSession();
+  const user = useSelector((state: RootState) => state.auth.user);
 
-  const currentUser = useSelector((state: RootState) => state.auth.user);
-
-  const isOwnPost = currentUser?.id === post.user_id;
+  const isOwnPost = user?.id === post.user_id;
 
   const isRepost = !!post.shared_post_details;
   const caption = post.caption || post.content || "";
@@ -423,7 +420,8 @@ const PostCard = ({ post }: { post: any; index?: number }) => {
 
         {showComments && (
           <CommentSection
-            currentUserId={session?.user?.id}
+            currentUserId={user?.id}
+            currentUsername={user?.username}
             comments={comments}
             newComment={newComment}
             isLoadingComments={isLoadingComments}
@@ -446,7 +444,7 @@ const PostCard = ({ post }: { post: any; index?: number }) => {
       {isRepostModalOpen && (
         <RepostModal
           post={post}
-          currentUser={currentUser}
+          currentUser={user}
           repostCaption={repostCaption}
           isSubmitting={isSubmitting}
           formatRelativeTime={formatRelativeTime}

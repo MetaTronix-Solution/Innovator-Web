@@ -15,6 +15,7 @@ interface CommentSectionProps {
   onCommentSubmit: (e: React.FormEvent) => void;
   formatTime: (date: string) => string;
   currentUserId?: string;
+  currentUsername?: string;
 }
 
 const CommentSection = ({
@@ -26,6 +27,7 @@ const CommentSection = ({
   onCommentSubmit,
   formatTime,
   currentUserId,
+  currentUsername,
 }: CommentSectionProps) => {
   const [comments, setComments] = useState<Comment[]>(initialComments);
 
@@ -57,7 +59,7 @@ const CommentSection = ({
           onSubmit={onCommentSubmit}
           isSubmitting={isSubmittingComment}
           placeholder="Write a comment…"
-          size="sm"
+          size="md"
         />
       </div>
 
@@ -67,9 +69,10 @@ const CommentSection = ({
             <Loader2 size={20} className="animate-spin text-muted-foreground" />
           </div>
         ) : comments.length === 0 ? (
-          <p className="text-center text-muted-foreground text-sm py-6">
-            No comments yet. Be the first!
-          </p>
+          <div className="text-center text-muted-foreground text-sm py-6">
+            <p className="text-md">No comments yet.</p>
+            <p className="text-lg mt-1">Be the first to comment!</p>
+          </div>
         ) : (
           comments.map((comment) => (
             <CommentItem
@@ -77,6 +80,7 @@ const CommentSection = ({
               comment={comment}
               formatTime={formatTime}
               currentUserId={currentUserId}
+              currentUsername={currentUsername}
               onDeleted={handleCommentDeleted}
               onUpdated={handleCommentUpdated}
             />
