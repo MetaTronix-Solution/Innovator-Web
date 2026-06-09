@@ -47,7 +47,6 @@ export async function PATCH(request: NextRequest) {
 
     const contentType = request.headers.get("content-type") ?? "";
 
-    // Handle multipart (avatar upload) vs JSON
     if (contentType.includes("multipart/form-data")) {
       const formData = await request.formData();
       const response = await fetch(`${BACKEND_URL}/api/profile/`, {

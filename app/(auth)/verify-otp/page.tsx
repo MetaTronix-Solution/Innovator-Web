@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, Suspense, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, ShieldCheck, ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -11,9 +11,41 @@ function VerifyOtpForm() {
   const searchParams = useSearchParams();
 
   const [email, setEmail] = useState(searchParams.get("email") || "");
-  const [otp, setOtp] = useState("");
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  const handleChange = (index: number, value: string) => {
+    const digit = value.replace(/\D/g, "").slice(-1);
+    const newOtp = [...otp];
+    newOtp[index] = digit;
+    setOtp(newOtp);
+    if (digit && index < 5) inputRefs.current[index + 1]?.focus();
+  };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === "Backspace" && !otp[index] && index > 0)
+      inputRefs.current[index - 1]?.focus();
+    if (e.key === "ArrowLeft" && index > 0)
+      inputRefs.current[index - 1]?.focus();
+    if (e.key === "ArrowRight" && index < 5)
+      inputRefs.current[index + 1]?.focus();
+  };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pasted = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, 6);
+    const newOtp = [...otp];
+    pasted.split("").forEach((ch, i) => {
+      newOtp[i] = ch;
+    });
+    setOtp(newOtp);
+    inputRefs.current[Math.min(pasted.length, 5)]?.focus();
+  };
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,14 +56,14 @@ function VerifyOtpForm() {
       const res = await fetch("/api/auth/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, otp }),
+        body: JSON.stringify({ email, otp: otp.join("") }),
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
       router.push(
-        `/reset-password?email=${encodeURIComponent(email)}&otp=${encodeURIComponent(otp)}`,
+        `/reset-password?email=${encodeURIComponent(email)}&otp=${encodeURIComponent(otp.join(""))}`,
       );
     } catch (err: any) {
       setError(err.message || "Verification failed");
@@ -49,9 +81,12 @@ function VerifyOtpForm() {
               <ShieldCheck className="h-8 w-8 text-primary" />
             </div>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">Verify OTP</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Verify your email
+          </h1>
           <p className="text-sm text-muted-foreground">
-            Enter the code sent to your email to continue.
+            Enter the 6-digit code sent to{" "}
+            <span className="text-foreground font-medium">{email}</span>
           </p>
         </div>
 
@@ -61,37 +96,35 @@ function VerifyOtpForm() {
           </div>
         )}
 
-        <form onSubmit={handleVerify} className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Email Address</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring outline-none"
-              placeholder="Enter your email"
-              required
-            />
+        <form onSubmit={handleVerify} className="space-y-6">
+          <div className="flex gap-2 justify-center">
+            {otp.map((digit, i) => (
+              <input
+                key={i}
+                ref={(el) => {
+                  inputRefs.current[i] = el;
+                }}
+                type="text"
+                inputMode="numeric"
+                maxLength={1}
+                value={digit}
+                onChange={(e) => handleChange(i, e.target.value)}
+                onKeyDown={(e) => handleKeyDown(i, e)}
+                onPaste={handlePaste}
+                className="w-12 h-14 text-center text-2xl font-semibold rounded-md border border-input bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+              />
+            ))}
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">OTP Code</label>
-            <input
-              type="text"
-              maxLength={6}
-              value={otp}
-              onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-              className="flex h-12 w-full rounded-md border border-input bg-background px-3 py-2 text-center text-2xl font-bold tracking-[0.5em] focus-visible:ring-2 focus-visible:ring-ring outline-none"
-              placeholder="000000"
-              required
-            />
-          </div>
-
-          <Button type="submit" disabled={isLoading} className="w-full h-11">
+          <Button
+            type="submit"
+            disabled={isLoading || otp.join("").length < 6}
+            className="w-full h-11"
+          >
             {isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              "Verify Code"
+              "Verify code"
             )}
           </Button>
         </form>

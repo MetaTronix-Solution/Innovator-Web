@@ -260,7 +260,7 @@ const PostCard = ({ post }: { post: any; index?: number }) => {
         ref={cardRef}
         className="bg-card border border-border rounded-sm md:rounded-2xl overflow-hidden shadow-sm mb-1 md:mb-2 transition-all hover:shadow-md"
       >
-        <div className="p-4 flex items-center justify-between gap-3">
+        <div className="p-4 px-2 md:px-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Link
               href={`/${post.user_id}`}
@@ -382,8 +382,8 @@ const PostCard = ({ post }: { post: any; index?: number }) => {
           </>
         )}
 
-        <div className="px-4 py-2 flex items-center justify-between border-t border-border/50">
-          <div className="flex gap-1">
+        <div className="px-0 py-1 md:px-2 md:py-2 flex items-center justify-between border-t border-border/50">
+          <div className="flex gap-1 md:gap-3">
             <ReactionButton
               isVertical={false}
               currentReaction={localReaction}
@@ -405,12 +405,14 @@ const PostCard = ({ post }: { post: any; index?: number }) => {
             />
           </div>
 
-          <button
-            onClick={() => setIsShareModalOpen(true)}
-            className="p-2 hover:bg-accent rounded-full cursor-pointer text-muted-foreground transition-all"
-          >
-            <Send size={18} />
-          </button>
+          <div className="pr-3">
+            <button
+              onClick={() => setIsShareModalOpen(true)}
+              className="p-2 hover:bg-accent rounded-full cursor-pointer text-muted-foreground transition-all"
+            >
+              <Send size={18} />
+            </button>
+          </div>
           <SharePostModal
             isOpen={isShareModalOpen}
             onClose={() => setIsShareModalOpen(false)}

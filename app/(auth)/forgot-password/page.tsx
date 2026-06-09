@@ -13,7 +13,6 @@ export default function ForgotPasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  // Inside ForgotPasswordPage.tsx
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
@@ -26,7 +25,9 @@ export default function ForgotPasswordPage() {
       });
 
       if (response.ok) {
-        router.push(`/verify-otp`);
+        router.push(
+          `/verify-otp?email=${encodeURIComponent(email.toLowerCase().trim())}`,
+        );
       }
     } catch (err) {
       setError("Failed to send OTP.");

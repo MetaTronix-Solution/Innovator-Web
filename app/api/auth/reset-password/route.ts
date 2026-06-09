@@ -5,7 +5,7 @@ const AUTH_API = process.env.NEXT_PUBLIC_AUTH_URL as string;
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { password, confirmPassword } = body;
+    const { email, otp, password, confirmPassword } = body;
 
     const response = await fetch(
       `${AUTH_API}/auth/forgot-password/reset-password/`,
@@ -16,17 +16,17 @@ export async function POST(req: Request) {
           Accept: "application/json",
         },
         body: JSON.stringify({
+          email,
+          otp,
           new_password: password,
           confirm_password: confirmPassword,
         }),
       },
     );
 
-    // 1. Extract the data from the response FIRST
-    // We use await response.json() so the 'data' variable actually exists
     const data = await response.json().catch(() => ({}));
+    console.log("Django response:", JSON.stringify(data, null, 2));
 
-    // 2. Now check if the response was successful
     if (!response.ok) {
       return NextResponse.json(
         { error: data.message || data.detail || "Failed to reset password." },

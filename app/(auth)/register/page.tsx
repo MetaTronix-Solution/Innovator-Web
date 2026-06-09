@@ -28,6 +28,7 @@ export default function RegisterPage() {
   const [otp, setOtp] = useState("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [showOTP, setShowOTP] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -67,24 +68,7 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_AUTH_URL}/auth/verify-email/`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: formData.email,
-            otp: otp,
-          }),
-        },
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Invalid OTP");
-      }
-
+      await authService.verifyEmail(formData.email, otp);
       router.push("/login?registered=true");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Verification failed");
@@ -240,12 +224,46 @@ export default function RegisterPage() {
                 </div>
               </div>
 
+              <div className="md:col-span-2 flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  id="terms"
+                  checked={agreedToTerms}
+                  onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-input accent-primary cursor-pointer"
+                />
+
+                <label
+                  htmlFor="terms"
+                  className="text-sm text-muted-foreground leading-snug"
+                >
+                  I agree to that{" "}
+                  <a
+                    href="https://your-terms-url.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline font-medium"
+                  >
+                    Terms of Service{" "}
+                  </a>
+                  and{" "}
+                  <a
+                    href="/privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline font-medium"
+                  >
+                    Privacy Policy
+                  </a>
+                </label>
+              </div>
+
               <Button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !agreedToTerms}
                 className="md:col-span-2 w-full h-12"
               >
-                {loading ? "Creating Account..." : "Sign Up"}
+                {loading ? "Creating Account..." : "Create Account"}
               </Button>
             </form>
           ) : (
@@ -306,7 +324,7 @@ export default function RegisterPage() {
                   href="/login"
                   className="text-primary hover:underline font-semibold"
                 >
-                  Sign in
+                  Log in
                 </Link>
               </p>
             </>
