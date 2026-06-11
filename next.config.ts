@@ -3,6 +3,17 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   trailingSlash: true,
   images: {
+    localPatterns: [
+      {
+        pathname: "/api/media",
+        search: "**",
+      },
+      {
+        pathname: "/**",
+        search: "",
+      },
+    ],
+
     remotePatterns: [
       {
         protocol: "https",

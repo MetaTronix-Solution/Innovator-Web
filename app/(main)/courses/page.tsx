@@ -1,58 +1,27 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
 import { useRouter } from "next/navigation";
-import { Search, BookOpen, Bell } from "lucide-react";
+import { Search, Bell, BookOpenText } from "lucide-react";
 import { NotificationsPanel } from "@/components/Courses/NotificationPanel";
 import { CourseCard } from "@/components/Courses/CourseCard";
+import useDebounce from "@/lib/hooks/useDebounce";
+import useLocalCache from "@/lib/hooks/useLocalCache";
+import useInfiniteScroll from "@/lib/hooks/useInfiniteScroll";
+import { Course } from "@/types/course";
 
-interface Course {
-  id: string;
-  title: string;
-  instructor: string;
-  thumbnail: string | null;
-  duration: string;
-  lessons_count: number;
-  rating: number;
-  enrolled_count?: number;
-  category?: string;
-  category_name?: string;
-  level?: string;
-  description?: string;
-  price?: number | string;
-  is_enrolled?: boolean;
-}
-
-interface CourseCache {
+interface CourseCacheData {
   courses: Course[];
-  timestamp: number;
   hasMore: boolean;
 }
 
 const LIMIT = 10;
-const CACHE_KEY = "courses_cache";
-const CACHE_TTL = 5 * 60 * 1000;
-
-const readCache = (): CourseCache | null => {
-  try {
-    const raw = localStorage.getItem(CACHE_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw) as CourseCache;
-  } catch {
-    return null;
-  }
-};
-
-const writeCache = (data: CourseCache) => {
-  try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-  } catch {}
-};
-
-const isCacheFresh = (cache: CourseCache | null): boolean => {
-  if (!cache || !cache.courses?.length) return false;
-  return Date.now() - cache.timestamp < CACHE_TTL;
-};
 
 const getCategoryName = (course: Course): string =>
   (course as any).category_name ??
@@ -115,8 +84,8 @@ export default function CoursePage() {
     pageRef.current = page;
   }, [page]);
 
-  const observerRef = useRef<IntersectionObserver | null>(null);
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const debouncedSearch = useDebounce(searchQuery, 500);
+  const cache = useLocalCache<CourseCacheData>("courses_cache", 5 * 60 * 1000);
 
   const fetchUnreadCount = useCallback(async () => {
     try {
@@ -133,11 +102,8 @@ export default function CoursePage() {
   }, [fetchUnreadCount]);
 
   useEffect(() => {
-    if (notifOpen) {
-      setUnreadCount(0);
-    } else {
-      fetchUnreadCount();
-    }
+    if (notifOpen) setUnreadCount(0);
+    else fetchUnreadCount();
   }, [notifOpen, fetchUnreadCount]);
 
   useEffect(() => {
@@ -145,37 +111,32 @@ export default function CoursePage() {
     initialFetchDone.current = true;
 
     const bootstrap = async () => {
-      const cache = readCache();
+      const cached = cache.read();
 
-      if (cache?.courses?.length) {
-        setCourses(cache.courses);
-        setHasMore(cache.hasMore ?? false);
+      if (cached?.courses?.length) {
+        setCourses(cached.courses);
+        setHasMore(cached.hasMore ?? false);
         setPage(2);
         setBootstrapping(false);
       }
 
-      const shouldRefetch = !isCacheFresh(cache);
+      const shouldRefetch = !cache.isFresh() || !cached?.courses?.length;
 
       try {
         if (shouldRefetch) {
           const res = await fetch(`/api/courses?page=1&limit=${LIMIT}`);
           if (!res.ok) throw new Error("Could not fetch courses.");
-          const json = await res.json();
-          const freshCourses: Course[] = json.results ?? json ?? [];
-          const freshHasMore: boolean = json.hasMore ?? false;
+          const data = await res.json();
+          const freshCourses: Course[] = data.results ?? data ?? [];
+          const freshHasMore: boolean = data.hasMore ?? false;
 
           setCourses(freshCourses);
           setHasMore(freshHasMore);
           setPage(2);
-
-          writeCache({
-            courses: freshCourses,
-            hasMore: freshHasMore,
-            timestamp: Date.now(),
-          });
+          cache.write({ courses: freshCourses, hasMore: freshHasMore });
         }
       } catch (err: any) {
-        if (!cache?.courses?.length) {
+        if (!cached?.courses?.length) {
           setError(err.message || "Something went wrong.");
         }
       } finally {
@@ -202,19 +163,16 @@ export default function CoursePage() {
       if (!res.ok) return;
       const json = await res.json();
       const newCourses: Course[] = json.results ?? json ?? [];
+      const newHasMore: boolean = json.hasMore ?? false;
+
       setCourses((prev) => {
         const merged = [...prev, ...newCourses];
-        const cache = readCache();
-        if (cache) {
-          writeCache({
-            ...cache,
-            courses: merged,
-            hasMore: json.hasMore ?? false,
-          });
-        }
+        const cached = cache.read();
+        if (cached) cache.write({ courses: merged, hasMore: newHasMore });
         return merged;
       });
-      setHasMore(json.hasMore ?? false);
+
+      setHasMore(newHasMore);
       setPage(pageRef.current + 1);
     } catch (err) {
       console.error("Failed to fetch more courses:", err);
@@ -223,29 +181,24 @@ export default function CoursePage() {
     }
   }, []);
 
-  useEffect(() => {
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) fetchMore();
-      },
-      { threshold: 0.1 },
-    );
-    if (sentinelRef.current) observerRef.current.observe(sentinelRef.current);
-    return () => observerRef.current?.disconnect();
-  }, [fetchMore]);
+  const sentinelRef = useInfiniteScroll(fetchMore);
 
-  const filteredCourses = courses.filter((course) => {
-    const matchesSearch =
-      course.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      course.instructor?.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredCourses = useMemo(() => {
+    return courses.filter((course) => {
+      const matchesSearch =
+        course.title?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        course.instructor
+          ?.toLowerCase()
+          .includes(debouncedSearch.toLowerCase());
 
-    const courseCat = getCategoryName(course);
-    const matchesCategory =
-      activeCategory === "All" ||
-      courseCat.toLowerCase() === activeCategory.toLowerCase();
+      const courseCat = getCategoryName(course);
+      const matchesCategory =
+        activeCategory === "All" ||
+        courseCat.toLowerCase() === activeCategory.toLowerCase();
 
-    return matchesSearch && matchesCategory;
-  });
+      return matchesSearch && matchesCategory;
+    });
+  }, [courses, debouncedSearch, activeCategory]);
 
   if (error) {
     return (
@@ -307,18 +260,22 @@ export default function CoursePage() {
           ))}
         </div>
       ) : filteredCourses.length === 0 ? (
-        <div className="text-center py-20 border border-dashed border-border rounded-2xl">
-          <BookOpen
-            size={32}
-            className="mx-auto text-muted-foreground/40 mb-3"
-          />
-          <p className="text-muted-foreground text-sm font-medium">
-            No courses found.
+        <div className="flex flex-col items-center justify-center py-20 border border-dashed border-border rounded-2xl space-y-3">
+          <div className="p-4 rounded-full bg-muted">
+            <BookOpenText className="w-8 h-8 text-muted-foreground" />
+          </div>
+          <p className="text-foreground font-semibold text-md">
+            No courses found
           </p>
-          {searchQuery && (
+          <p className="text-muted-foreground text-sm text-center max-w-[200px]">
+            {debouncedSearch
+              ? `No results for "${debouncedSearch}". Try a different title or instructor.`
+              : "No courses available in this category yet."}
+          </p>
+          {debouncedSearch && (
             <button
               onClick={() => setSearchQuery("")}
-              className="mt-3 text-xs text-orange-500 font-bold"
+              className="text-xs text-orange-500 font-semibold hover:underline"
             >
               Clear search
             </button>

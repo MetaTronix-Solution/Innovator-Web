@@ -237,24 +237,22 @@ export default function RegisterPage() {
                   htmlFor="terms"
                   className="text-sm text-muted-foreground leading-snug"
                 >
-                  I agree to that{" "}
-                  <a
-                    href="https://your-terms-url.com"
+                  I agree to the{" "}
+                  <Link
+                    href="/terms"
                     target="_blank"
-                    rel="noopener noreferrer"
                     className="text-primary hover:underline font-medium"
                   >
-                    Terms of Service{" "}
-                  </a>
+                    Terms of Service
+                  </Link>{" "}
                   and{" "}
-                  <a
+                  <Link
                     href="/privacy"
                     target="_blank"
-                    rel="noopener noreferrer"
                     className="text-primary hover:underline font-medium"
                   >
                     Privacy Policy
-                  </a>
+                  </Link>
                 </label>
               </div>
 

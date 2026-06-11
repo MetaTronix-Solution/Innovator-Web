@@ -57,6 +57,7 @@ const ReelCard = ({ reel, post }: ReelCardProps) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
+  const [blocking, setBlocking] = useState(false);
 
   const [localCount, setLocalCount] = useState<number>(
     reel.reactions_count ?? reel.like_count ?? 0,
@@ -141,7 +142,7 @@ const ReelCard = ({ reel, post }: ReelCardProps) => {
       });
 
       if (res.ok || res.status === 204) {
-        router.refresh(); // re-fetch reels list
+        router.refresh();
       } else {
         const err = await res.json();
         throw new Error(err.message ?? "Failed to delete");
@@ -156,7 +157,26 @@ const ReelCard = ({ reel, post }: ReelCardProps) => {
 
   const handleShare = useCallback(() => setIsShareModalOpen(true), []);
 
-  const handleBlock = () => {};
+  const handleBlock = async () => {
+    if (!confirm(`Block ${reel.username}?`)) return;
+    setBlocking(true);
+    try {
+      const res = await fetch(`/api/users/${userId}/block/`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? "Failed to block user");
+      }
+      toast.success("User blocked");
+      setShowMenu(false);
+      router.refresh();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to block user");
+    } finally {
+      setBlocking(false);
+    }
+  };
 
   const handleCopyLink = async () => {
     try {
@@ -265,10 +285,11 @@ const ReelCard = ({ reel, post }: ReelCardProps) => {
                   </button>
                   <button
                     onClick={handleBlock}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                    disabled={blocking}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50"
                   >
                     <Ban size={15} />
-                    Block user
+                    {blocking ? "Blocking…" : "Block user"}
                   </button>
                 </>
               )}

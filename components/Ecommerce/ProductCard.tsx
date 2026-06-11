@@ -55,6 +55,14 @@ export default function ProductCard({
     maximumFractionDigits: 0,
   });
 
+  const buttonState = cartLoading
+    ? "loading"
+    : isOutOfStock
+      ? "out-of-stock"
+      : isInCart
+        ? "in-cart"
+        : "default";
+
   return (
     <div
       onClick={() => router.push(`/products/${product.id}`)}
@@ -66,9 +74,9 @@ export default function ProductCard({
           src={getMediaUrl(product.image) || "/placeholder-product.png"}
           alt={product.name}
           fill
-          loading="eager"
-          className="object-contain p-2 group-hover:scale-110 transition-transform duration-500"
+          sizes="(max-width: 640px) 50vw, 33vw"
           unoptimized
+          className="object-contain p-2 group-hover:scale-110 transition-transform duration-500"
         />
       </div>
 
@@ -96,20 +104,22 @@ export default function ProductCard({
 
         <Button
           onClick={handleCartClick}
-          disabled={cartLoading || isOutOfStock}
-          className={`w-full h-12 rounded-sm md:rounded-md bottom-0 font-bold transition-all duration-300 cursor-pointer ${
-            isOutOfStock
+          disabled={buttonState === "loading" || buttonState === "out-of-stock"}
+          className={`w-full h-12 rounded-sm md:rounded-md font-bold transition-all duration-300 cursor-pointer ${
+            buttonState === "out-of-stock"
               ? "bg-muted text-muted-foreground cursor-not-allowed"
-              : isInCart
+              : buttonState === "in-cart"
                 ? "bg-foreground text-secondary hover:bg-secondary-foreground/90"
                 : "bg-primary"
           }`}
         >
-          {cartLoading ? (
+          {buttonState === "loading" ? (
             <Loader2 className="animate-spin" />
-          ) : isOutOfStock ? (
-            <span className="flex items-center gap-2">Out of Stock</span>
-          ) : isInCart ? (
+          ) : buttonState === "out-of-stock" ? (
+            <span className="flex items-center gap-2">
+              <Ban size={16} /> Out of Stock
+            </span>
+          ) : buttonState === "in-cart" ? (
             <span className="flex items-center gap-2">
               <Check size={16} /> Added!
             </span>

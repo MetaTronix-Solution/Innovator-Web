@@ -8,7 +8,7 @@ import React, {
   useCallback,
 } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Search, ShoppingBag, Bell } from "lucide-react";
+import { Search, ShoppingBag, Bell, PackageSearch } from "lucide-react";
 
 import ProductCard from "@/components/Ecommerce/ProductCard";
 import { RootState } from "@/lib/store/store";
@@ -23,39 +23,18 @@ import { Product } from "@/types/product";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import NotificationDrawer from "@/components/Ecommerce/NotificationDrawer";
+import useDebounce from "@/lib/hooks/useDebounce";
+import useLocalCache from "@/lib/hooks/useLocalCache";
+import useInfiniteScroll from "@/lib/hooks/useInfiniteScroll";
 
 type CategoryFilter = "All" | "Multimeters" | "Electronics";
 
 const LIMIT = 10;
-const CACHE_KEY = "products_cache";
-const CACHE_TTL = 5 * 60 * 1000;
 
-interface ProductCache {
+interface ProductCacheData {
   products: Product[];
-  timestamp: number;
   hasMore: boolean;
 }
-
-const readCache = (): ProductCache | null => {
-  try {
-    const raw = localStorage.getItem(CACHE_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw) as ProductCache;
-  } catch {
-    return null;
-  }
-};
-
-const writeCache = (data: ProductCache) => {
-  try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-  } catch {}
-};
-
-const isCacheFresh = (cache: ProductCache | null): boolean => {
-  if (!cache || !cache.products?.length) return false;
-  return Date.now() - cache.timestamp < CACHE_TTL;
-};
 
 export default function EcommercePage() {
   const dispatch = useDispatch();
@@ -83,6 +62,12 @@ export default function EcommercePage() {
   const pageRef = useRef(page);
   const initialFetchDone = useRef(false);
 
+  const debouncedSearch = useDebounce(searchQuery, 500);
+  const cache = useLocalCache<ProductCacheData>(
+    "products_cache",
+    5 * 60 * 1000,
+  );
+
   useEffect(() => {
     hasMoreRef.current = hasMore;
   }, [hasMore]);
@@ -93,24 +78,21 @@ export default function EcommercePage() {
     pageRef.current = page;
   }, [page]);
 
-  const observerRef = useRef<IntersectionObserver | null>(null);
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
-
   useEffect(() => {
     if (initialFetchDone.current) return;
     initialFetchDone.current = true;
 
     const bootstrap = async () => {
-      const cache = readCache();
+      const cached = cache.read();
 
-      if (cache?.products?.length) {
-        dispatch(setProducts(cache.products));
-        dispatch(setHasMore(cache.hasMore ?? false));
+      if (cached?.products?.length) {
+        dispatch(setProducts(cached.products));
+        dispatch(setHasMore(cached.hasMore ?? false));
         dispatch(setPage(2));
         setBootstrapping(false);
       }
 
-      const shouldRefetch = !isCacheFresh(cache);
+      const shouldRefetch = !cache.isFresh();
 
       try {
         const [productsJson, cartRes] = await Promise.all([
@@ -131,19 +113,16 @@ export default function EcommercePage() {
           setUnreadCount(notifData.count ?? 0);
         }
 
-        let currentProducts = cache?.products ?? [];
+        let currentProducts = cached?.products ?? [];
 
         if (productsJson) {
           const fresh: Product[] = productsJson.results ?? [];
+          const freshHasMore: boolean = productsJson.hasMore ?? false;
           dispatch(setProducts(fresh));
-          dispatch(setHasMore(productsJson.hasMore ?? false));
+          dispatch(setHasMore(freshHasMore));
           dispatch(setPage(2));
           currentProducts = fresh;
-          writeCache({
-            products: fresh,
-            hasMore: productsJson.hasMore ?? false,
-            timestamp: Date.now(),
-          });
+          cache.write({ products: fresh, hasMore: freshHasMore });
         }
 
         if (cartRes.ok) {
@@ -162,7 +141,7 @@ export default function EcommercePage() {
           dispatch(syncCart(mappedItems));
         }
       } catch (err: any) {
-        if (!cache?.products?.length) {
+        if (!cached?.products?.length) {
           setError(err.message || "Something went wrong.");
         }
       } finally {
@@ -183,16 +162,17 @@ export default function EcommercePage() {
       if (!res.ok) return;
       const json = await res.json();
       const newProducts: Product[] = json.results ?? [];
+      const newHasMore: boolean = json.next !== null;
+
       dispatch(appendProducts(newProducts));
-      dispatch(setHasMore(json.hasMore ?? false));
+      dispatch(setHasMore(newHasMore));
       dispatch(setPage(pageRef.current + 1));
 
-      const cache = readCache();
-      if (cache) {
-        writeCache({
-          products: [...cache.products, ...newProducts],
-          hasMore: json.hasMore ?? false,
-          timestamp: cache.timestamp,
+      const cached = cache.read();
+      if (cached) {
+        cache.write({
+          products: [...cached.products, ...newProducts],
+          hasMore: newHasMore,
         });
       }
     } catch (err) {
@@ -202,16 +182,7 @@ export default function EcommercePage() {
     }
   }, [dispatch]);
 
-  useEffect(() => {
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) fetchMore();
-      },
-      { threshold: 0.1 },
-    );
-    if (sentinelRef.current) observerRef.current.observe(sentinelRef.current);
-    return () => observerRef.current?.disconnect();
-  }, [fetchMore]);
+  const sentinelRef = useInfiniteScroll(fetchMore);
 
   const handleCartUpdate = (product: Product, action: "add" | "remove") => {
     if (action === "add") {
@@ -227,12 +198,12 @@ export default function EcommercePage() {
     return products.filter((product) => {
       const prodName = product.name?.toLowerCase() || "";
       const prodCat = product.category_details?.name?.toLowerCase() || "";
-      const query = searchQuery.toLowerCase();
+      const query = debouncedSearch.toLowerCase();
       const matchesSearch = prodName.includes(query) || prodCat.includes(query);
       if (activeCategory === "All") return matchesSearch;
       return matchesSearch && prodCat === activeCategory.toLowerCase();
     });
-  }, [products, searchQuery, activeCategory]);
+  }, [products, debouncedSearch, activeCategory]);
 
   const SkeletonGrid = () => (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -313,8 +284,26 @@ export default function EcommercePage() {
       {bootstrapping ? (
         <SkeletonGrid />
       ) : filteredProducts.length === 0 ? (
-        <div className="text-center py-20 border border-dashed border-border rounded-2xl">
-          <p className="text-muted-foreground text-xs">No items found.</p>
+        <div className="flex flex-col items-center justify-center py-20 border border-dashed border-border rounded-2xl space-y-3">
+          <div className="p-4 rounded-full bg-muted">
+            <PackageSearch className="w-8 h-8 text-muted-foreground" />
+          </div>
+          <p className="text-foreground font-semibold text-md">
+            No products found
+          </p>
+          <p className="text-muted-foreground text-sm text-center max-w-[200px]">
+            {debouncedSearch
+              ? `No results for "${debouncedSearch}". Try a different name or category.`
+              : "No products available in this category yet."}
+          </p>
+          {debouncedSearch && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="text-xs text-orange-500 font-semibold hover:underline"
+            >
+              Clear search
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -346,6 +335,8 @@ export default function EcommercePage() {
         </div>
       )}
 
+      <div ref={sentinelRef} className="h-1" />
+
       <div className="fixed bottom-20 md:bottom-8 right-8 z-40">
         <button
           onClick={() => router.push("/cart")}
@@ -355,7 +346,6 @@ export default function EcommercePage() {
         >
           <div className="relative">
             <ShoppingBag size={isMobile ? 16 : 24} />
-
             {totalQuantity > 0 && (
               <span className="absolute -top-2 -right-2 bg-black text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full border-2 border-orange-500">
                 {totalQuantity > 99 ? "99+" : totalQuantity}

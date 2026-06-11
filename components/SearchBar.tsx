@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import useDebounce from "@/lib/hooks/useDebounce";
 
 const SearchBar = () => {
   const router = useRouter();
@@ -12,30 +13,28 @@ const SearchBar = () => {
   const [query, setQuery] = useState(searchParams.get("q") || "");
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const isTyping = useRef(false);
+
+  const debouncedQuery = useDebounce(query, 500);
 
   useEffect(() => {
-    const handler = setTimeout(() => {
-      if (query.trim()) {
-        router.push(`/search?q=${encodeURIComponent(query.trim())}`);
-      } else if (searchParams.get("q")) {
-        router.push(`/search`);
-      }
-    }, 500);
-
-    return () => clearTimeout(handler);
-  }, [query, router, searchParams]);
+    if (debouncedQuery.trim()) {
+      router.push(`/search?q=${encodeURIComponent(debouncedQuery.trim())}`);
+    } else if (searchParams.get("q")) {
+      router.push("/");
+    }
+  }, [debouncedQuery]);
 
   useEffect(() => {
-    setQuery(searchParams.get("q") || "");
+    if (!isTyping.current) {
+      setQuery(searchParams.get("q") || "");
+    }
+    isTyping.current = false;
   }, [searchParams]);
 
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth >= 1024) {
-        setIsOpen(true);
-      } else {
-        setIsOpen(false);
-      }
+      setIsOpen(window.innerWidth >= 1024);
     };
 
     handleResize();
@@ -68,7 +67,7 @@ const SearchBar = () => {
           flex items-center h-10 rounded-full transition-all duration-300 ease-in-out
           ${
             isOpen
-              ? "w-48 sm:w-60 bg-transparent border border-muted-foreground/20 px-3" // Changed bg-muted to bg-transparent
+              ? "w-48 sm:w-60 bg-transparent border border-muted-foreground/20 px-3"
               : "w-10 bg-transparent justify-center hover:bg-muted/50 cursor-pointer"
           }
           lg:w-64 lg:bg-transparent lg:border lg:border-muted-foreground/20 lg:px-3 lg:cursor-default
@@ -77,14 +76,17 @@ const SearchBar = () => {
         <div className="p-0 flex items-center justify-center">
           <Search
             size={24}
-            className={`shrink-0 transition-colors text-muted-foreground`}
+            className="shrink-0 transition-colors text-muted-foreground"
           />
         </div>
 
         <Input
           type="text"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            isTyping.current = true;
+            setQuery(e.target.value);
+          }}
           placeholder="Search name or username"
           className={`
             ml-1 h-full bg-transparent border-none outline-none text-sm text-foreground 

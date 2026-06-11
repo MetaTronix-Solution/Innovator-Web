@@ -73,12 +73,15 @@ function SearchResults() {
 
   if (users.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-center space-y-3">
+      <div className="flex flex-col items-center justify-center py-30 text-center space-y-3">
         <SearchX className="h-10 w-10 text-muted-foreground" />
-        <h3 className="font-medium text-lg">No results found</h3>
+        <h3 className="font-medium text-lg">
+          No results found for
+          <span className="text-primary text-lg">"{query}"</span>
+        </h3>
         <p className="text-sm text-muted-foreground max-w-xs">
-          We couldn't find any accounts matching "{query}". Check the spelling
-          and try again.
+          Try checking the spelling or searching for a different name or
+          username.
         </p>
       </div>
     );

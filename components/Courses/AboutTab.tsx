@@ -37,7 +37,6 @@ export function AboutTab({ course, isEnrolled, setIsEnrolled }: AboutTabProps) {
         });
 
         const data = await res.json();
-        console.log(data);
 
         if (res.ok && data.payment_url) {
           window.location.href = data.payment_url;

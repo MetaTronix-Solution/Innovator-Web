@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 const sections = [
   {
@@ -110,21 +111,22 @@ We aim to respond to all privacy-related inquiries within 7 business days.`,
 ];
 
 export default function PrivacyPolicyPage() {
+  const router = useRouter();
   return (
     <main className="min-h-screen bg-background">
-      <div className="max-w-3xl mx-auto px-4 py-12">
-        {/* Back link */}
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors mb-8"
+      <div className="max-w-3xl mx-auto px-4 py-4 md:py-8">
+        <button
+          onClick={() => router.back()}
+          className="md:hidden inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors mb-4"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Innovator
-        </Link>
+          Back
+        </button>
 
-        {/* Header */}
-        <div className="mb-10 space-y-2">
-          <h1 className="text-4xl font-bold tracking-tight">Privacy Policy</h1>
+        <div className="mb-4 md:mb-10 space-y-2">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+            Privacy Policy
+          </h1>
           <p className="text-muted-foreground text-sm">
             Last updated:{" "}
             {new Date().toLocaleDateString("en-US", {
@@ -142,8 +144,7 @@ export default function PrivacyPolicyPage() {
           </p>
         </div>
 
-        {/* Sections */}
-        <div className="space-y-8">
+        <div className="space-y-4 md:space-y-8">
           {sections.map((section) => (
             <section
               key={section.title}
@@ -152,7 +153,6 @@ export default function PrivacyPolicyPage() {
               <h2 className="text-lg font-semibold mb-3">{section.title}</h2>
               <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line space-y-2">
                 {section.content.split("\n").map((line, i) => {
-                  // Render **bold** text
                   const parts = line.split(/\*\*(.*?)\*\*/g);
                   return (
                     <p key={i}>
@@ -176,7 +176,6 @@ export default function PrivacyPolicyPage() {
           ))}
         </div>
 
-        {/* Footer */}
         <div className="mt-12 pt-6 border-t border-border text-center text-sm text-muted-foreground">
           <p>
             By using Innovator, you agree to this Privacy Policy and our{" "}

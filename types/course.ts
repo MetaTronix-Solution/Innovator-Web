@@ -29,6 +29,13 @@ export interface Course {
   is_published: boolean;
   created_at: string;
   contents: Content[];
+  instructor?: string;
+  duration?: string;
+  lessons_count?: number;
+  rating?: number;
+  enrolled_count?: number;
+  level?: string;
+  is_enrolled?: boolean;
 }
 
 export type Tab = "lessons" | "docs" | "about";

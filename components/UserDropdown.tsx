@@ -148,13 +148,6 @@ const UserDropdown = ({
         />
 
         <MenuLink
-          icon={<BookOpen size={20} />}
-          label="Research Paper"
-          onClick={() => handleNavigate("/research")}
-          className="md:hidden"
-        />
-
-        <MenuLink
           icon={<Calendar size={20} />}
           label="Events"
           onClick={() => handleNavigate("/events")}

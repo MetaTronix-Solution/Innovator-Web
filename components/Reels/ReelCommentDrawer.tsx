@@ -30,7 +30,6 @@ export default function ReelCommentsDrawer({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  // Track who the user is replying to
   const [replyTo, setReplyTo] = useState<ReplyTarget | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -60,28 +59,24 @@ export default function ReelCommentsDrawer({
       if (!newComment.trim()) return;
       setIsSubmitting(true);
       try {
-        // Construct standard data payload
         const payload = replyTo
           ? {
               id: reelId,
               content: newComment,
               type: "reel" as const,
-              parentId: replyTo.id, // Pass the parent comment id if it's a reply
+              parentId: replyTo.id,
             }
           : { id: reelId, content: newComment, type: "reel" as const };
 
-        // Post through your service helper architecture
         const created = await postComment(
           payload.id,
           payload.content,
           payload.type,
         );
 
-        // Optimistically insert item into localized state array
         if (replyTo) {
           setComments((prev) =>
             prev.map((c) => {
-              // Append to replies subarray if it matches the parent target
               if (c.id === replyTo.id) {
                 return { ...c, replies: [created, ...(c.replies || [])] };
               }
@@ -106,7 +101,7 @@ export default function ReelCommentsDrawer({
 
   const handleReplyAction = (commentId: string, username: string) => {
     setReplyTo({ id: commentId, username });
-    setNewComment(`@${username} `); // Prefill tag implicitly
+    setNewComment(`@${username} `);
     if (inputRef.current) {
       inputRef.current.focus();
     }
@@ -130,7 +125,6 @@ export default function ReelCommentsDrawer({
 
   if (!mounted) return null;
 
-  // Reusable sub-component to prevent massive layout nesting duplication
   const CommentNode = ({
     comment,
     isReply = false,
@@ -170,20 +164,21 @@ export default function ReelCommentsDrawer({
               {formatTime(comment.created_at || comment.createdAt)}
             </span>
           </div>
-          <p className="text-sm text-foreground/90 mt-0.5 leading-relaxed break-words">
-            {comment.content || comment.text}
-          </p>
 
-          {/* Action Row */}
-          {!isReply && (
-            <button
-              onClick={() => handleReplyAction(comment.id, username)}
-              className="mt-1 text-[11px] text-muted-foreground hover:text-primary font-medium flex items-center gap-1 transition-colors"
-            >
-              <MessageSquare size={12} />
-              Reply
-            </button>
-          )}
+          <div className="flex items-end gap-3">
+            <p className="text-sm text-foreground/90 mt-0.5 leading-relaxed break-words">
+              {comment.content || comment.text}
+            </p>
+
+            {!isReply && (
+              <button
+                onClick={() => handleReplyAction(comment.id, username)}
+                className="shrink-0 mb-0.5 text-[11px] text-muted-foreground hover:text-primary font-medium transition-colors"
+              >
+                Reply
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -212,7 +207,6 @@ export default function ReelCommentsDrawer({
           </button>
         </div>
 
-        {/* Comments section layout block */}
         <div className="flex-1 overflow-y-auto px-4 py-3 space-y-5">
           {isLoading ? (
             <div className="flex justify-center py-12">
@@ -228,10 +222,8 @@ export default function ReelCommentsDrawer({
                 key={comment.id}
                 className="border-b border-border/20 pb-4 last:border-0 last:pb-0"
               >
-                {/* Master Core Comment */}
                 <CommentNode comment={comment} />
 
-                {/* Sub-Threaded Nested Target Replies */}
                 {comment.replies && comment.replies.length > 0 && (
                   <div className="space-y-1 relative before:absolute before:left-3 before:top-2 before:bottom-3 before:w-[1px] before:bg-border/60">
                     {comment.replies.map((reply: any) => (
@@ -252,9 +244,7 @@ export default function ReelCommentsDrawer({
           )}
         </div>
 
-        {/* Input area configuration form element */}
         <div className="border-t border-border/50 p-3 bg-background/30 backdrop-blur-sm">
-          {/* Active indicator bar showing you are replying to someone */}
           {replyTo && (
             <div className="flex items-center justify-between bg-accent/60 px-3 py-1.5 rounded-t-lg border-x border-t border-border text-xs text-muted-foreground mb-[-1px]">
               <span>

@@ -8,16 +8,13 @@ import Link from "next/link";
 import {
   Home,
   PlaySquare,
-  Store,
+  ShoppingBag,
   Bell,
   ChevronDown,
   BookOpen,
-  X,
   User,
   FileText,
-  MoreHorizontal,
   PlusCircle,
-  ShoppingBag,
   MessageSquare,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
@@ -31,6 +28,7 @@ import { NotificationFeed } from "@/components/NotificationFeed";
 import { NotificationService } from "@/lib/services/notificationService";
 import { NotificationItem } from "@/types/notification";
 import CreateReelModal from "../Reels/create/CreateReelModal";
+import MobileTabBar from "@/components/layout/MobileTabBar";
 
 interface NavItemProps {
   icon: React.ReactElement<{ size?: number; strokeWidth?: number }>;
@@ -148,28 +146,11 @@ const Navbar = () => {
   }, []);
 
   const navLinks = [
-    { icon: <Home />, href: "/", title: "Home", label: "Home", exact: true },
-    { icon: <PlaySquare />, href: "/reels", title: "Reels", label: "Reels" },
-    { icon: <ShoppingBag />, href: "/products", title: "Shop", label: "Shop" },
-    {
-      icon: <BookOpen />,
-      href: "/courses",
-      title: "E-learning",
-      label: "E-learning",
-    },
-    {
-      icon: <FileText />,
-      href: "/research",
-      title: "Research Paper",
-      label: "Research Papers",
-    },
-  ];
-
-  const tabBarLinks = [
-    { icon: <Home />, href: "/", label: "Home", exact: true },
-    { icon: <PlaySquare />, href: "/reels", label: "Reels" },
-    { icon: <Store />, href: "/products", label: "Shop" },
-    { icon: <BookOpen />, href: "/courses", label: "Academy" },
+    { icon: <Home />, href: "/", title: "Home", exact: true },
+    { icon: <PlaySquare />, href: "/reels", title: "Reels" },
+    { icon: <ShoppingBag />, href: "/products", title: "Shop" },
+    { icon: <BookOpen />, href: "/courses", title: "E-learning" },
+    { icon: <FileText />, href: "/research", title: "Research Papers" },
   ];
 
   return (
@@ -184,7 +165,9 @@ const Navbar = () => {
 
       <nav className="sticky top-0 z-50 w-full bg-card border-b border-border shadow-sm">
         <div
-          className={`max-w-[1440px] mx-auto px-2 md:px-6 flex items-center justify-between h-10 md:h-16 ${pathname === "/" ? "flex" : "hidden md:flex"}`}
+          className={`max-w-[1440px] mx-auto px-2 md:px-6 flex items-center justify-between h-10 md:h-16 ${
+            pathname === "/" ? "flex" : "hidden md:flex"
+          }`}
         >
           {/* Logo */}
           <div className="flex items-center cursor-pointer flex-1 gap-2">
@@ -206,8 +189,8 @@ const Navbar = () => {
           <div className="hidden md:flex items-center justify-center flex-[1.5] h-full gap-1">
             {navLinks.map((link) => (
               <NavItem
-                title={link.title}
                 key={link.href}
+                title={link.title}
                 icon={link.icon}
                 href={link.href}
                 active={
@@ -263,6 +246,7 @@ const Navbar = () => {
               </div>
             </div>
 
+            {/* Mobile action buttons */}
             <div className="flex sm:hidden items-center gap-1">
               <button
                 onClick={() => setCreateReelOpen(true)}
@@ -282,7 +266,6 @@ const Navbar = () => {
                   <MessageSquare size={18} />
                 </div>
               </Link>
-
               <div
                 onClick={() => router.push("/notifications")}
                 className="relative flex items-center justify-center w-8 h-8 bg-secondary text-muted-foreground rounded-full cursor-pointer hover:bg-accent transition-colors active:scale-95"
@@ -296,6 +279,7 @@ const Navbar = () => {
               </div>
             </div>
 
+            {/* Avatar / dropdown */}
             <div
               ref={dropdownRef}
               className="relative shrink-0 hidden sm:block"
@@ -340,103 +324,12 @@ const Navbar = () => {
         </div>
       </nav>
 
-      <div
-        className={`md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border transition-transform duration-300 ${
-          tabBarVisible ? "translate-y-0" : "translate-y-full"
-        }`}
-      >
-        <div className="flex items-center justify-around h-16 px-2">
-          {tabBarLinks.map((link) => {
-            const isActive = link.exact
-              ? pathname === link.href
-              : pathname.startsWith(link.href);
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="flex flex-col items-center justify-center gap-1 flex-1 h-full relative group"
-              >
-                {isActive && (
-                  <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-primary" />
-                )}
-                <span
-                  className={`transition-all duration-200 ${isActive ? "text-primary scale-110" : "text-muted-foreground group-active:scale-90"}`}
-                >
-                  {React.cloneElement(
-                    link.icon as React.ReactElement<{
-                      size?: number;
-                      strokeWidth?: number;
-                    }>,
-                    { size: 22, strokeWidth: isActive ? 2.5 : 1.8 },
-                  )}
-                </span>
-                <span
-                  className={`text-[10px] font-medium leading-none transition-colors ${isActive ? "text-primary" : "text-muted-foreground"}`}
-                >
-                  {link.label}
-                </span>
-              </Link>
-            );
-          })}
+      <MobileTabBar
+        visible={tabBarVisible}
+        isMobileMenuOpen={isMobileMenuOpen}
+        onToggleMenu={() => setIsMobileMenuOpen((o) => !o)}
+      />
 
-          <button
-            onClick={() => setIsMobileMenuOpen((o) => !o)}
-            className="flex flex-col items-center justify-center gap-1 flex-1 h-full relative group"
-          >
-            {isMobileMenuOpen && (
-              <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-primary" />
-            )}
-            <span
-              className={`transition-all duration-200 ${isMobileMenuOpen ? "text-primary scale-110" : "text-muted-foreground group-active:scale-90"}`}
-            >
-              {isMobileMenuOpen ? (
-                <X size={22} strokeWidth={2.5} />
-              ) : (
-                <MoreHorizontal size={22} strokeWidth={1.8} />
-              )}
-            </span>
-            <span
-              className={`text-[10px] font-medium leading-none transition-colors ${isMobileMenuOpen ? "text-primary" : "text-muted-foreground"}`}
-            >
-              More
-            </span>
-          </button>
-        </div>
-        <div
-          style={{ height: "env(safe-area-inset-bottom)" }}
-          className="bg-card"
-        />
-      </div>
-
-      {isMobileMenuOpen && (
-        <div
-          ref={menuRef}
-          className="md:hidden fixed inset-0 z-[60] bg-card border-l border-border shadow-2xl animate-in slide-in-from-right duration-300 p-2 w-full h-full overflow-y-auto"
-        >
-          <div className="flex justify-between items-center mb-2">
-            <h2 className="text-lg font-semibold text-foreground">Menu</h2>
-            <button
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="p-2 rounded-full hover:bg-accent text-muted-foreground transition-colors"
-            >
-              <X size={24} />
-            </button>
-          </div>
-          <div className="grid grid-cols-1 gap-1">
-            <UserDropdown
-              user={user}
-              onLogout={() => {
-                handleLogout();
-                setIsMobileMenuOpen(false);
-              }}
-              getProfileImage={getProfileImage}
-              onClose={() => setIsDropdownOpen(false)}
-              onNavigate={() => setIsMobileMenuOpen(false)}
-              isMobile={true}
-            />
-          </div>
-        </div>
-      )}
       <CreateReelModal
         isOpen={createReelOpen}
         onClose={() => setCreateReelOpen(false)}
