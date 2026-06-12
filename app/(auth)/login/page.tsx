@@ -79,7 +79,7 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = () => {
-    signIn("google", { callbackUrl: "/" });
+    signIn("google", { callbackUrl: "/", redirect: false });
   };
 
   const isEmailError =

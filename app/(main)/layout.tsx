@@ -36,12 +36,18 @@ export default function MainLayout({
       dispatch(setCredentials({ user: session.user as any }));
 
       const isOAuthCallback = window.location.pathname.startsWith("/api/auth");
-      if (isOAuthCallback) {
+      const hasAuthParam = new URLSearchParams(window.location.search).has(
+        "auth",
+      );
+
+      if (isOAuthCallback || hasAuthParam) {
         window.history.replaceState(null, "", "/");
 
-        const blockBack = () => window.history.pushState(null, "", "/");
-        window.addEventListener("popstate", blockBack);
-        return () => window.removeEventListener("popstate", blockBack);
+        if (isOAuthCallback) {
+          const blockBack = () => window.history.pushState(null, "", "/");
+          window.addEventListener("popstate", blockBack);
+          return () => window.removeEventListener("popstate", blockBack);
+        }
       }
     }
   }, [sessionStatus, session, dispatch]);

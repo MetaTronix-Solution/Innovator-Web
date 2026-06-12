@@ -1,13 +1,20 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Maximize2 } from "lucide-react";
 import { Content } from "@/types/course";
+import { getMediaUrl } from "@/lib/utils/getMediaUrl";
 
-export function PreviewPlayer({ content }: { content: Content }) {
-  const iframeRef = useRef<HTMLDivElement>(null);
+export function PreviewPlayer({
+  content,
+  videoRef,
+}: {
+  content: Content;
+  videoRef?: React.RefObject<HTMLVideoElement>;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const handleFullscreen = () => {
-    const el = iframeRef.current;
+    const el = containerRef.current;
     if (!el) return;
     if (!document.fullscreenElement) {
       el.requestFullscreen()
@@ -27,15 +34,18 @@ export function PreviewPlayer({ content }: { content: Content }) {
     return () => document.removeEventListener("fullscreenchange", handler);
   }, []);
 
-  if (content.video_url) {
+  const videoUrl = getMediaUrl(content.video_url);
+  const videoFile = getMediaUrl(content.video_file);
+
+  if (videoUrl) {
     return (
       <div
-        ref={iframeRef}
+        ref={containerRef}
         className="relative w-full bg-black"
         style={{ aspectRatio: "16/9" }}
       >
         <iframe
-          src={content.video_url}
+          src={videoUrl}
           className="w-full h-full"
           allowFullScreen
           allow="autoplay; fullscreen"
@@ -45,18 +55,20 @@ export function PreviewPlayer({ content }: { content: Content }) {
     );
   }
 
-  if (content.video_file) {
+  if (videoFile) {
     return (
       <div
-        ref={iframeRef}
+        ref={containerRef}
         className="relative w-full bg-black"
         style={{ aspectRatio: "16/9" }}
       >
         <video
-          src={content.video_file}
+          ref={videoRef}
+          src={videoFile}
           controls
           className="w-full h-full"
           playsInline
+          preload="auto"
         />
         <button
           onClick={handleFullscreen}
@@ -68,5 +80,6 @@ export function PreviewPlayer({ content }: { content: Content }) {
       </div>
     );
   }
+
   return null;
 }

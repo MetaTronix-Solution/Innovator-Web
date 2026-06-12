@@ -689,7 +689,6 @@ export default function MessagesView({
         </div>
       </div>
 
-      {/* ── EMPTY STATE ── */}
       {activeChatId === null && (
         <div className="hidden md:flex flex-1 flex-col items-center justify-center bg-muted/10 gap-3">
           <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center">
@@ -705,10 +704,8 @@ export default function MessagesView({
         </div>
       )}
 
-      {/* ── CHAT PANEL ── */}
       {activeChatId !== null && currentChat && (
         <div className="flex-1 flex flex-col bg-background relative min-w-0 border border-primary/50 overflow-hidden">
-          {/* Header — trash icon removed */}
           <div className="px-2 h-[60px] border-b border-border/60 flex items-center gap-3 shrink-0 bg-background">
             <button
               onClick={handleCloseChat}
@@ -777,7 +774,6 @@ export default function MessagesView({
             </div>
           </div>
 
-          {/* Messages */}
           <div
             ref={messagesBodyRef}
             className="flex-1 overflow-y-auto no-scrollbar pl-4 py-4 space-y-1 bg-muted/5 relative"

@@ -9,6 +9,13 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.AUTH_GOOGLE_ID as string,
       clientSecret: process.env.AUTH_GOOGLE_SECRET as string,
+      authorization: {
+        params: {
+          prompt: "select_account",
+          access_type: "offline",
+          response_type: "code",
+        } as Record<string, string>,
+      },
     }),
   ],
   pages: {
@@ -18,8 +25,8 @@ export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt", maxAge: 24 * 60 * 60 },
   secret: process.env.AUTH_SECRET,
   callbacks: {
-    async redirect({ baseUrl }) {
-      return `${baseUrl}/`;
+    async redirect({ url, baseUrl }) {
+      return baseUrl;
     },
 
     async signIn({ user, account, profile }) {
@@ -75,7 +82,6 @@ export const authOptions: NextAuthOptions = {
     },
 
     async jwt({ token, user }) {
-      // user is only defined on first sign-in
       if (user) {
         token.accessToken = user.accessToken;
         token.refreshToken = user.refreshToken;
