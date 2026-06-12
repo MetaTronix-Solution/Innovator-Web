@@ -19,11 +19,12 @@ export function CourseHero({
 }) {
   const previewVideo = course.contents.find((c) => c.is_preview && isVideo(c));
   const [showPreview, setShowPreview] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(
+    null,
+  ) as React.RefObject<HTMLVideoElement>;
 
   const handleWatchPreview = () => {
     setShowPreview(true);
-    // slight timeout to ensure the element is visible before playing
     setTimeout(() => {
       videoRef.current?.play();
     }, 50);
