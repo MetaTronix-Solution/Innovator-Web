@@ -19,7 +19,7 @@ import { getMediaUrl } from "@/lib/utils/getMediaUrl";
 import PostCardSkeleton from "./PostCardSkeleton";
 import LazyVideo from "./LazyVideo";
 import MediaCarousel from "./MediaCarousel";
-import CommentSection from "./CommentSection";
+import CommentSection from "../Comments/CommentSection";
 import RepostModal from "./RepostModal";
 import RepostCard from "./RepostCard";
 import ReactionsModal from "./ReactionsModal";
@@ -27,7 +27,7 @@ import ReactionButton from "./ReactionButton";
 import PostCardMenu from "./PostCardMenu";
 import { RootState } from "@/lib/store/store";
 import Link from "next/link";
-import CommentButton from "./CommentButton";
+import CommentButton from "../Comments/CommentButton";
 import RepostButton from "./RepostButton";
 import { formatRelativeTime } from "@/lib/utils/formatRelativeTime";
 

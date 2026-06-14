@@ -13,11 +13,13 @@ import {
   Clock,
   Search,
   MoreHorizontal,
+  ChevronLeft,
 } from "lucide-react";
 import { getMediaUrl } from "@/lib/utils/getMediaUrl";
 import { useChatBridge } from "@/lib/hooks/useChatBridge";
 import { MutualUser } from "@/app/(main)/messages/page";
 import { MediaBubble, MediaUploadButton } from "./MediaUploadButton";
+import { useRouter } from "next/navigation";
 
 interface ChatMessage {
   id: string;
@@ -184,6 +186,7 @@ export default function MessagesView({
   token,
   onClose,
 }: MessagesViewProps) {
+  const router = useRouter();
   const stableToken = typeof token === "string" ? token : null;
 
   const conversations: ActiveChatUser[] = Array.isArray(rawConversations)
@@ -463,31 +466,27 @@ export default function MessagesView({
             : "hidden md:flex md:w-[280px]"
         }`}
       >
-        <div className="hidden md:flex items-center justify-between px-4 h-[40px] border-b border-border/60 shrink-0">
-          <div className="hidden md:flex items-center gap-2">
-            <h2 className="text-[15px] font-semibold text-foreground">
-              Messages
-            </h2>
-            {totalUnread > 0 && (
-              <span className="min-w-[18px] h-[18px] bg-orange-500 text-white text-[10px] font-semibold rounded-full flex items-center justify-center px-1">
-                {totalUnread}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-1.5">
+        <div className="flex md:hidden items-center justify-between px-2 h-[40px] border-b border-border/60 shrink-0">
+          <div className="w-8 flex items-center">
             {activeChatId === null && (
               <button
                 onClick={onClose}
                 className="w-7 h-7 rounded-full border border-border/60 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
               >
-                <X size={14} />
+                <ChevronLeft className="h-8 w-8" />
               </button>
             )}
           </div>
+
+          <h2 className="text-[15px] font-semibold text-foreground">
+            Messages
+          </h2>
+
+          <div className="w-8" />
         </div>
 
         {activeChatId === null && (
-          <div className="px-3 py-2.5 border-b border-border/60 hidden md:block">
+          <div className="px-3 py-2.5 border-b border-border/60">
             <div className="relative">
               <Search
                 size={13}

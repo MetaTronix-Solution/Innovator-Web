@@ -43,6 +43,10 @@ const ReelCard = ({ reel, post }: ReelCardProps) => {
   const router = useRouter();
 
   const currentUserId = useSelector((state: any) => state.auth?.user?.id);
+  const currentUsername = useSelector(
+    (state: any) => state.auth?.user?.username,
+  );
+
   const isOwner =
     currentUserId && currentUserId === (reel.user_id || reel.user?.id);
 
@@ -301,6 +305,8 @@ const ReelCard = ({ reel, post }: ReelCardProps) => {
           <ReelCommentsDrawer
             reelId={reel.id}
             commentsCount={reel.comments_count ?? 0}
+            currentUserId={currentUserId}
+            currentUsername={currentUsername}
             onClose={() => setShowComments(false)}
           />
         )}

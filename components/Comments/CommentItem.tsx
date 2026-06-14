@@ -1,14 +1,15 @@
 "use client";
 
 import React, { memo, useState, useCallback } from "react";
-import { ChevronDown, ChevronUp, Loader2, User } from "lucide-react";
+import { ChevronDown, ChevronUp, Loader2, User } from "lucide-react"; // ← remove Trash2
 import { toast } from "sonner";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { getMediaUrl } from "@/lib/utils/getMediaUrl";
 import { Reply, Comment } from "@/types/comment";
-import ReplyItem from "./ReplyItem";
+import ReplyItem from "../posts/ReplyItem";
 import CommentInput from "./CommentInput";
 import CommentMenu from "./CommentMenu";
+import DeleteConfirmModal from "./DeleteConfirmModal"; // ← add
 
 interface CommentItemProps {
   comment: Comment;
@@ -42,7 +43,10 @@ const CommentItem = memo(
     const [isEditing, setIsEditing] = useState(false);
     const [editText, setEditText] = useState(comment.content);
     const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
+
     const [isDeleting, setIsDeleting] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+
     const [isHovered, setIsHovered] = useState(false);
 
     const avatarUrl = getMediaUrl(comment.avatar);
@@ -125,8 +129,9 @@ const CommentItem = memo(
       [editText, comment.content, comment.id, onUpdated],
     );
 
-    const handleDelete = useCallback(async () => {
-      if (!confirm("Delete this comment?")) return;
+    const handleDeleteRequest = useCallback(() => setShowDeleteModal(true), []);
+
+    const handleDeleteConfirm = useCallback(async () => {
       setIsDeleting(true);
       try {
         const res = await fetch(`/api/comments/${comment.id}`, {
@@ -139,16 +144,15 @@ const CommentItem = memo(
         toast.error("Failed to delete comment");
       } finally {
         setIsDeleting(false);
+        setShowDeleteModal(false);
       }
     }, [comment.id, onDeleted]);
 
     const handleReport = useCallback(() => {
-      // TODO: wire up your report API
       toast.info(`Reported comment by ${comment.username}`);
     }, [comment.username]);
 
     const handleBlock = useCallback(() => {
-      // TODO: wire up your block API
       toast.info(`Blocked ${comment.username}`);
     }, [comment.username]);
 
@@ -169,136 +173,151 @@ const CommentItem = memo(
     );
 
     return (
-      <div
-        className="py-2"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
-        <div className="flex gap-2.5">
-          <Avatar size="default" className="mt-0.5 shrink-0">
-            <AvatarImage src={avatarUrl ?? undefined} alt={comment.username} />
-            <AvatarFallback>
-              <User size={14} className="text-muted-foreground" />
-            </AvatarFallback>
-          </Avatar>
+      <>
+        {showDeleteModal && (
+          <DeleteConfirmModal
+            title="Delete comment?"
+            description="This will permanently remove your comment. This action cannot be undone."
+            onConfirm={handleDeleteConfirm}
+            onCancel={() => setShowDeleteModal(false)}
+            isDeleting={isDeleting}
+          />
+        )}
 
-          <div className="flex-1 min-w-0">
-            {isEditing ? (
-              <div className="mt-1">
-                <CommentInput
-                  value={editText}
-                  onChange={setEditText}
-                  onSubmit={handleEdit}
-                  onCancel={() => {
-                    setIsEditing(false);
-                    setEditText(comment.content);
-                  }}
-                  isSubmitting={isSubmittingEdit}
-                  placeholder="Edit comment…"
-                  autoFocus
-                  size="sm"
-                  showCancel
-                />
-              </div>
-            ) : (
-              <div className="flex items-start gap-1">
-                {/* Comment bubble */}
-                <div className="bg-muted/40 rounded-2xl px-3 py-2 inline-block max-w-full">
-                  <p className="text-xs font-semibold text-foreground">
-                    {comment.username}
-                  </p>
-                  <p className="text-sm text-foreground/90 leading-relaxed mt-0.5 break-words">
-                    {comment.content}
-                  </p>
-                </div>
+        <div
+          className="py-2"
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
+          <div className="flex gap-2.5">
+            <Avatar size="default" className="mt-0.5 shrink-0">
+              <AvatarImage
+                src={avatarUrl ?? undefined}
+                alt={comment.username}
+              />
+              <AvatarFallback>
+                <User size={14} className="text-muted-foreground" />
+              </AvatarFallback>
+            </Avatar>
 
-                <div
-                  className={`
-                    mt-1 transition-opacity duration-150
-                    ${isHovered ? "opacity-100" : "opacity-0 pointer-events-none"}
-                  `}
-                >
-                  <CommentMenu
-                    isOwner={isOwner}
-                    isDeleting={isDeleting}
-                    onEdit={() => {
+            <div className="flex-1 min-w-0">
+              {isEditing ? (
+                <div className="mt-1">
+                  <CommentInput
+                    value={editText}
+                    onChange={setEditText}
+                    onSubmit={handleEdit}
+                    onCancel={() => {
+                      setIsEditing(false);
                       setEditText(comment.content);
-                      setIsEditing(true);
                     }}
-                    onDelete={handleDelete}
-                    onReport={handleReport}
-                    onBlock={handleBlock}
+                    isSubmitting={isSubmittingEdit}
+                    placeholder="Edit comment…"
+                    autoFocus
+                    size="sm"
+                    showCancel
                   />
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="flex items-start gap-1">
+                  <div className="bg-muted/40 rounded-2xl px-3 py-2 inline-block max-w-full">
+                    <p className="text-xs font-semibold text-foreground">
+                      {comment.username}
+                    </p>
+                    <p className="text-sm text-foreground/90 leading-relaxed mt-0.5 break-words">
+                      {comment.content}
+                    </p>
+                  </div>
 
-            <div className="flex items-center gap-3 mt-1 px-1">
-              <span className="text-[11px] text-muted-foreground">
-                {formatTime(comment.created_at)}
-              </span>
-              <button
-                onClick={() => setShowReplyInput((v) => !v)}
-                className="text-[11px] font-semibold text-muted-foreground hover:text-primary transition-colors"
-              >
-                Reply
-              </button>
-              {repliesCount > 0 && (
+                  <div
+                    className={`mt-1 transition-opacity duration-150 ${
+                      isHovered
+                        ? "opacity-100"
+                        : "opacity-0 pointer-events-none"
+                    }`}
+                  >
+                    <CommentMenu
+                      isOwner={isOwner}
+                      isDeleting={isDeleting}
+                      onEdit={() => {
+                        setEditText(comment.content);
+                        setIsEditing(true);
+                      }}
+                      onDelete={handleDeleteRequest}
+                      onReport={handleReport}
+                      onBlock={handleBlock}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center gap-3 mt-1 px-1">
+                <span className="text-[11px] text-muted-foreground">
+                  {formatTime(comment.created_at)}
+                </span>
                 <button
-                  onClick={fetchReplies}
-                  className="flex items-center gap-1 text-[11px] font-semibold text-primary hover:text-primary/80 transition-colors"
+                  onClick={() => setShowReplyInput((v) => !v)}
+                  className="text-[11px] font-semibold text-muted-foreground hover:text-primary transition-colors"
                 >
-                  {isLoadingReplies ? (
-                    <Loader2 size={10} className="animate-spin" />
-                  ) : showReplies ? (
-                    <ChevronUp size={12} />
-                  ) : (
-                    <ChevronDown size={12} />
-                  )}
-                  {showReplies
-                    ? "Hide"
-                    : `${repliesCount} ${repliesCount === 1 ? "reply" : "replies"}`}
+                  Reply
                 </button>
+                {repliesCount > 0 && (
+                  <button
+                    onClick={fetchReplies}
+                    className="flex items-center gap-1 text-[11px] font-semibold text-primary hover:text-primary/80 transition-colors"
+                  >
+                    {isLoadingReplies ? (
+                      <Loader2 size={10} className="animate-spin" />
+                    ) : showReplies ? (
+                      <ChevronUp size={12} />
+                    ) : (
+                      <ChevronDown size={12} />
+                    )}
+                    {showReplies
+                      ? "Hide"
+                      : `${repliesCount} ${repliesCount === 1 ? "reply" : "replies"}`}
+                  </button>
+                )}
+              </div>
+
+              {showReplyInput && (
+                <div className="mt-2">
+                  <CommentInput
+                    value={replyText}
+                    onChange={setReplyText}
+                    onSubmit={handleSubmitReply}
+                    onCancel={() => {
+                      setShowReplyInput(false);
+                      setReplyText("");
+                    }}
+                    isSubmitting={isSubmittingReply}
+                    placeholder={`Reply to ${comment.username}…`}
+                    autoFocus
+                    size="xs"
+                    showCancel
+                  />
+                </div>
+              )}
+
+              {showReplies && replies.length > 0 && (
+                <div className="mt-2 space-y-2 pl-1 border-l-2 border-border/40 ml-1">
+                  {replies.map((reply) => (
+                    <ReplyItem
+                      key={reply.id}
+                      reply={reply}
+                      formatTime={formatTime}
+                      currentUserId={currentUserId}
+                      currentUsername={currentUsername}
+                      onDeleted={handleReplyDeleted}
+                      onUpdated={handleReplyUpdated}
+                    />
+                  ))}
+                </div>
               )}
             </div>
-
-            {showReplyInput && (
-              <div className="mt-2">
-                <CommentInput
-                  value={replyText}
-                  onChange={setReplyText}
-                  onSubmit={handleSubmitReply}
-                  onCancel={() => {
-                    setShowReplyInput(false);
-                    setReplyText("");
-                  }}
-                  isSubmitting={isSubmittingReply}
-                  placeholder={`Reply to ${comment.username}…`}
-                  autoFocus
-                  size="xs"
-                  showCancel
-                />
-              </div>
-            )}
-
-            {showReplies && replies.length > 0 && (
-              <div className="mt-2 space-y-2 pl-1 border-l-2 border-border/40 ml-1">
-                {replies.map((reply) => (
-                  <ReplyItem
-                    key={reply.id}
-                    reply={reply}
-                    formatTime={formatTime}
-                    currentUserId={currentUserId}
-                    currentUsername={currentUsername}
-                    onDeleted={handleReplyDeleted}
-                    onUpdated={handleReplyUpdated}
-                  />
-                ))}
-              </div>
-            )}
           </div>
         </div>
-      </div>
+      </>
     );
   },
 );

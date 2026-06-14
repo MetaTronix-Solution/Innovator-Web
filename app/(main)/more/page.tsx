@@ -42,8 +42,8 @@ export default function MorePage() {
         user={user}
         onLogout={handleLogout}
         getProfileImage={getProfileImage}
-        onClose={() => router.back()}
-        onNavigate={() => router.back()}
+        onClose={() => {}}
+        onNavigate={() => {}}
         isMobile={true}
       />
     </div>

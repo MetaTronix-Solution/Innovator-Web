@@ -51,8 +51,6 @@ export async function DELETE(
       },
     );
 
-    console.log("Django response status:", response.status);
-
     if (response.status === 204 || response.ok) {
       return new NextResponse(null, { status: 204 });
     }

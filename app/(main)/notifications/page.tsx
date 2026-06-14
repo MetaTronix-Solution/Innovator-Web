@@ -48,7 +48,7 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="py-4 px-2 md:px-0">
+    <div className="py-2 md:py-4 px-2 md:px-0">
       <NotificationFeed
         initialNotifications={notifications}
         userId={user?.id || user?.uuid || ""}

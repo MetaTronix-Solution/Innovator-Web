@@ -18,7 +18,6 @@ import {
   ChevronDown,
   Package,
   Calendar,
-  BookOpen,
 } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import ChangePasswordModal from "./ChangePasswordModal";
@@ -52,7 +51,7 @@ const UserDropdown = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleNavigate = (path: string) => {
-    onClose();
+    if (!isMobile) onClose();
     if (onNavigate) onNavigate();
     router.push(path);
   };

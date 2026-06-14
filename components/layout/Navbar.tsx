@@ -165,11 +165,10 @@ const Navbar = () => {
 
       <nav className="sticky top-0 z-50 w-full bg-card border-b border-border shadow-sm">
         <div
-          className={`max-w-[1440px] mx-auto px-2 md:px-6 flex items-center justify-between h-10 md:h-16 ${
+          className={`max-w-[1440px] mx-auto px-2 md:px-6 flex items-center justify-between h-12 md:h-16 ${
             pathname === "/" ? "flex" : "hidden md:flex"
           }`}
         >
-          {/* Logo */}
           <div className="flex items-center cursor-pointer flex-1 gap-2">
             <Link href="/" className="shrink-0 flex items-center gap-1">
               <Image
@@ -183,6 +182,9 @@ const Navbar = () => {
                 Innovator
               </p>
             </Link>
+            <div className="flex sm:hidden ml-1">
+              <SearchBar />
+            </div>
           </div>
 
           {/* Desktop nav links */}

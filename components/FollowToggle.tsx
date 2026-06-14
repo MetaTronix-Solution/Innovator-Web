@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { toggleFollowUser } from "@/lib/services/followService";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, CheckCheck } from "lucide-react";
 
 interface FollowToggleProps {
   userId: string;
@@ -12,6 +12,8 @@ interface FollowToggleProps {
   variant?: "text" | "button" | "reels";
   onStatusChange?: (newStatus: boolean) => void;
 }
+
+const THROTTLE_MS = 2000;
 
 const FollowToggle = ({
   userId,
@@ -22,30 +24,38 @@ const FollowToggle = ({
 }: FollowToggleProps) => {
   const [isFollowed, setIsFollowed] = useState(initialIsFollowed);
   const [isLoading, setIsLoading] = useState(false);
+  const lastCalledAt = useRef<number>(0);
 
   useEffect(() => {
     setIsFollowed(initialIsFollowed);
   }, [initialIsFollowed]);
 
-  const handleToggle = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (isLoading) return;
-    setIsLoading(true);
-    try {
-      await toggleFollowUser(userId, isFollowed);
-      const newStatus = !isFollowed;
-      setIsFollowed(newStatus);
-      if (onStatusChange) onStatusChange(newStatus);
-      toast.success(
-        newStatus ? `Following ${username}` : `Unfollowed ${username}`,
-      );
-    } catch (error: any) {
-      toast.error(error.message || "Something went wrong");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const handleToggle = useCallback(
+    async (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const now = Date.now();
+      if (isLoading || now - lastCalledAt.current < THROTTLE_MS) return;
+      lastCalledAt.current = now;
+
+      setIsLoading(true);
+      try {
+        await toggleFollowUser(userId, isFollowed);
+        const newStatus = !isFollowed;
+        setIsFollowed(newStatus);
+        if (onStatusChange) onStatusChange(newStatus);
+        toast.success(
+          newStatus ? `Following ${username}` : `Unfollowed ${username}`,
+        );
+      } catch (error: any) {
+        toast.error(error.message || "Something went wrong");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [isFollowed, isLoading, userId, username, onStatusChange],
+  );
 
   const getLabel = () => {
     if (isFollowed) return "Following";
@@ -65,7 +75,12 @@ const FollowToggle = ({
         {isLoading ? (
           <Loader2 size={10} className="animate-spin" />
         ) : (
-          getLabel()
+          <>
+            {isFollowed && (
+              <CheckCheck size={12} className="text-muted-foreground" />
+            )}
+            {getLabel()}
+          </>
         )}
       </button>
     );
@@ -82,7 +97,7 @@ const FollowToggle = ({
           disabled:opacity-50 disabled:cursor-not-allowed
           ${
             isFollowed
-              ? "bg-secondary-foreground border-white/40 text-secondary "
+              ? "bg-secondary-foreground border-white/40 text-secondary"
               : "border-white text-white hover:bg-primary hover:text-black"
           }
         `}
