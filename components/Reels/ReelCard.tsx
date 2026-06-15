@@ -26,6 +26,7 @@ import ReactionButton from "../posts/ReactionButton";
 import ReelCommentsDrawer from "./ReelCommentDrawer";
 import ReelReactionsDrawer from "./ReelReactonsDrawer";
 import { toast } from "sonner";
+import CaptionText from "../CaptionText";
 
 interface ReelCardProps {
   reel: any;
@@ -358,9 +359,9 @@ const ReelCard = ({ reel, post }: ReelCardProps) => {
         {reel.caption && (
           <div className="max-w-[75%] mt-2">
             <p
-              className={`text-white/90 text-sm leading-relaxed ${isExpanded ? "line-clamp-none" : "line-clamp-1"}`}
+              className={`text-white/90 text-sm leading-relaxed ${isExpanded ? "" : "line-clamp-1"}`}
             >
-              {reel.caption}
+              <CaptionText caption={reel.caption} />
             </p>
             <button
               onClick={() => setIsExpanded(!isExpanded)}

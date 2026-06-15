@@ -6,7 +6,6 @@ import {
   X,
   Image as ImageIcon,
   Loader2,
-  Globe2,
   User,
   Check,
   Play,
@@ -15,6 +14,7 @@ import { toast } from "sonner";
 import { useDispatch } from "react-redux";
 import { addPostToTop } from "@/lib/store/features/postsSlice";
 import { Button } from "../ui/button";
+import CaptionText from "@/components/CaptionText"; // ← add
 
 interface Category {
   id: string;
@@ -35,19 +35,17 @@ export default function CreatePostModal({
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPreview, setShowPreview] = useState(false); // ← add
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
     null,
   );
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!isOpen) return;
-
     const fetchCategories = async () => {
       try {
         const response = await fetch("/api/categories");
@@ -59,13 +57,11 @@ export default function CreatePostModal({
         console.error("Failed to fetch categories", err);
       }
     };
-
     fetchCategories();
   }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen || !initialFile) return;
-
     const url = URL.createObjectURL(initialFile);
     setMediaFiles([initialFile]);
     setPreviews([url]);
@@ -74,6 +70,8 @@ export default function CreatePostModal({
   useEffect(() => {
     return () => previews.forEach((url) => URL.revokeObjectURL(url));
   }, [previews]);
+
+  const hasHashtags = /#\w+/.test(content);
 
   if (!isOpen) return null;
 
@@ -101,15 +99,12 @@ export default function CreatePostModal({
     setPreviews(updatedPreviews);
   };
 
-  const isVideoFile = (file: File) => {
-    return file.type.startsWith("video/");
-  };
+  const isVideoFile = (file: File) => file.type.startsWith("video/");
 
   const handlePostSubmit = async () => {
     if (!selectedCategoryId) {
       return toast.error("Please select a category before posting.");
     }
-
     if (!content.trim() && mediaFiles.length === 0) {
       return toast.error("Please add some content or media.");
     }
@@ -117,39 +112,29 @@ export default function CreatePostModal({
     setIsLoading(true);
     const formData = new FormData();
     formData.append("content", content);
-
     formData.append("category_ids", selectedCategoryId);
-
-    mediaFiles.forEach((file) => {
-      formData.append("uploaded_media", file);
-    });
+    mediaFiles.forEach((file) => formData.append("uploaded_media", file));
 
     try {
       const response = await fetch("/api/posts", {
         method: "POST",
         body: formData,
       });
-
       const result = await response.json();
 
       if (response.ok) {
         toast.success("Post shared successfully!");
-        const newPost = result.post || result;
-
-        console.log("New post created:", newPost);
-
-        dispatch(addPostToTop(newPost));
-
+        dispatch(addPostToTop(result.post || result));
         setContent("");
         setMediaFiles([]);
         setPreviews([]);
         setSelectedCategoryId(null);
+        setShowPreview(false);
         onClose();
       } else {
         toast.error(result.error || "Something went wrong");
       }
     } catch (err) {
-      console.error("Post submission error:", err);
       toast.error("Failed to connect to the server");
     } finally {
       setIsLoading(false);
@@ -163,6 +148,7 @@ export default function CreatePostModal({
         onClick={onClose}
       />
       <div className="relative w-full max-w-[520px] bg-card border border-border rounded-2xl shadow-2xl flex flex-col animate-in zoom-in-95 duration-200">
+        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <div className="w-8" />
           <h2 className="text-xl font-bold">Create Post</h2>
@@ -175,6 +161,7 @@ export default function CreatePostModal({
         </div>
 
         <div className="max-h-[500px] overflow-y-auto p-6 space-y-4 no-scrollbar">
+          {/* User info */}
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-full bg-muted border border-border flex items-center justify-center overflow-hidden shrink-0 relative">
               {profileImage ? (
@@ -193,20 +180,42 @@ export default function CreatePostModal({
               <p className="font-bold text-sm">
                 {user?.full_name || user?.username}
               </p>
-              {/* <div className="flex items-center gap-1 text-xs bg-secondary px-2 py-1 rounded-md w-fit">
-                <Globe2 className="w-3 h-3" /> <span>Public</span>
-              </div> */}
             </div>
           </div>
 
-          <textarea
-            autoFocus
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder={`What's on your mind, ${user?.full_name?.split(" ")[0] || "Innovator"}?`}
-            className="w-full min-h-[100px] bg-transparent border-none text-lg resize-none focus:outline-none placeholder:text-muted-foreground/50"
-          />
+          {/* Textarea or Preview toggle */}
+          {showPreview ? (
+            <div
+              className="w-full min-h-[100px] text-lg leading-relaxed whitespace-pre-wrap cursor-text text-foreground/90"
+              onClick={() => setShowPreview(false)}
+            >
+              <CaptionText caption={content} />
+            </div>
+          ) : (
+            <textarea
+              autoFocus
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              onBlur={() => {
+                if (hasHashtags) setShowPreview(true);
+              }}
+              placeholder={`What's on your mind, ${user?.full_name?.split(" ")[0] || "Innovator"}?`}
+              className="w-full min-h-[100px] bg-transparent border-none text-lg resize-none focus:outline-none placeholder:text-muted-foreground/50"
+            />
+          )}
 
+          {/* Hashtag hint */}
+          {hasHashtags && !showPreview && (
+            <button
+              type="button"
+              onClick={() => setShowPreview(true)}
+              className="text-xs text-primary font-medium hover:underline"
+            >
+              Preview hashtags
+            </button>
+          )}
+
+          {/* Category selector */}
           <div className="space-y-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Select Category <span className="text-destructive">*</span>
@@ -232,7 +241,7 @@ export default function CreatePostModal({
             </div>
           </div>
 
-          {/* Media Grid - UPDATED to show video previews */}
+          {/* Media previews — Image instead of img */}
           {previews.length > 0 && (
             <div
               className={`grid gap-2 ${previews.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}
@@ -263,11 +272,16 @@ export default function CreatePostModal({
                         </div>
                       </div>
                     ) : (
-                      <img
-                        src={url}
-                        alt="Preview"
-                        className="w-full h-full object-cover"
-                      />
+                      // ← Image instead of img
+                      <div className="relative w-full h-full">
+                        <Image
+                          src={url}
+                          alt={`Preview ${index + 1}`}
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
+                      </div>
                     )}
                   </div>
                 );
@@ -276,6 +290,7 @@ export default function CreatePostModal({
           )}
         </div>
 
+        {/* Footer */}
         <div className="p-6 pt-2 space-y-4">
           <div className="flex items-center justify-between p-3 border rounded-xl bg-muted/20">
             <span className="text-sm font-semibold px-2">Add to your post</span>

@@ -7,6 +7,7 @@ import cartReducer from "./features/cartSlice";
 import postsReducer from "./features/postsSlice";
 import reelsReducer from "./features/reelsSlice";
 import productsReducer from "./features/productsSlice";
+import messagesReducer from "./features/messagesSlice";
 
 const persistConfig: PersistConfig<any> = {
   key: "root",
@@ -21,6 +22,7 @@ const appReducer = combineReducers({
   posts: postsReducer,
   reels: reelsReducer,
   products: productsReducer,
+  messages: messagesReducer,
 });
 
 const rootReducer = (state: any, action: any) => {

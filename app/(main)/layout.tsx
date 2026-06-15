@@ -1,6 +1,6 @@
 "use client";
 import { useSelector, useDispatch } from "react-redux";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import Navbar from "@/components/layout/Navbar";
@@ -19,8 +19,10 @@ export default function MainLayout({
   );
   const { data: session, status: sessionStatus } = useSession();
   const router = useRouter();
+  const pathname = usePathname();
 
   const hasRedirected = useRef(false);
+  const isMessagesPage = pathname === "/messages";
 
   useEffect(() => {
     if (
@@ -76,13 +78,19 @@ export default function MainLayout({
   return (
     <div className="min-h-screen bg-background font-sans transition-colors duration-300">
       <Navbar />
-      <div className="w-full mx-auto px-0 md:px-4 lg:px-8">
-        <div className="flex justify-center pt-4 gap-4 xl:gap-8 items-start">
+      <div
+        className={`w-full mx-auto ${isMessagesPage ? "px-0" : "px-0 md:px-4 lg:px-8"}`}
+      >
+        <div
+          className={`flex items-start ${isMessagesPage ? "justify-start gap-0" : "justify-center gap-4 xl:gap-8 pt-4"}`}
+        >
           <aside className="hidden xl:block w-[280px] 2xl:w-[320px] sticky top-[72px] max-h-[calc(100vh-72px)] overflow-y-auto no-scrollbar shrink-0">
             <LeftSidebar />
           </aside>
 
-          <main className="w-full max-w-[680px] min-w-0 md:px-4 pb-20">
+          <main
+            className={`w-full min-w-0 ${isMessagesPage ? "max-w-none" : "md:px-4 max-w-[680px] pb-20"}`}
+          >
             {children}
           </main>
 

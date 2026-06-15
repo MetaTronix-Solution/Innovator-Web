@@ -30,6 +30,7 @@ import Link from "next/link";
 import CommentButton from "../Comments/CommentButton";
 import RepostButton from "./RepostButton";
 import { formatRelativeTime } from "@/lib/utils/formatRelativeTime";
+import CaptionText from "../CaptionText";
 
 export const renderedPosts = new Set<string>();
 
@@ -365,7 +366,7 @@ const PostCard = ({ post }: { post: any; index?: number }) => {
                       !isExpanded ? "line-clamp-2" : ""
                     }`}
                   >
-                    {caption}
+                    <CaptionText caption={caption} />
                   </p>
                   {caption.length > 100 && (
                     <button

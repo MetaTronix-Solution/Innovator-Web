@@ -58,6 +58,7 @@ const Navbar = () => {
   const lastScrollY = useRef(0);
 
   const { user } = useSelector((state: RootState) => state.auth);
+  const { activeChatId } = useSelector((state: RootState) => state.messages);
 
   useEffect(() => {
     if (!user) return;
@@ -153,6 +154,8 @@ const Navbar = () => {
     { icon: <FileText />, href: "/research", title: "Research Papers" },
   ];
 
+  const isChatRoomActive = pathname === "/messages" && !!activeChatId;
+
   return (
     <>
       {isMobileMenuOpen && (
@@ -163,14 +166,44 @@ const Navbar = () => {
         />
       )}
 
-      <nav className="sticky top-0 z-50 w-full bg-card border-b border-border shadow-sm">
+      <nav
+        className={`sticky top-0 z-50 w-full bg-card border-b border-border shadow-sm ${
+          pathname === "/" ? "block" : "hidden md:block"
+        }`}
+      >
         <div
           className={`max-w-[1440px] mx-auto px-2 md:px-6 flex items-center justify-between h-12 md:h-16 ${
             pathname === "/" ? "flex" : "hidden md:flex"
           }`}
         >
           <div className="flex items-center cursor-pointer flex-1 gap-2">
-            <Link href="/" className="shrink-0 flex items-center gap-1">
+            <Link
+              href="/"
+              className="shrink-0 flex items-center gap-1"
+              onClick={(e) => {
+                if (pathname === "/") {
+                  e.preventDefault();
+                  const start = window.scrollY;
+                  const duration = 600;
+                  const startTime = performance.now();
+
+                  const animateScroll = (currentTime: number) => {
+                    const elapsed = currentTime - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    const ease =
+                      progress < 0.5
+                        ? 2 * progress * progress
+                        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+
+                    window.scrollTo(0, start * (1 - ease));
+
+                    if (progress < 1) requestAnimationFrame(animateScroll);
+                  };
+
+                  requestAnimationFrame(animateScroll);
+                }
+              }}
+            >
               <Image
                 src="/logo1.png"
                 alt="Innovator"
@@ -326,11 +359,7 @@ const Navbar = () => {
         </div>
       </nav>
 
-      <MobileTabBar
-        visible={tabBarVisible}
-        isMobileMenuOpen={isMobileMenuOpen}
-        onToggleMenu={() => setIsMobileMenuOpen((o) => !o)}
-      />
+      <MobileTabBar visible={tabBarVisible} />
 
       <CreateReelModal
         isOpen={createReelOpen}
