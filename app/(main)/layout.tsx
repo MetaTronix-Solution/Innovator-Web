@@ -77,6 +77,7 @@ export default function MainLayout({
 
   return (
     <div className="min-h-screen bg-background font-sans transition-colors duration-300">
+      <div id="scroll-top-anchor" />
       <Navbar />
       <div
         className={`w-full mx-auto ${isMessagesPage ? "px-0" : "px-0 md:px-4 lg:px-8"}`}

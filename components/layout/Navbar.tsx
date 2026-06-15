@@ -183,8 +183,13 @@ const Navbar = () => {
               onClick={(e) => {
                 if (pathname === "/") {
                   e.preventDefault();
-                  const start = window.scrollY;
-                  const duration = 600;
+                  const start =
+                    window.scrollY ||
+                    document.documentElement.scrollTop ||
+                    document.body.scrollTop;
+                  if (start === 0) return;
+
+                  const duration = 800;
                   const startTime = performance.now();
 
                   const animateScroll = (currentTime: number) => {
@@ -195,7 +200,11 @@ const Navbar = () => {
                         ? 2 * progress * progress
                         : 1 - Math.pow(-2 * progress + 2, 2) / 2;
 
-                    window.scrollTo(0, start * (1 - ease));
+                    const position = start * (1 - ease);
+
+                    window.scrollTo(0, position);
+                    document.documentElement.scrollTop = position;
+                    document.body.scrollTop = position;
 
                     if (progress < 1) requestAnimationFrame(animateScroll);
                   };
