@@ -34,7 +34,9 @@ export default function ChatInputForm({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const placeholderName = chatPartnerName ? chatPartnerName.split(" ")[0] : "User";
+  const placeholderName = chatPartnerName
+    ? chatPartnerName.split(" ")[0]
+    : "User";
 
   return (
     <div className="shrink-0 px-3 py-2.5 border-t border-border/60 bg-background relative">
@@ -47,15 +49,15 @@ export default function ChatInputForm({
           >
             <Plus size={16} />
           </button>
-          
+
           <MediaUploadButton
-            activeChatId={activeChatId}
+            activeChatId={activeChatId ?? ""}
             disabled={loading || !isSendReady}
             onSent={onSentMedia}
             onHasFilesChange={onHasFilesChange}
             triggerSendRef={mediaSendRef}
           />
-          
+
           <input
             ref={inputRef}
             type="text"
@@ -65,7 +67,7 @@ export default function ChatInputForm({
             placeholder={`Message ${placeholderName}…`}
             className="flex-1 bg-transparent border-none outline-none text-[13px] text-foreground placeholder:text-muted-foreground/40 min-w-0"
           />
-          
+
           <button
             type="button"
             className="text-muted-foreground/70 hover:text-foreground transition-colors shrink-0"
@@ -73,7 +75,7 @@ export default function ChatInputForm({
             <Smile size={16} />
           </button>
         </div>
-        
+
         <button
           type="submit"
           disabled={
