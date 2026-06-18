@@ -443,13 +443,16 @@ export default function MessagesView({
     <div
       className={`flex w-full bg-background font-sans antialiased overflow-hidden ${
         activeChatId
-          ? "h-[calc(100dvh-72px)] md:h-[calc(100vh-72px)]"
+          ? "h-[calc(100dvh-72px)] md:h-[calc(100vh-80px)]"
           : "h-[calc(100dvh-64px)] md:h-[calc(100vh-72px)]"
       }`}
     >
+      {/* Sidebar */}
       <div
-        className={`w-full md:w-[320px] lg:w-[360px] border-r border-border/60 flex-shrink-0 ${
-          activeChatId ? "hidden md:flex" : "flex"
+        className={`flex flex-col bg-background border-r border-border/60 shrink-0 transition-all duration-300 ease-in-out ${
+          activeChatId === null
+            ? "w-full md:w-[360px]"
+            : "hidden md:flex md:w-[280px]"
         }`}
       >
         <ChatSidebar
@@ -466,116 +469,110 @@ export default function MessagesView({
         />
       </div>
 
-      <div className="hidden md:flex flex-1 flex-col items-center justify-center bg-muted/10 gap-3">
-        <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center">
-          <svg
-            className="text-muted-foreground/40 rotate-[-10deg]"
-            width="28"
-            height="28"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <line x1="22" y1="2" x2="11" y2="13" />
-            <polygon points="22 2 15 22 11 13 2 9 22 2" />
-          </svg>
-        </div>
-        <p className="text-sm font-medium text-foreground">Your messages</p>
-        <p className="text-xs text-muted-foreground">
-          Select a conversation or start a new one
-        </p>
-      </div>
-
-      {activeChatId !== null && currentChat && (
-        <div
-          className={`flex-1 flex-col bg-background relative min-w-0 overflow-hidden ${
-            activeChatId ? "flex" : "hidden md:flex"
-          }`}
-        >
-          <ChatAreaHeader
-            currentChat={currentChat}
-            isOnline={getLiveOnlineStatus(
-              currentChat.id,
-              getChatActiveStatus(currentChat),
-            )}
-            autoDelete24h={autoDelete24h}
-            onToggleAutoDelete={() => setAutoDelete24h((v) => !v)}
-            onCloseChat={handleCloseChat}
-          />
-
-          <div
-            ref={messagesBodyRef}
-            className="flex-1 overflow-y-auto no-scrollbar pl-4 py-2 space-y-1 bg-muted/5 relative"
-          >
-            {loading ? (
-              <div className="flex h-full items-center justify-center">
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-orange-500 border-t-transparent" />
-              </div>
-            ) : messages.length === 0 ? (
-              <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
-                <Avatar
-                  src={getChatAvatar(currentChat)}
-                  name={getChatName(currentChat)}
-                  id={currentChat.id}
-                  size={56}
-                />
-                <div>
-                  <p className="text-sm font-semibold text-foreground">
-                    {getChatName(currentChat)}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    No messages yet — say hello!
-                  </p>
+      <div className="flex-1 min-w-0 flex flex-col overflow-hidden transition-all duration-300">
+        {activeChatId !== null && currentChat ? (
+          <div className="flex flex-col flex-1 bg-background relative min-w-0 overflow-hidden">
+            <ChatAreaHeader
+              currentChat={currentChat}
+              isOnline={getLiveOnlineStatus(
+                currentChat.id,
+                getChatActiveStatus(currentChat),
+              )}
+              autoDelete24h={autoDelete24h}
+              onToggleAutoDelete={() => setAutoDelete24h((v) => !v)}
+              onCloseChat={handleCloseChat}
+            />
+            <div
+              ref={messagesBodyRef}
+              className="flex-1 overflow-y-auto no-scrollbar pl-4 py-2 space-y-1 bg-muted/5 relative"
+            >
+              {loading ? (
+                <div className="flex h-full items-center justify-center">
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-orange-500 border-t-transparent" />
                 </div>
-              </div>
-            ) : (
-              <>
-                {renderedItems.map((item) => {
-                  if (item.type === "date") {
-                    return <DateSeparator key={item.key} date={item.label} />;
-                  }
-                  return (
-                    <MessageGroup
-                      key={item.key}
-                      group={item.group}
-                      currentChatName={getChatName(currentChat)}
-                      currentChatAvatar={getChatAvatar(currentChat)}
-                      currentUserAvatar={user?.avatar}
-                    />
-                  );
-                })}
-              </>
-            )}
-            <div ref={messagesEndRef} />
-
-            {showScrollBtn && (
-              <button
-                onClick={() => scrollToBottom("smooth")}
-                className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-orange-500 text-white text-xs font-semibold px-4 py-1.5 rounded-full shadow-sm hover:bg-orange-600 transition-colors z-10"
-              >
-                ↓ New messages
-              </button>
-            )}
+              ) : messages.length === 0 ? (
+                <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
+                  <Avatar
+                    src={getChatAvatar(currentChat)}
+                    name={getChatName(currentChat)}
+                    id={currentChat.id}
+                    size={56}
+                  />
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">
+                      {getChatName(currentChat)}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      No messages yet — say hello!
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {renderedItems.map((item) => {
+                    if (item.type === "date")
+                      return <DateSeparator key={item.key} date={item.label} />;
+                    return (
+                      <MessageGroup
+                        key={item.key}
+                        group={item.group}
+                        currentChatName={getChatName(currentChat)}
+                        currentChatAvatar={getChatAvatar(currentChat)}
+                        currentUserAvatar={user?.avatar}
+                      />
+                    );
+                  })}
+                </>
+              )}
+              <div ref={messagesEndRef} />
+              {showScrollBtn && (
+                <button
+                  onClick={() => scrollToBottom("smooth")}
+                  className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-orange-500 text-white text-xs font-semibold px-4 py-1.5 rounded-full shadow-sm hover:bg-orange-600 transition-colors z-10"
+                >
+                  ↓ New messages
+                </button>
+              )}
+            </div>
+            <ChatInputForm
+              activeChatId={activeChatId}
+              isSendReady={isSendReady}
+              typeMessage={typeMessage}
+              onTypeMessageChange={setTypeMessage}
+              loading={loading}
+              hasMediaFiles={hasMediaFiles}
+              onHasFilesChange={setHasMediaFiles}
+              mediaSendRef={mediaSendRef}
+              chatPartnerName={getChatName(currentChat)}
+              onSubmit={handleSendMessage}
+              onSentMedia={handleSentMedia}
+            />
           </div>
-
-          <ChatInputForm
-            activeChatId={activeChatId}
-            isSendReady={isSendReady}
-            typeMessage={typeMessage}
-            onTypeMessageChange={setTypeMessage}
-            loading={loading}
-            hasMediaFiles={hasMediaFiles}
-            onHasFilesChange={setHasMediaFiles}
-            mediaSendRef={mediaSendRef}
-            chatPartnerName={getChatName(currentChat)}
-            onSubmit={handleSendMessage}
-            onSentMedia={handleSentMedia}
-          />
-        </div>
-      )}
+        ) : (
+          <div className="hidden md:flex flex-1 flex-col items-center justify-center bg-muted/10 gap-3">
+            <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center">
+              <svg
+                className="text-muted-foreground/40 rotate-[-10deg]"
+                width="28"
+                height="28"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="22" y1="2" x2="11" y2="13" />
+                <polygon points="22 2 15 22 11 13 2 9 22 2" />
+              </svg>
+            </div>
+            <p className="text-sm font-medium text-foreground">Your messages</p>
+            <p className="text-xs text-muted-foreground">
+              Select a conversation or start a new one
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

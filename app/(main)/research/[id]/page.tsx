@@ -167,7 +167,7 @@ export default function ResearchDetailPage() {
   const isLocked = paper.type === "paid" && !isUnlocked;
 
   return (
-    <div className="w-full min-h-screen bg-background text-foreground pb-20 animate-in fade-in duration-300">
+    <div className="w-full min-h-screen bg-background text-foreground pb-20 px-2 animate-in fade-in duration-300">
       <div className="flex items-center justify-between mb-6">
         <Button
           variant="outline"
@@ -196,9 +196,7 @@ export default function ResearchDetailPage() {
         </Button>
       </div>
 
-      {/* Main Details Body */}
       <div className="space-y-6">
-        {/* Badges and Price status */}
         <div className="flex flex-wrap items-center gap-2">
           <Badge
             variant="secondary"
@@ -342,7 +340,7 @@ export default function ResearchDetailPage() {
                       toast.error("PDF document not found.");
                     }
                   }}
-                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-semibold py-5"
+                  className="flex-1 font-semibold py-5"
                 >
                   <BookOpen className="mr-2 h-4 w-4" />
                   Read Full PDF

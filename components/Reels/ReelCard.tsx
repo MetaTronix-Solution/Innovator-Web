@@ -355,7 +355,6 @@ const ReelCard = ({ reel, post }: ReelCardProps) => {
             variant="reels"
           />
         </div>
-
         {reel.caption && (
           <div className="max-w-[75%] mt-2">
             <p
@@ -371,7 +370,6 @@ const ReelCard = ({ reel, post }: ReelCardProps) => {
             </button>
           </div>
         )}
-
         {reel.audio_name && (
           <div className="flex items-center gap-1.5 mt-2">
             <Music2 size={12} className="text-white/70 shrink-0" />

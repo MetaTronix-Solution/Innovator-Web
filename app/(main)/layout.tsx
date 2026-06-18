@@ -131,7 +131,6 @@ export default function MainLayout({
   const isMessagesPage = pathname === "/messages";
   const scrollPositions = useRef<Record<string, number>>({});
 
-  // Save scroll position on scroll
   useEffect(() => {
     const handleScroll = () => {
       scrollPositions.current[pathname] = window.scrollY;
@@ -140,7 +139,6 @@ export default function MainLayout({
     return () => window.removeEventListener("scroll", handleScroll);
   }, [pathname]);
 
-  // Restore scroll position on route change
   useEffect(() => {
     const savedPosition = scrollPositions.current[pathname];
     if (savedPosition) {
@@ -207,27 +205,24 @@ export default function MainLayout({
     <div className="min-h-screen bg-background font-sans transition-colors duration-300">
       <div id="scroll-top-anchor" />
       <Navbar />
-      <div
-        className={`w-full mx-auto ${isMessagesPage ? "px-0" : "px-0 md:px-4 lg:px-8"}`}
-      >
-        <div
-          className={`flex items-start ${isMessagesPage ? "justify-start gap-0" : "justify-center gap-4 xl:gap-8 pt-4"}`}
-        >
-          <aside className="hidden xl:block w-[280px] 2xl:w-[320px] sticky top-[72px] max-h-[calc(100vh-72px)] overflow-y-auto no-scrollbar shrink-0">
-            <LeftSidebar />
-          </aside>
 
-          <main
-            className={`w-full min-w-0 ${isMessagesPage ? "max-w-none" : "md:px-4 max-w-[680px] pb-20"}`}
-          >
-            {children}
-          </main>
-
-          <aside className="hidden lg:block w-[300px] 2xl:w-[350px] sticky top-[72px] max-h-[calc(100vh-72px)] overflow-y-auto no-scrollbar shrink-0">
-            <RightWidgets />
-          </aside>
+      {isMessagesPage ? (
+        <main className="w-full overflow-hidden">{children}</main>
+      ) : (
+        <div className="w-full mx-auto px-0 md:px-4 lg:px-8">
+          <div className="flex items-start justify-center gap-4 xl:gap-8 pt-4">
+            <aside className="hidden xl:block w-[280px] 2xl:w-[320px] sticky top-[72px] max-h-[calc(100vh-72px)] overflow-y-auto no-scrollbar shrink-0">
+              <LeftSidebar />
+            </aside>
+            <main className="w-full min-w-0 md:px-4 max-w-[680px] pb-20">
+              {children}
+            </main>
+            <aside className="hidden lg:block w-[300px] 2xl:w-[350px] sticky top-[72px] max-h-[calc(100vh-72px)] overflow-y-auto no-scrollbar shrink-0">
+              <RightWidgets />
+            </aside>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

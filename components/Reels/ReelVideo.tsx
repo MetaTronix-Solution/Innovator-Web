@@ -18,6 +18,7 @@ const ReelVideo = memo(
     const [isPlaying, setIsPlaying] = useState(false);
     const [showHeart, setShowHeart] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
+    const [progress, setProgress] = useState(0);
 
     useEffect(() => {
       const video = videoRef.current;
@@ -52,6 +53,20 @@ const ReelVideo = memo(
       };
     }, []);
 
+    useEffect(() => {
+      const video = videoRef.current;
+      if (!video) return;
+
+      const updateProgress = () => {
+        if (video.duration) {
+          setProgress((video.currentTime / video.duration) * 100);
+        }
+      };
+
+      video.addEventListener("timeupdate", updateProgress);
+      return () => video.removeEventListener("timeupdate", updateProgress);
+    }, []);
+
     const togglePlay = useCallback(() => {
       if (!videoRef.current) return;
       if (videoRef.current.paused) {
@@ -67,7 +82,6 @@ const ReelVideo = memo(
       if (now - lastTap.current < 300) {
         setShowHeart(true);
         setTimeout(() => setShowHeart(false), 800);
-        // Trigger your Like API here
       } else {
         togglePlay();
       }
@@ -86,7 +100,6 @@ const ReelVideo = memo(
           e.preventDefault();
           onScroll?.("down");
           break;
-        case " ":
         case "k":
           e.preventDefault();
           togglePlay();
@@ -104,7 +117,7 @@ const ReelVideo = memo(
         ref={containerRef}
         tabIndex={0}
         onKeyDown={handleKeyDown}
-        className={`relative w-full h-full bg-black overflow-hidden flex items-center justify-center ${className}`}
+        className={`relative w-full h-full bg-black overflow-hidden flex items-center justify-center ${className} isolate`}
       >
         <video
           ref={videoRef}
@@ -136,11 +149,15 @@ const ReelVideo = memo(
           </div>
         )}
 
-        <div className="absolute bottom-0 left-0 w-full h-[2px] bg-white/20 z-20">
+        <div className="absolute bottom-0 left-0 w-full h-1 z-[60] bg-black/50">
           <div
-            className="h-full bg-white/60 transition-all duration-100 ease-linear"
+            className="h-full transition-all duration-100 ease-linear"
             style={{
-              width: `${videoRef.current ? (videoRef.current.currentTime / videoRef.current.duration) * 100 : 0}%`,
+              width: `${progress}%`,
+              background: "linear-gradient(to right, #ffffff, #ffffff)",
+              willChange: "width",
+              filter: "none",
+              opacity: 1,
             }}
           />
         </div>

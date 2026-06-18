@@ -81,7 +81,9 @@ export function NotificationFeed({
   const updateUnreadCount = useCallback(
     (notifs: NotificationItem[]) => {
       if (onUnreadCountChange) {
-        const count = notifs.filter((n) => !n.is_read).length;
+        const count = notifs.filter(
+          (n) => !n.is_read && n.type !== "chat_message",
+        ).length;
         onUnreadCountChange(count);
       }
     },
@@ -134,6 +136,7 @@ export function NotificationFeed({
         if (cancelled) return;
         try {
           const data = JSON.parse(event.data);
+          if (data.type === "chat_message") return;
           setNotifications((prev) => {
             const next = [data, ...prev];
             updateUnreadCount(next);

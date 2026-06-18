@@ -1,7 +1,13 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Search, ChevronLeft, MoreHorizontal, Trash2, Loader2 } from "lucide-react";
+import {
+  Search,
+  ChevronLeft,
+  MoreHorizontal,
+  Trash2,
+  Loader2,
+} from "lucide-react";
 import { ActiveChatUser } from "./MessageView";
 import { MutualUser } from "@/app/(main)/messages/page";
 import { Avatar } from "./MessageView";
@@ -69,7 +75,7 @@ export default function ChatSidebar({
 
   return (
     <div
-      className={`flex flex-col bg-background transition-all duration-300 ease-in-out border-r border-border/60 shrink-0 ${
+      className={`flex flex-col bg-background border-r border-border/60 shrink-0 transition-all duration-300 ease-in-out ${
         activeChatId === null
           ? "w-full md:w-[360px]"
           : "hidden md:flex md:w-[280px]"
@@ -128,7 +134,9 @@ export default function ChatSidebar({
                     <div className="p-1">
                       <div
                         className={`relative rounded-full transition-transform group-hover:scale-105 ${
-                          isOnline ? "ring-2 ring-green-400" : "ring-2 ring-border/30"
+                          isOnline
+                            ? "ring-2 ring-green-400"
+                            : "ring-2 ring-border/30"
                         }`}
                       >
                         <Avatar
@@ -227,9 +235,7 @@ export default function ChatSidebar({
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setMenuOpenId(
-                          menuOpenId === chat.id ? null : chat.id,
-                        );
+                        setMenuOpenId(menuOpenId === chat.id ? null : chat.id);
                       }}
                       className="w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground/40 hover:text-foreground hover:bg-muted/60 transition-colors focus:outline-none"
                     >

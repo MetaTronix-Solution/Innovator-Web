@@ -33,7 +33,7 @@ const SearchBar = () => {
   return (
     <form
       onSubmit={(e) => e.preventDefault()}
-      className="flex items-center h-9 w-56 md:w-48 sm:w-60 lg:w-64 rounded-full border border-foreground/20 px-3 bg-transparent"
+      className="flex items-center h-9 w-48 sm:w-60 md:w-48 lg:w-64 rounded-full border border-foreground/20 px-2 sm:px-3 bg-transparent"
     >
       <Search size={18} className="shrink-0 text-foreground" />
       <Input

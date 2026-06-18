@@ -30,11 +30,31 @@ const LazyVideo = memo(
     const [isSeeking, setIsSeeking] = useState(false);
     const [speed, setSpeed] = useState(1);
     const [showFeedback, setShowFeedback] = useState(false);
+    const [controlsVisible, setControlsVisible] = useState(false);
+    const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const fmt = (s: number) => {
       s = Math.floor(s || 0);
       return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
     };
+
+    const clearHideTimer = () => {
+      if (hideTimer.current) clearTimeout(hideTimer.current);
+    };
+
+    const startHideTimer = () => {
+      clearHideTimer();
+      hideTimer.current = setTimeout(() => setControlsVisible(false), 3000);
+    };
+
+    const revealControls = () => {
+      setControlsVisible(true);
+      startHideTimer();
+    };
+
+    useEffect(() => {
+      return () => clearHideTimer();
+    }, []);
 
     useEffect(() => {
       const observer = new IntersectionObserver(
@@ -59,25 +79,19 @@ const LazyVideo = memo(
     };
 
     const togglePlay = () => {
-      setTimeout(() => {
-        containerRef.current?.focus();
-      }, 0);
-
+      setTimeout(() => containerRef.current?.focus(), 0);
       if (!videoRef.current) return;
-
       if (videoRef.current.paused) {
         videoRef.current.play();
       } else {
         videoRef.current.pause();
       }
-
       setShowFeedback(true);
       setTimeout(() => setShowFeedback(false), 600);
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
       if (!videoRef.current) return;
-
       switch (e.key) {
         case "ArrowUp":
           e.preventDefault();
@@ -141,8 +155,13 @@ const LazyVideo = memo(
         ref={containerRef}
         tabIndex={0}
         onKeyDown={handleKeyDown}
-        onMouseEnter={() => containerRef.current?.focus()}
-        className={`relative bg-black group w-full flex items-center justify-center overflow-hidden ${className}`}
+        onMouseEnter={revealControls}
+        onMouseMove={revealControls}
+        onMouseLeave={() => {
+          clearHideTimer();
+          setControlsVisible(false);
+        }}
+        className={`relative bg-black/25 group w-full flex items-center justify-center overflow-hidden cursor-pointer ${className}`}
         style={{ aspectRatio: "auto" }}
       >
         <video
@@ -154,6 +173,14 @@ const LazyVideo = memo(
           preload="metadata"
           className="w-full object-contain max-h-[500px]"
           onClick={togglePlay}
+          onTouchEnd={(e) => {
+            e.preventDefault();
+            if (!controlsVisible) {
+              revealControls();
+            } else {
+              togglePlay();
+            }
+          }}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
           onDurationChange={() => setDuration(videoRef.current?.duration || 0)}
@@ -181,6 +208,7 @@ const LazyVideo = memo(
           }}
         />
 
+        {/* Play/Pause feedback pulse */}
         {showFeedback && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="bg-black/40 rounded-full p-4 animate-ping-once">
@@ -193,89 +221,192 @@ const LazyVideo = memo(
           </div>
         )}
 
+        {/* Bottom overlay */}
         <div
-          className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent px-3 pt-8 pb-3 transition-opacity duration-300 opacity-100 lg:opacity-0 lg:group-hover:opacity-100`}
+          className="absolute bottom-0 left-0 right-0"
+          // Remove stopPropagation so button touches pass through
+          onClick={(e) => e.stopPropagation()}
         >
-          <div className="relative mb-2 h-6 flex items-center group/slider">
-            <div className="absolute w-full h-1 bg-white/20 rounded-full">
+          {/* Buttons + progress — slide up/down */}
+          <div
+            className={`px-3 pt-8 pb-2 bg-gradient-to-t from-black/90 via-black/40 to-transparent transition-all duration-300 ease-in-out ${
+              controlsVisible
+                ? "opacity-100 translate-y-0 pointer-events-auto"
+                : "opacity-0 translate-y-full pointer-events-none"
+            }`}
+          >
+            {/* Progress bar inside controls */}
+            <div
+              className="relative h-4 flex items-center mb-1"
+              onMouseEnter={() => {
+                clearHideTimer();
+                setControlsVisible(true);
+              }}
+            >
+              <div className="absolute left-0 right-0 h-[3px] bg-white/30 rounded-full">
+                <div
+                  className="absolute left-0 top-0 h-full bg-white/50 rounded-full"
+                  style={{ width: `${buffered}%` }}
+                />
+                <div
+                  className="absolute left-0 top-0 h-full bg-white rounded-full"
+                  style={{ width: `${progress}%` }}
+                />
+                <div
+                  className="absolute h-3 w-3 bg-white rounded-full -top-[4px] shadow-md"
+                  style={{ left: `calc(${progress}% - 6px)` }}
+                />
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={0.1}
+                value={progress || 0}
+                onChange={handleSeekChange}
+                onMouseDown={() => {
+                  setIsSeeking(true);
+                  clearHideTimer();
+                }}
+                onMouseUp={() => {
+                  handleSeekCommit();
+                  startHideTimer();
+                }}
+                onTouchStart={(e) => {
+                  e.stopPropagation();
+                  setIsSeeking(true);
+                  clearHideTimer();
+                }}
+                onTouchEnd={(e) => {
+                  e.stopPropagation();
+                  handleSeekCommit();
+                  startHideTimer();
+                }}
+                className="absolute left-0 right-0 w-full h-full opacity-0 cursor-pointer z-10 touch-none"
+              />
+            </div>
+
+            {/* Icon row */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1">
+                <button
+                  onTouchEnd={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    togglePlay();
+                    startHideTimer();
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    togglePlay();
+                  }}
+                  className="text-white p-2"
+                >
+                  {isPlaying ? (
+                    <Pause size={20} fill="white" />
+                  ) : (
+                    <Play size={20} fill="white" />
+                  )}
+                </button>
+                <button
+                  onTouchEnd={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    skip(-5);
+                    startHideTimer();
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    skip(-5);
+                  }}
+                  className="text-white/70 p-2"
+                >
+                  <RotateCcw size={18} />
+                </button>
+                <button
+                  onTouchEnd={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    skip(5);
+                    startHideTimer();
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    skip(5);
+                  }}
+                  className="text-white/70 p-2"
+                >
+                  <RotateCw size={18} />
+                </button>
+                <span className="text-white/90 text-[11px] font-medium ml-1 tabular-nums">
+                  {fmt(currentTime)} / {fmt(duration)}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 bg-black/20 rounded-full px-2 py-1">
+                  <button
+                    onTouchEnd={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      toggleMute();
+                      startHideTimer();
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleMute();
+                    }}
+                    className="text-white/70 p-1"
+                  >
+                    {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                  </button>
+                  <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    value={isMuted ? 0 : volume}
+                    onChange={handleVolumeChange}
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-12 sm:w-16 accent-white cursor-pointer hidden xs:block"
+                  />
+                </div>
+                <select
+                  value={speed}
+                  onChange={(e) => {
+                    const v = parseFloat(e.target.value);
+                    setSpeed(v);
+                    if (videoRef.current) videoRef.current.playbackRate = v;
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-white/90 bg-white/10 rounded-md px-1 text-xs font-bold border-none outline-none appearance-none"
+                >
+                  {[0.5, 1, 1.5, 2].map((s) => (
+                    <option key={s} value={s} className="text-black">
+                      {s}x
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Thin progress bar — always visible when controls hidden */}
+          <div
+            className={`transition-all duration-300 ${
+              controlsVisible
+                ? "opacity-0 pointer-events-none h-0"
+                : "opacity-100 h-4"
+            } relative flex items-center px-3`}
+          >
+            <div className="absolute left-3 right-3 h-[3px] bg-white/30 rounded-full">
               <div
-                className="absolute left-0 top-0 h-full bg-white/40 rounded-full"
+                className="absolute left-0 top-0 h-full bg-white/50 rounded-full"
                 style={{ width: `${buffered}%` }}
               />
               <div
                 className="absolute left-0 top-0 h-full bg-white rounded-full"
                 style={{ width: `${progress}%` }}
               />
-              <div
-                className="absolute h-3 w-3 bg-white rounded-full -top-1 shadow-md lg:opacity-0 lg:group-hover/slider:opacity-100"
-                style={{ left: `calc(${progress}% - 6px)` }}
-              />
-            </div>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              step={0.1}
-              value={progress || 0}
-              onChange={handleSeekChange}
-              onMouseDown={() => setIsSeeking(true)}
-              onMouseUp={handleSeekCommit}
-              className="absolute w-full h-full opacity-0 cursor-pointer z-10 touch-none"
-            />
-          </div>
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1">
-              <button onClick={togglePlay} className="text-white p-2">
-                {isPlaying ? (
-                  <Pause size={20} fill="white" />
-                ) : (
-                  <Play size={20} fill="white" />
-                )}
-              </button>
-
-              <button onClick={() => skip(-5)} className="text-white/70 p-2">
-                <RotateCcw size={18} />
-              </button>
-              <button onClick={() => skip(5)} className="text-white/70 p-2">
-                <RotateCw size={18} />
-              </button>
-
-              <span className="text-white/90 text-[11px] font-medium ml-1 tabular-nums">
-                {fmt(currentTime)} / {fmt(duration)}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1 bg-black/20 rounded-full px-2 py-1">
-                <button onClick={toggleMute} className="text-white/70 p-1">
-                  {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-                </button>
-                <input
-                  type="range"
-                  min={0}
-                  max={1}
-                  step={0.05}
-                  value={isMuted ? 0 : volume}
-                  onChange={handleVolumeChange}
-                  className="w-12 sm:w-16 accent-white cursor-pointer hidden xs:block"
-                />
-              </div>
-
-              <select
-                value={speed}
-                onChange={(e) => {
-                  const v = parseFloat(e.target.value);
-                  setSpeed(v);
-                  if (videoRef.current) videoRef.current.playbackRate = v;
-                }}
-                className="text-white/90 bg-white/10 rounded-md px-1 text-xs font-bold border-none outline-none appearance-none"
-              >
-                {[0.5, 1, 1.5, 2].map((s) => (
-                  <option key={s} value={s} className="text-black">
-                    {s}x
-                  </option>
-                ))}
-              </select>
             </div>
           </div>
         </div>
@@ -283,6 +414,6 @@ const LazyVideo = memo(
     );
   },
 );
-LazyVideo.displayName = "LazyVideo";
 
+LazyVideo.displayName = "LazyVideo";
 export default LazyVideo;
