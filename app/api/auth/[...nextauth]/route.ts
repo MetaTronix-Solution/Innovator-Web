@@ -23,7 +23,7 @@ export const authOptions: NextAuthOptions = {
     error: "/login",
   },
   session: { strategy: "jwt", maxAge: 24 * 60 * 60 },
-  secret: process.env.AUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
     async redirect({ url, baseUrl }) {
       return baseUrl;

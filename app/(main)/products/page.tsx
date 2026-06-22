@@ -339,16 +339,16 @@ export default function EcommercePage() {
 
       <div className="fixed bottom-20 md:bottom-8 right-8 z-40">
         <button
-          onClick={() => router.push("/cart")}
+          onClick={() => router.push("/my-cart")}
           className={`bg-primary text-white rounded-full shadow-lg hover:scale-105 transition-all flex items-center justify-center ${
             isMobile ? "p-3" : "p-4"
           }`}
         >
           <div className="relative">
             <ShoppingBag size={isMobile ? 16 : 24} />
-            {totalQuantity > 0 && (
+            {cartItems.length > 0 && (
               <span className="absolute -top-2 -right-2 bg-black text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full border-2 border-orange-500">
-                {totalQuantity > 99 ? "99+" : totalQuantity}
+                {cartItems.length > 99 ? "99+" : cartItems.length}
               </span>
             )}
           </div>

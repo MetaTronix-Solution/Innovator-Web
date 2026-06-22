@@ -303,14 +303,14 @@ export default function CartPage() {
               <button
                 onClick={() => setDeleteTarget(null)}
                 disabled={deleteLoading}
-                className="flex-1 py-3 rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-all disabled:opacity-50"
+                className="flex-1 py-3 rounded-2xl border cursor-pointer border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-all disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDelete}
                 disabled={deleteLoading}
-                className="flex-1 py-3 rounded-2xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-red-500/20"
+                className="flex-1 py-3 rounded-2xl cursor-pointer bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-red-500/20"
               >
                 {deleteLoading ? (
                   <Loader2 size={15} className="animate-spin" />
@@ -328,7 +328,7 @@ export default function CartPage() {
         <Button
           variant="secondary"
           onClick={() => router.back()}
-          className="p-2 rounded-full"
+          className="p-2 rounded-full cursor-pointer"
         >
           <ArrowLeft size={20} />
         </Button>
@@ -388,7 +388,7 @@ export default function CartPage() {
                         variant="outline"
                         onClick={() => handleDecrease(item)}
                         disabled={loadingItemId === item.id}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white dark:hover:bg-zinc-700 transition-all disabled:opacity-40"
+                        className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white dark:hover:bg-zinc-700 transition-all disabled:opacity-40 cursor-pointer"
                       >
                         {loadingItemId === item.id ? (
                           <Loader2 size={13} className="animate-spin" />
@@ -403,7 +403,7 @@ export default function CartPage() {
                         variant="outline"
                         onClick={() => handleIncrease(item)}
                         disabled={loadingItemId === item.id}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white dark:hover:bg-zinc-700 transition-all disabled:opacity-40"
+                        className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white dark:hover:bg-zinc-700 transition-all disabled:opacity-40 cursor-pointer"
                       >
                         {loadingItemId === item.id ? (
                           <Loader2 size={13} className="animate-spin" />
@@ -416,6 +416,7 @@ export default function CartPage() {
                       variant="destructive"
                       onClick={() => setDeleteTarget(item)}
                       disabled={loadingItemId === item.id}
+                      className="cursor-pointer"
                     >
                       <Trash2 size={17} />
                     </Button>
@@ -447,7 +448,7 @@ export default function CartPage() {
             </div>
             <Button
               onClick={() => router.push("/checkout")}
-              className="w-full p-6"
+              className="w-full p-6 cursor-pointer"
             >
               Proceed to Checkout <ChevronRight size={18} />
             </Button>

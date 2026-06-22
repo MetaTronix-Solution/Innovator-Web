@@ -47,6 +47,28 @@ const LeftSidebar = () => {
           />
         ))}
       </div>
+
+      <div className="mt-auto pt-4 px-2">
+        <div className="flex flex-wrap gap-x-4 gap-y-1">
+          {[
+            { label: "Terms", href: "/terms" },
+            { label: "Privacy", href: "/privacy" },
+            { label: "About", href: "/about" },
+            { label: "Help", href: "/faq" },
+          ].map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="text-[12px] text-muted-foreground hover:underline"
+            >
+              {link.label}
+            </Link>
+          ))}
+        </div>
+        {/* <p className="text-[11px] text-muted-foreground mt-2">
+          © {new Date().getFullYear()} Innovator. All rights reserved.
+        </p> */}
+      </div>
     </aside>
   );
 };
