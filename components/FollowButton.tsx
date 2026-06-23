@@ -37,7 +37,6 @@ export default function FollowButton({
       ? `/api/users/${userId}/unfollow/`
       : `/api/users/${userId}/follow/`;
 
-    // Optimistic update — instant UI change
     if (username) {
       dispatch(updateFollowing({ username, isFollowing: newState }));
     }
@@ -47,16 +46,13 @@ export default function FollowButton({
       const res = await fetch(endpoint, { method: "POST" });
 
       if (!res.ok) {
-        // API failed — rollback to original state
         if (username) {
           dispatch(updateFollowing({ username, isFollowing: isFollowed }));
         }
         onFollowChange?.(isFollowed);
         if (res.status === 401) window.location.href = "/login";
       }
-      // No refreshUser() — optimistic update is the source of truth
     } catch (err) {
-      // Network error — rollback
       if (username) {
         dispatch(updateFollowing({ username, isFollowing: isFollowed }));
       }
@@ -73,9 +69,9 @@ export default function FollowButton({
       variant={isFollowed ? "secondary" : "outline"}
       disabled={loading}
       onClick={handleFollow}
-      className={`h-8 px-3 rounded-full transition-all active:scale-95 shadow-sm ${
+      className={`h-8 px-3 rounded-full transition-all active:scale-95 shadow-sm cursor-pointer ${
         isFollowed
-          ? "border-primary/20 text-primary hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
+          ? "border-primary/20 text-primary hover:bg-primary hover:text-destructive hover:border-destructive/30"
           : "border-primary/20 hover:border-primary hover:bg-primary hover:text-white"
       }`}
     >

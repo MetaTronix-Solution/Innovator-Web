@@ -1,27 +1,15 @@
 "use client";
-
 import React from "react";
-import { UserPlus } from "lucide-react";
-
 import UserSuggestion from "../UserSuggestion";
 
 const RightWidgets = () => {
   return (
-    <aside className="hidden lg:flex flex-col gap-4 w-full sticky  h-fit">
-      <section className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-        <div className="p-4 border-b border-border flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <UserPlus size={18} className="text-foreground/90" />
-            <h3 className="font-bold text-sm tracking-tight uppercase">
-              Suggested for you
-            </h3>
-          </div>
-        </div>
-
-        <div className="max-h-fit overflow-hidden">
+    <aside className="hidden lg:flex flex-col gap-6 w-full sticky top-6 h-fit">
+      <div className="relative">
+        <div className="glass-float relative rounded-3xl overflow-hidden">
           <UserSuggestion />
         </div>
-      </section>
+      </div>
     </aside>
   );
 };

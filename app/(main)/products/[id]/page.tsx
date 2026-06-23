@@ -164,8 +164,11 @@ export default function ProductDetailPage() {
   const hasMultipleImages = images.length > 1;
 
   return (
-    <div className="w-full max-w-2xl mx-auto min-h-screen bg-secondary/90 text-zinc-900 dark:text-zinc-100">
-      <div className="md:hidden text-foreground" onClick={() => router.back()}>
+    <div className="w-full max-w-2xl mx-auto min-h-screen text-zinc-900 dark:text-zinc-100">
+      <div
+        className="px-2 md:hidden text-foreground"
+        onClick={() => router.back()}
+      >
         <ArrowLeft />
       </div>
       <div className="relative bg-secondary/90">

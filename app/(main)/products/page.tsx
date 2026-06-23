@@ -232,53 +232,55 @@ export default function EcommercePage() {
 
   return (
     <div className="w-full max-w-5xl mx-auto px-2 py:1 md:py-2 bg-background font-sans min-h-screen relative">
-      <div className="flex items-center gap-2 mb-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 w-5 h-5" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search products..."
-            className="w-full bg-card border border-border/70 rounded-full py-3 pl-12 pr-4 text-sm focus:border-orange-500/60 shadow-sm transition-all"
+      <div className="sticky top-0 z-30 -mx-2 px-2 pt-2 md:static md:mx-0 md:px-0 md:pt-0 bg-background/95 backdrop-blur-md md:bg-transparent md:backdrop-blur-none">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 w-5 h-5" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search products..."
+              className="w-full bg-card border border-border/70 rounded-full py-3 pl-12 pr-4 text-sm focus:border-orange-500/60 shadow-sm transition-all"
+            />
+          </div>
+
+          <button
+            onClick={() => setNotifOpen(true)}
+            className="relative p-3 bg-card border border-border/70 rounded-xl"
+          >
+            <Bell size={18} />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full font-bold">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </button>
+
+          <NotificationDrawer
+            open={notifOpen}
+            onClose={() => setNotifOpen(false)}
           />
         </div>
 
-        <button
-          onClick={() => setNotifOpen(true)}
-          className="relative p-3 bg-card border border-border/70 rounded-xl"
-        >
-          <Bell size={18} />
-          {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full font-bold">
-              {unreadCount > 9 ? "9+" : unreadCount}
-            </span>
+        <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1 no-scrollbar">
+          {(["All", "Multimeters", "Electronics"] as CategoryFilter[]).map(
+            (cat) => (
+              <Button
+                variant="outline"
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className={`px-5 py-4 rounded-full border text-xs font-bold transition-all whitespace-nowrap ${
+                  activeCategory === cat
+                    ? "text-primary hover:bg-primary"
+                    : "bg-card text-muted-foreground"
+                }`}
+              >
+                {cat}
+              </Button>
+            ),
           )}
-        </button>
-
-        <NotificationDrawer
-          open={notifOpen}
-          onClose={() => setNotifOpen(false)}
-        />
-      </div>
-
-      <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1 no-scrollbar">
-        {(["All", "Multimeters", "Electronics"] as CategoryFilter[]).map(
-          (cat) => (
-            <Button
-              variant="outline"
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className={`px-5 py-4 rounded-full border text-xs font-bold transition-all whitespace-nowrap ${
-                activeCategory === cat
-                  ? "text-primary hover:bg-primary"
-                  : "bg-card text-muted-foreground"
-              }`}
-            >
-              {cat}
-            </Button>
-          ),
-        )}
+        </div>
       </div>
 
       {bootstrapping ? (
