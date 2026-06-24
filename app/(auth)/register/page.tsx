@@ -82,7 +82,7 @@ export default function RegisterPage() {
       <div className="max-w-xl w-full">
         <div className="bg-card text-card-foreground rounded-xl border border-border shadow-sm p-8 space-y-6">
           <div className="text-center">
-            <h1 className="text-3xl font-bold tracking-tight">
+            <h1 className="text-3xl font-medium text-foreground tracking-tight">
               {showOTP ? "Verify Your Email" : "Create an Account"}
             </h1>
             {showOTP && (

@@ -95,8 +95,14 @@ const Navbar = () => {
   useEffect(() => {
     const handleScroll = () => {
       const currentY = window.scrollY;
-      setScrolled(currentY > 20); // Change at 20px scroll
-      setTabBarVisible(currentY < lastScrollY.current || currentY < 10);
+
+      setScrolled(currentY > 20);
+
+      const isScrollingUp = currentY < lastScrollY.current;
+      const isAtTop = currentY < 10;
+
+      setTabBarVisible(isScrollingUp || isAtTop);
+
       lastScrollY.current = currentY;
     };
 
@@ -161,16 +167,6 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentY = window.scrollY;
-      setTabBarVisible(currentY < lastScrollY.current || currentY < 10);
-      lastScrollY.current = currentY;
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
   const getProfileImage = () => {
     const rawAvatarPath = user?.profile?.avatar || user?.profile_image;
     if (!rawAvatarPath || rawAvatarPath === "null") return null;
@@ -222,7 +218,7 @@ const Navbar = () => {
         style={{
           background: scrolled
             ? "var(--glass-bg)"
-            : "var(--navbar-solid-bg, rgba(255,255,255,0.98))", // Fallback for light mode
+            : "var(--navbar-solid-bg, rgba(255,255,255,0.98))",
           boxShadow: scrolled
             ? "var(--glass-shadow)"
             : "0 1px 3px rgba(0,0,0,0.08)",
@@ -275,7 +271,6 @@ const Navbar = () => {
             </div>
           </div>
 
-          {/* Desktop nav links */}
           <div className="hidden md:flex items-center justify-center flex-[1.5] h-full gap-1">
             {navLinks.map((link) => (
               <NavItem
@@ -300,7 +295,7 @@ const Navbar = () => {
                 className="p-2 rounded-full hover:bg-accent hover:scale-105"
                 title="Create Reel"
               >
-                <PlusCircle className="text-secondary-foreground" size={24} />
+                <PlusCircle className="text-muted-foreground" size={24} />
               </button>
 
               <div className="relative" ref={notifRef}>
@@ -336,11 +331,10 @@ const Navbar = () => {
               </div>
             </div>
 
-            {/* Mobile action buttons */}
             <div className="flex sm:hidden items-center gap-1">
               <button
                 onClick={() => setCreateReelOpen(true)}
-                className="relative flex items-center justify-center w-8 h-8 bg-secondary text-secondary-foreground rounded-full cursor-pointer hover:bg-accent transition-colors active:scale-95"
+                className="relative flex items-center justify-center w-8 h-8 text-foreground rounded-full cursor-pointer hover:bg-accent transition-colors active:scale-95"
                 aria-label="Create Reel"
               >
                 <PlusCircle size={18} />
@@ -350,7 +344,7 @@ const Navbar = () => {
                   className={`relative flex items-center justify-center w-8 h-8 rounded-full cursor-pointer transition-colors active:scale-95 ${
                     pathname === "/messages"
                       ? "bg-primary text-primary-foreground"
-                      : "bg-secondary text-secondary-foreground hover:bg-accent"
+                      : " text-foreground hover:bg-accent"
                   }`}
                 >
                   <MessageSquare size={18} />
@@ -358,7 +352,7 @@ const Navbar = () => {
               </Link>
               <div
                 onClick={() => router.push("/notifications")}
-                className="relative flex items-center justify-center w-8 h-8 bg-secondary text-muted-foreground rounded-full cursor-pointer hover:bg-accent transition-colors active:scale-95"
+                className="relative flex items-center justify-center w-8 h-8 text-foreground rounded-full cursor-pointer hover:bg-accent transition-colors active:scale-95"
               >
                 <Bell size={18} />
                 {unreadCount > 0 && (

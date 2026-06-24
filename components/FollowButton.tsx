@@ -69,7 +69,7 @@ export default function FollowButton({
       variant={isFollowed ? "secondary" : "outline"}
       disabled={loading}
       onClick={handleFollow}
-      className={`h-8 px-3 rounded-full transition-all active:scale-95 shadow-sm cursor-pointer ${
+      className={`h-8 px-3 rounded-md transition-all active:scale-95 shadow-sm cursor-pointer ${
         isFollowed
           ? "border-primary/20 text-primary hover:bg-primary hover:text-destructive hover:border-destructive/30"
           : "border-primary/20 hover:border-primary hover:bg-primary hover:text-white"

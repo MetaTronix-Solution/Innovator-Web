@@ -95,7 +95,7 @@ export default function LoginPage() {
           <div className="text-center">
             <h1 className="text-3xl font-bold tracking-tight">Welcome Back</h1>
             <p className="text-muted-foreground mt-2">
-              Sign in to your account
+              Sign in to your Innovator account
             </p>
           </div>
 

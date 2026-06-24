@@ -115,7 +115,7 @@ const FollowToggle = ({
     <button
       onClick={handleToggle}
       disabled={isLoading}
-      className={`px-6 py-2 rounded-full font-bold text-sm transition-all flex items-center justify-center gap-2 ${
+      className={`px-6 py-2 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${
         isFollowed
           ? "bg-secondary text-secondary-foreground hover:bg-secondary/80 border border-border"
           : "bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:scale-105 active:scale-95"

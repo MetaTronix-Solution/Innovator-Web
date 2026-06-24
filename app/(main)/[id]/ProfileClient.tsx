@@ -4,18 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, notFound } from "next/navigation";
 import { useSelector } from "react-redux";
 import Image from "next/image";
-import {
-  User,
-  Camera,
-  MoreHorizontal,
-  Send,
-  LayoutGrid,
-  Film,
-  Link2,
-  Flag,
-  Ban,
-  Loader2,
-} from "lucide-react";
+import { User, Camera, LayoutGrid, Film, MoreVertical } from "lucide-react";
 import { RootState } from "@/lib/store/store";
 import { getMediaUrl } from "@/lib/utils/getMediaUrl";
 import CreatePostBox from "@/components/Home/CreatePostBox";
@@ -26,7 +15,7 @@ import { useRouter } from "next/navigation";
 import { updateAvatar } from "@/lib/services/profileService";
 import { toast } from "sonner";
 import ReportModal from "@/components/ReportModal";
-import { Button } from "@/components/ui/button";
+import { ConfirmationModal } from "@/components/ConfirmationModal";
 
 const ProfilePage = () => {
   const params = useParams();
@@ -45,6 +34,7 @@ const ProfilePage = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
   const [blocking, setBlocking] = useState(false);
 
   const menuRef = useRef<HTMLDivElement>(null);
@@ -133,11 +123,6 @@ const ProfilePage = () => {
   };
 
   const handleBlock = async () => {
-    if (
-      !confirm("Block this user? You will no longer see their posts or reels.")
-    )
-      return;
-
     setBlocking(true);
     try {
       const res = await fetch(`/api/users/${targetId}/block/`, {
@@ -146,6 +131,7 @@ const ProfilePage = () => {
       if (!res.ok) throw new Error("Failed to block user");
 
       toast.success("User blocked");
+      setIsBlockModalOpen(false);
       router.push("/");
     } catch (err: any) {
       toast.error(err.message || "Failed to block user");
@@ -164,17 +150,12 @@ const ProfilePage = () => {
     notFound();
     return null;
   }
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh] bg-background">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     );
-  }
-
-  if (!profileData) {
-    notFound();
   }
 
   const userPosts = profileData.posts || [];
@@ -191,151 +172,48 @@ const ProfilePage = () => {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.1),transparent)]" />
       </div>
 
-      <div className="px-6 pb-6 border-b border-border bg-card">
-        <div className="relative flex justify-between items-start">
-          <div className="relative -mt-16 md:-mt-20">
-            <div className="w-28 h-28 md:w-32 md:h-32 rounded-full border-4 border-card bg-muted overflow-hidden relative shadow-md">
-              {avatarUrl ? (
-                <Image
-                  src={avatarUrl}
-                  alt="profile"
-                  fill
-                  className="object-cover"
-                  priority
-                  unoptimized
-                />
-              ) : (
-                <User
-                  size={54}
-                  className="m-auto mt-6 md:mt-8 text-muted-foreground/60"
-                />
-              )}
-            </div>
-
-            {isOwnProfile && (
-              <>
-                <button
-                  onClick={() => cameraInputRef.current?.click()}
-                  disabled={avatarUploading}
-                  className="absolute bottom-1 right-1 bg-orange-500 hover:bg-orange-600 p-2 rounded-full border-2 border-card text-white shadow-md active:scale-95 transition-transform disabled:opacity-60"
-                >
-                  {avatarUploading ? (
-                    <div className="h-[15px] w-[15px] animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  ) : (
-                    <Camera size={15} />
-                  )}
-                </button>
-                <input
-                  ref={cameraInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleCameraChange}
-                />
-              </>
-            )}
-          </div>
-
-          <div className="pt-4 flex items-center gap-2">
-            {isOwnProfile ? (
-              <>
-                <button
-                  onClick={() => router.push("/settings/edit-profile")}
-                  className="border border-border bg-muted hover:bg-accent text-foreground px-5 py-2 rounded-full font-bold text-xs tracking-wide transition-colors shadow-sm hover:scale-105"
-                >
-                  Edit profile
-                </button>
-
-                <div className="relative" ref={menuRef}>
-                  <button
-                    onClick={() => setMenuOpen((o) => !o)}
-                    className="p-2 text-muted-foreground hover:bg-accent rounded-full transition-colors"
-                  >
-                    <MoreHorizontal size={22} />
-                  </button>
-
-                  {menuOpen && (
-                    <div className="absolute right-0 top-full mt-1.5 z-20 min-w-[180px] rounded-xl border border-border bg-popover shadow-lg py-1">
-                      <button
-                        onClick={handleCopyLink}
-                        className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-foreground hover:bg-muted transition-colors"
-                      >
-                        <Link2 size={15} />
-                        Copy profile link
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </>
+      <div className="px-6 pb-6 border-b border-border bg-card flex flex-col items-center text-center">
+        <div className="relative -mt-16 md:-mt-20">
+          <div className="w-28 h-28 md:w-32 md:h-32 rounded-full border-4 border-card bg-muted overflow-hidden relative shadow-md">
+            {avatarUrl ? (
+              <Image
+                src={avatarUrl}
+                alt="profile"
+                fill
+                className="object-cover"
+                priority
+                unoptimized
+              />
             ) : (
-              <>
-                <Button
-                  onClick={() => router.push(`/messages/${targetId}`)}
-                  className="p-2 md:p-4.5 rounded-full md:rounded-3xl"
-                >
-                  <Send size={14} />
-                  <span className="hidden md:flex">Message</span>
-                </Button>
-                <FollowToggle
-                  username=""
-                  userId={profileData.id}
-                  initialIsFollowed={profileData.is_followed}
-                  variant="button"
-                />
-
-                <div className="relative" ref={menuRef}>
-                  <button
-                    onClick={() => setMenuOpen((o) => !o)}
-                    className="p-2 text-muted-foreground hover:bg-accent rounded-full transition-colors"
-                  >
-                    <MoreHorizontal size={22} />
-                  </button>
-
-                  {menuOpen && (
-                    <div className="absolute right-0 top-full mt-1.5 z-20 min-w-[180px] rounded-xl border border-border bg-popover shadow-lg py-1">
-                      <button
-                        onClick={handleCopyLink}
-                        className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-foreground hover:bg-muted"
-                      >
-                        <Link2 size={15} /> Copy profile link
-                      </button>
-
-                      <button
-                        onClick={() => setIsReportModalOpen(true)}
-                        className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-destructive hover:bg-muted"
-                      >
-                        <Flag size={15} /> Report
-                      </button>
-
-                      <button
-                        onClick={handleBlock}
-                        disabled={blocking}
-                        className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-destructive hover:bg-muted disabled:opacity-50"
-                      >
-                        {blocking ? (
-                          <Loader2 size={15} className="animate-spin" />
-                        ) : (
-                          <Ban size={15} />
-                        )}
-                        Block
-                      </button>
-                    </div>
-                  )}
-
-                  <ReportModal
-                    userId={targetId}
-                    isOpen={isReportModalOpen}
-                    onClose={() => {
-                      setIsReportModalOpen(false);
-                      setMenuOpen(false);
-                    }}
-                  />
-                </div>
-              </>
+              <User
+                size={54}
+                className="m-auto mt-6 md:mt-8 text-muted-foreground/60"
+              />
             )}
           </div>
+          {isOwnProfile && (
+            <>
+              <button
+                onClick={() => cameraInputRef.current?.click()}
+                disabled={avatarUploading}
+                className="absolute bottom-1 right-1 bg-orange-500 hover:bg-orange-600 p-2 rounded-full border-2 border-card text-white shadow-md transition-transform disabled:opacity-60"
+              >
+                {avatarUploading ? (
+                  <div className="h-[15px] w-[15px] animate-spin rounded-full border-2 border-white border-t-transparent" />
+                ) : (
+                  <Camera size={15} />
+                )}
+              </button>
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleCameraChange}
+              />
+            </>
+          )}
         </div>
-
         <div className="mt-4">
           <h1 className="text-xl md:text-2xl font-black tracking-tight text-foreground">
             {profileData?.full_name || profileData?.username}
@@ -354,15 +232,104 @@ const ProfilePage = () => {
             </p>
           )}
         </div>
+        <div className="pt-6 flex items-center gap-3">
+          {!isOwnProfile && (
+            <>
+              <button
+                onClick={() => router.push(`/messages/${targetId}`)}
+                className="rounded-xl px-6 py-1.5 bg-primary text-primary-foreground hover:scale-105"
+              >
+                Message
+              </button>
+              <FollowToggle
+                username=""
+                userId={profileData.id}
+                initialIsFollowed={profileData.is_followed}
+                variant="button"
+              />
+            </>
+          )}
+        </div>
 
-        <div className="flex gap-10 mt-6 pt-5 border-t border-border/40">
-          <StatItem count={profileData?.followers_count} label="Followers" />
-          <StatItem
-            count={profileData?.following_count}
-            label="Following"
-            border
-          />
-          <StatItem count={userPosts.length} label="Posts" border />
+        <div className="flex items-center justify-between mt-8 pt-5 border-t border-border/40 w-full w-full">
+          <div className="flex-1 flex justify-center border-r border-border/60">
+            <StatItem count={profileData?.followers_count} label="Followers" />
+          </div>
+
+          <div className="flex-1 flex justify-center border-r border-border/60">
+            <StatItem count={profileData?.following_count} label="Following" />
+          </div>
+
+          <div className="flex-1 flex justify-center border-r border-border/60">
+            <StatItem count={userPosts.length} label="Posts" />
+          </div>
+
+          <div className="flex-1 flex justify-center relative" ref={menuRef}>
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="p-2 text-primary hover:bg-accent rounded-full transition-colors"
+            >
+              <MoreVertical size={24} />
+            </button>
+
+            {menuOpen && (
+              <div className="absolute right-0 mt-2 w-40 rounded-xl border border-border bg-popover shadow-lg py-1 z-20">
+                {isOwnProfile ? (
+                  <>
+                    <button
+                      onClick={() => {
+                        handleCopyLink();
+                        setMenuOpen(false);
+                      }}
+                      className="w-full px-4 py-2 text-sm text-left hover:bg-muted"
+                    >
+                      Copy link
+                    </button>
+                    <button
+                      onClick={() => router.push("/settings/edit-profile")}
+                      className="w-full px-4 py-2 text-sm text-left hover:bg-muted"
+                    >
+                      Edit profile
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={handleCopyLink}
+                      className="w-full px-4 py-2 text-sm text-left hover:bg-muted"
+                    >
+                      Copy link
+                    </button>
+                    <button
+                      onClick={() => {
+                        setMenuOpen(false);
+                        setIsReportModalOpen(true);
+                      }}
+                      className="w-full px-4 py-2 text-sm text-left text-destructive hover:bg-muted"
+                    >
+                      Report
+                    </button>
+                    <button
+                      onClick={() => {
+                        setMenuOpen(false);
+                        setIsBlockModalOpen(true);
+                      }}
+                      className="w-full px-4 py-2 text-sm text-left text-destructive hover:bg-muted"
+                    >
+                      Block
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+          {!isOwnProfile && (
+            <ReportModal
+              userId={targetId}
+              isOpen={isReportModalOpen}
+              onClose={() => setIsReportModalOpen(false)}
+            />
+          )}
         </div>
       </div>
 
@@ -381,11 +348,7 @@ const ProfilePage = () => {
             <button
               key={tab}
               onClick={() => handleTabChange(tab)}
-              className={`flex items-center gap-2 pb-3 transition-all relative ${
-                activeTab === tab
-                  ? "text-foreground font-black"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
+              className={`flex items-center gap-2 pb-3 transition-all relative ${activeTab === tab ? "text-foreground font-black" : "text-muted-foreground"}`}
             >
               {tab === "posts" ? <LayoutGrid size={16} /> : <Film size={16} />}
               <span className="text-xs font-bold uppercase tracking-wider">
@@ -397,7 +360,6 @@ const ProfilePage = () => {
             </button>
           ))}
         </div>
-
         <div className="grid grid-cols-1 mb-10 gap-2 md:gap-4">
           {activeTab === "posts" ? (
             userPosts.length > 0 ? (
@@ -428,6 +390,23 @@ const ProfilePage = () => {
         </div>
         <div className="mb-10"></div>
       </div>
+      <ConfirmationModal
+        isOpen={isBlockModalOpen}
+        onClose={() => setIsBlockModalOpen(false)}
+        onConfirm={handleBlock}
+        title="Block User"
+        message={
+          <>
+            Are you sure you want to block{" "}
+            <span className="text-primary font-semibold">
+              {profileData?.full_name || profileData?.username}
+            </span>
+            ? You will no longer see their posts or reels.
+          </>
+        }
+        confirmText="Block"
+        loading={blocking}
+      />
     </div>
   );
 };
