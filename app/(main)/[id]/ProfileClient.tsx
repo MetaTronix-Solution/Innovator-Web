@@ -460,6 +460,7 @@ const ProfilePage = () => {
           conversationId={profileData?.conversation_id ?? null}
           token={token}
           onClose={() => setChatOpen(false)}
+          onMinimize={() => setChatOpen(false)}
         />
       )}
     </div>
