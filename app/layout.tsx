@@ -4,6 +4,7 @@ import "./globals.css";
 import Script from "next/script";
 import AppProvider from "@/lib/Provider";
 import { Toaster } from "sonner";
+import FloatingChatManager from "@/components/messages/FloatingChatManager";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -59,6 +60,7 @@ export default function RootLayout({
         <AppProvider>
           {children}
           <Toaster />
+          <FloatingChatManager />
         </AppProvider>
       </body>
     </html>

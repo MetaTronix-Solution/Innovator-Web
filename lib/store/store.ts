@@ -8,11 +8,22 @@ import postsReducer from "./features/postsSlice";
 import reelsReducer from "./features/reelsSlice";
 import productsReducer from "./features/productsSlice";
 import messagesReducer from "./features/messagesSlice";
+import chatUiReducer from "./features/chatUiSlice";
 
 const persistConfig: PersistConfig<any> = {
   key: "root",
   storage,
-  whitelist: ["auth", "theme", "cart"],
+  whitelist: ["auth", "theme", "cart", "chatUi"],
+  version: 1,
+  migrate: (state: any) => {
+    if (state?.chatUi && !Array.isArray(state.chatUi.openChats)) {
+      return Promise.resolve({
+        ...state,
+        chatUi: { openChats: [] },
+      });
+    }
+    return Promise.resolve(state);
+  },
 };
 
 const appReducer = combineReducers({
@@ -23,6 +34,7 @@ const appReducer = combineReducers({
   reels: reelsReducer,
   products: productsReducer,
   messages: messagesReducer,
+  chatUi: chatUiReducer,
 });
 
 const rootReducer = (state: any, action: any) => {

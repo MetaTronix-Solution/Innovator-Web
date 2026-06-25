@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useRef, useCallback, useEffect } from "react";
@@ -43,7 +42,6 @@ function formatBytes(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-// ── Full-screen gallery lightbox ──────────────────────────────────────────────
 function GalleryLightbox({
   items,
   startIndex,
@@ -175,7 +173,6 @@ function GalleryLightbox({
   );
 }
 
-// ── Collage grid for multiple media ──────────────────────────────────────────
 function MediaCollage({
   attachments,
   isMine,
@@ -286,7 +283,6 @@ function MediaCollage({
   );
 }
 
-// ── Single media bubble (backward compat) ────────────────────────────────────
 export function MediaBubble({
   attachment,
   attachments,
@@ -296,7 +292,6 @@ export function MediaBubble({
   attachments?: string[];
   isMine: boolean;
 }) {
-  // Normalise: prefer attachments array, fall back to single attachment
   const all =
     attachments && attachments.length > 0
       ? attachments
@@ -306,7 +301,6 @@ export function MediaBubble({
 
   if (all.length === 0) return null;
 
-  // If all are images/videos → collage
   const allMedia = all.every((s) => {
     const t = getMediaType(s);
     return t === "image" || t === "video";
@@ -316,7 +310,6 @@ export function MediaBubble({
     return <MediaCollage attachments={all} isMine={isMine} />;
   }
 
-  // Mixed or file-only → render each as file bubble
   return (
     <div className="flex flex-col gap-1">
       {all.map((src, i) => (
@@ -413,7 +406,7 @@ function SingleFileBubble({ src, isMine }: { src: string; isMine: boolean }) {
   );
 }
 
-// ── Attachment preview card (before send) ─────────────────────────────────────
+// Attachment preview card (before send)
 function AttachmentPreviewCard({
   preview,
   onRemove,
@@ -424,8 +417,6 @@ function AttachmentPreviewCard({
   return (
     <div className="relative inline-block rounded-xl overflow-hidden border border-border/60 bg-muted/30">
       {preview.mediaType === "image" && (
-        // blob: URLs not supported by next/image — intentional img tag
-        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={preview.objectUrl}
           alt={preview.file.name}
@@ -467,7 +458,6 @@ function AttachmentPreviewCard({
   );
 }
 
-// ── Upload button ─────────────────────────────────────────────────────────────
 interface MediaUploadProps {
   activeChatId: string;
   onSent: (message: any) => void;

@@ -162,7 +162,7 @@ const UserSuggestion = () => {
             </div>
 
             {/* Info */}
-            <div className="flex-1 min-w-0 z-10">
+            <div className="flex-1 min-w-0 z-10 cursor-pointer">
               <h4 className="text-[14.5px] font-semibold text-zinc-900 dark:text-white truncate">
                 {user.full_name || user.username}
               </h4>

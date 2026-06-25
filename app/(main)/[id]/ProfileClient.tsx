@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, notFound } from "next/navigation";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import Image from "next/image";
 import { User, Camera, LayoutGrid, Film, MoreVertical } from "lucide-react";
 import { RootState } from "@/lib/store/store";
@@ -16,12 +16,15 @@ import { updateAvatar } from "@/lib/services/profileService";
 import { toast } from "sonner";
 import ReportModal from "@/components/ReportModal";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
+import FloatingChatBox from "@/components/messages/FloatingChatBox";
+import { openChat } from "@/lib/store/features/chatUiSlice";
 
 const ProfilePage = () => {
   const params = useParams();
   const targetId = params?.id as string;
 
   const { user: currentUser } = useSelector((state: RootState) => state.auth);
+
   const router = useRouter();
 
   const [profileData, setProfileData] = useState<any>(null);
@@ -36,11 +39,28 @@ const ProfilePage = () => {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
   const [blocking, setBlocking] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
+
+  const dispatch = useDispatch();
 
   const menuRef = useRef<HTMLDivElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const isOwnProfile = currentUser?.id?.toString() === targetId;
+
+  useEffect(() => {
+    const getToken = async () => {
+      try {
+        const res = await fetch("/api/auth/token");
+        const data = await res.json();
+        setToken(data.token ?? null);
+      } catch (err) {
+        console.error("Failed to get token:", err);
+      }
+    };
+    getToken();
+  }, []);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -236,11 +256,27 @@ const ProfilePage = () => {
           {!isOwnProfile && (
             <>
               <button
-                onClick={() => router.push(`/messages/${targetId}`)}
+                onClick={() =>
+                  dispatch(
+                    openChat({
+                      id: targetId,
+                      name:
+                        profileData?.full_name ||
+                        profileData?.username ||
+                        "User",
+                      avatar:
+                        profileData?.profile?.avatar ||
+                        profileData?.profile_image ||
+                        null,
+                      conversationId: profileData?.conversation_id ?? null,
+                    }),
+                  )
+                }
                 className="rounded-xl px-6 py-1.5 bg-primary text-primary-foreground hover:scale-105"
               >
                 Message
               </button>
+
               <FollowToggle
                 username=""
                 userId={profileData.id}
@@ -290,6 +326,12 @@ const ProfilePage = () => {
                       className="w-full px-4 py-2 text-sm text-left hover:bg-muted"
                     >
                       Edit profile
+                    </button>
+                    <button
+                      onClick={() => router.push("/resume/${resumeId}")}
+                      className="w-full px-4 py-2 text-sm text-left hover:bg-muted"
+                    >
+                      Make a CV
                     </button>
                   </>
                 ) : (
@@ -407,6 +449,19 @@ const ProfilePage = () => {
         confirmText="Block"
         loading={blocking}
       />
+
+      {chatOpen && (
+        <FloatingChatBox
+          recipientId={targetId}
+          recipientName={profileData?.full_name || profileData?.username}
+          recipientAvatar={
+            profileData?.profile?.avatar || profileData?.profile_image
+          }
+          conversationId={profileData?.conversation_id ?? null}
+          token={token}
+          onClose={() => setChatOpen(false)}
+        />
+      )}
     </div>
   );
 };
