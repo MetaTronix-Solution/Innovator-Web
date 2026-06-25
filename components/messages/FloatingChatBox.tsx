@@ -191,11 +191,7 @@ export default function FloatingChatBox({
     for (const msg of messages) {
       const isMine = String(msg.sender) === String(currentUserId);
       const text = msg.message || msg.text || msg.body || msg.content || "";
-      const atts: string[] = msg.attachments?.length
-        ? msg.attachments
-        : msg.attachment
-          ? [msg.attachment]
-          : [];
+      const atts: string[] = msg.attachment ? [msg.attachment] : [];
       const last = groups[groups.length - 1];
       const sameS = last && String(last.sender) === String(msg.sender);
       const withinWindow =
@@ -210,8 +206,10 @@ export default function FloatingChatBox({
         last.attachments.push(...atts);
         last.created_at = msg.created_at;
       } else {
+        const msgId = msg.id || String(Date.now());
+
         groups.push({
-          id: msg.id || String(Date.now()),
+          id: msgId,
           sender: String(msg.sender),
           isMine,
           attachments: [...atts],
