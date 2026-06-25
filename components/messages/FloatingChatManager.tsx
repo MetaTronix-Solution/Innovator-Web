@@ -7,6 +7,7 @@ import { closeChat } from "@/lib/store/features/chatUiSlice";
 import FloatingChatBox from "./FloatingChatBox";
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { getMediaUrl } from "@/lib/utils/getMediaUrl";
 
 export default function FloatingChatManager() {
   const [mounted, setMounted] = useState(false);
@@ -65,11 +66,8 @@ export default function FloatingChatManager() {
       <div className="flex flex-col-reverse items-center gap-2 pb-3">
         {openChats.map((chat) => {
           const isOpen = openIds.has(chat.id);
-          const avatarSrc = chat.avatar
-            ? chat.avatar.startsWith("http")
-              ? chat.avatar
-              : `${process.env.NEXT_PUBLIC_API_URL || ""}${chat.avatar}`
-            : null;
+          const avatarSrc = chat.avatar ? getMediaUrl(chat.avatar) : null;
+
           const initials = chat.name
             .split(" ")
             .map((w: string) => w[0])
