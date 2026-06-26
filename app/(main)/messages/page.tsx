@@ -3,11 +3,13 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector, useDispatch } from "react-redux";
-import MessagesView, {
-  ActiveChatUser,
-} from "@/components/messages/MessageView";
+import MessagesView from "@/components/messages/MessageView";
 import { RootState } from "@/lib/store/store";
-import { setThreads, setThreadsLoading } from "@/lib/store/features/messagesSlice";
+import {
+  ActiveChatUser,
+  setThreads,
+  setThreadsLoading,
+} from "@/lib/store/features/messagesSlice";
 
 export interface MutualUser {
   id: string;
@@ -20,7 +22,7 @@ export interface MutualUser {
 export default function MessagesPage() {
   const router = useRouter();
   const dispatch = useDispatch();
-  
+
   const { threads } = useSelector((state: RootState) => state.messages);
   const [mutualUsers, setMutualUsers] = useState<MutualUser[]>([]);
   const [token, setToken] = useState<string | null>(null);
@@ -136,12 +138,10 @@ export default function MessagesPage() {
     initializeChatWorkspace();
   }, [currentUserId, dispatch, threads.length]);
 
-  const threadsWithPresence: ActiveChatUser[] = threads.map(
-    (thread) => {
-      const match = mutualUsers.find((u) => String(u.id) === String(thread.id));
-      return match ? { ...thread, active: match.online_status } : thread;
-    },
-  );
+  const threadsWithPresence: ActiveChatUser[] = threads.map((thread) => {
+    const match = mutualUsers.find((u) => String(u.id) === String(thread.id));
+    return match ? { ...thread, active: match.online_status } : thread;
+  });
 
   if (loading) {
     return (
