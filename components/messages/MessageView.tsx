@@ -1,12 +1,17 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  ReactNode,
+} from "react";
 import { useSelector, useDispatch } from "react-redux";
 import Image from "next/image";
 import { getMediaUrl } from "@/lib/utils/getMediaUrl";
 import { useChatBridge } from "@/lib/hooks/useChatBridge";
 import { MutualUser } from "@/app/(main)/messages/page";
-import { useRouter } from "next/navigation";
 import { RootState } from "@/lib/store/store";
 import {
   setActiveChatId,
@@ -46,7 +51,7 @@ export interface ActiveChatUser {
   is_active?: boolean;
   time?: string;
   rawTime?: string;
-  lastMsg?: string;
+  lastMsg?: ReactNode;
   last_message?: string;
   unread?: number;
   avatar?: string | null;
@@ -177,7 +182,6 @@ export default function MessagesView({
   token,
   onClose,
 }: MessagesViewProps) {
-  const router = useRouter();
   const stableToken = typeof token === "string" ? token : null;
 
   const conversations: ActiveChatUser[] = Array.isArray(rawConversations)

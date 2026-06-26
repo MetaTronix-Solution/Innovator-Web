@@ -72,6 +72,12 @@ const ProfilePage = () => {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  const sortByNewest = (arr: any[]) =>
+    [...arr].sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    );
+
   useEffect(() => {
     const loadData = async () => {
       if (!targetId || targetId === "undefined") return;
@@ -83,8 +89,9 @@ const ProfilePage = () => {
           return;
         }
         const userData = await userRes.json();
+        userData.posts = sortByNewest(userData.posts ?? []);
         setProfileData(userData);
-        if (userData?.reels) setUserReels(userData.reels);
+        if (userData?.reels) setUserReels(sortByNewest(userData.reels));
       } catch (err) {
         setIs404(true);
       } finally {
@@ -101,7 +108,8 @@ const ProfilePage = () => {
       const res = await fetch(`/api/reels?user=${targetId}`);
       const data = await res.json();
       if (res.ok) {
-        setUserReels(Array.isArray(data) ? data : (data.results ?? []));
+        const raw = Array.isArray(data) ? data : (data.results ?? []);
+        setUserReels(sortByNewest(raw));
         setReelsFetched(true);
       }
     } catch (err) {

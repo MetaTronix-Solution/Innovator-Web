@@ -1,8 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import Image from "next/image";
-import { X, Minus } from "lucide-react";
+import { X, Minus, Ban, UserRound, ChevronDown } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/lib/store/store";
 import { getMediaUrl } from "@/lib/utils/getMediaUrl";
@@ -16,6 +22,9 @@ import {
 import { cn } from "@/lib/utils";
 import ChatInputForm from "@/components/messages/ChatInputForm";
 import StackedMediaBubble from "@/components/messages/StackedMediaBubble";
+import { useRouter } from "next/navigation";
+import { useBlockUser } from "@/lib/hooks/useBlockUser";
+import { ConfirmationModal } from "../ConfirmationModal";
 
 interface FloatingChatBoxProps {
   recipientId: string;
@@ -27,7 +36,7 @@ interface FloatingChatBoxProps {
   onMinimize: () => void;
 }
 
-export default function FloatingChatBox({
+const FloatingChatBox = React.memo(function FloatingChatBox({
   recipientId,
   recipientName,
   recipientAvatar,
@@ -36,6 +45,7 @@ export default function FloatingChatBox({
   onClose,
   onMinimize,
 }: FloatingChatBoxProps) {
+  const router = useRouter();
   const dispatch = useDispatch();
   const { user: currentUser } = useSelector((state: RootState) => state.auth);
   const { chatHistories, loadingHistory } = useSelector(
@@ -53,12 +63,29 @@ export default function FloatingChatBox({
   const [hasMediaFiles, setHasMediaFiles] = useState(false);
   const mediaSendRef = useRef<(() => Promise<void>) | null>(null);
   const currentUserIdRef = useRef(currentUserId);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
+
+  const menuRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const hasFetched = useRef(false);
+
+  const { blockUser, blocking } = useBlockUser();
 
   useEffect(() => {
     currentUserIdRef.current = currentUserId;
   }, [currentUserId]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [menuOpen]);
 
   const handleIncomingMessage = useCallback(
     (data: any) => {
@@ -168,6 +195,14 @@ export default function FloatingChatBox({
     [dispatch, recipientId, currentUserId],
   );
 
+  const QUICK_REPLIES = [
+    "Hey! How are you? 👋",
+    "Let's catch up soon!",
+    "🌟 Hello!",
+    "What's up?",
+    `Hey ${recipientName}, how's it going?`,
+  ];
+
   const avatarSrc = recipientAvatar ? getMediaUrl(recipientAvatar) : null;
   const initials = recipientName
     .split(" ")
@@ -176,8 +211,7 @@ export default function FloatingChatBox({
     .slice(0, 2)
     .toUpperCase();
 
-  // Merge consecutive attachment-only messages from same sender (within 60s) into one stack
-  const groupedMessages = (() => {
+  const groupedMessages = useMemo(() => {
     const MERGE_WINDOW_MS = 60_000;
     type Group = {
       id: string;
@@ -219,37 +253,76 @@ export default function FloatingChatBox({
       }
     }
     return groups;
-  })();
+  }, [messages, currentUserId]);
 
   return (
     <div className="w-[320px] h-[440px] rounded-2xl shadow-2xl border border-border bg-card flex flex-col overflow-hidden">
       <div className="flex items-center gap-2.5 px-3 py-2.5 bg-card border-b border-border shrink-0">
-        <div className="relative w-8 h-8 rounded-full overflow-hidden bg-muted shrink-0">
-          {avatarSrc ? (
-            <Image
-              src={avatarSrc}
-              alt={recipientName}
-              fill
-              className="object-cover"
-              unoptimized
-            />
-          ) : (
-            <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-muted-foreground">
-              {initials}
-            </span>
-          )}
+        <div className="relative w-8 h-8 shrink-0">
+          <div className="w-8 h-8 rounded-full overflow-hidden bg-muted">
+            {avatarSrc ? (
+              <Image
+                src={avatarSrc}
+                alt={recipientName}
+                fill
+                className="object-cover rounded-full"
+                unoptimized
+              />
+            ) : (
+              <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-muted-foreground">
+                {initials}
+              </span>
+            )}
+          </div>
+
           {isSendReady && (
             <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-500 border-2 border-card" />
           )}
         </div>
 
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold leading-tight truncate">
-            {recipientName}
-          </p>
+        <div className="flex-1 min-w-0 relative" ref={menuRef}>
+          <div className="flex items-center gap-1">
+            <p className="text-sm font-semibold leading-tight truncate">
+              {recipientName}
+            </p>
+            <button
+              onClick={() => setMenuOpen((v) => !v)}
+              className="p-0.5 rounded-full hover:bg-muted transition-colors text-muted-foreground shrink-0"
+            >
+              <ChevronDown
+                className={`w-3.5 h-3.5 transition-transform duration-200 ${menuOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+          </div>
           <p className="text-[10px] text-muted-foreground">
             {isSendReady ? "Active now" : "Connecting…"}
           </p>
+
+          {/* Dropdown */}
+          {menuOpen && (
+            <div className="absolute top-full left-0 mt-1 w-40 bg-popover border border-border rounded-xl shadow-lg py-1 z-50">
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  router.push(`/${recipientId}`);
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-muted transition-colors text-foreground"
+              >
+                <UserRound className="w-3.5 h-3.5" />
+                View Profile
+              </button>
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  setIsBlockModalOpen(true);
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-muted transition-colors text-destructive"
+              >
+                <Ban className="w-3.5 h-3.5" />
+                Block
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-1">
@@ -270,8 +343,14 @@ export default function FloatingChatBox({
         </div>
       </div>
 
-      {/* ── Messages ── */}
-      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2 scrollbar-thin scrollbar-thumb-border bg-background/50">
+      <div
+        className="flex-1 overflow-y-auto px-3 py-3 space-y-2 bg-background/50
+  [&::-webkit-scrollbar]:w-1.5
+  [&::-webkit-scrollbar-track]:bg-transparent
+  [&::-webkit-scrollbar-thumb]:bg-border
+  [&::-webkit-scrollbar-thumb]:rounded-full
+  [&::-webkit-scrollbar-thumb:hover]:bg-muted-foreground/40"
+      >
         {loading ? (
           <div className="flex h-full items-center justify-center">
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -298,6 +377,17 @@ export default function FloatingChatBox({
               </span>
               !
             </p>
+            <div className="flex flex-wrap justify-center gap-1.5 mt-1">
+              {QUICK_REPLIES.map((reply) => (
+                <button
+                  key={reply}
+                  onClick={() => setTypeMessage(reply)}
+                  className="text-xs px-3 py-2 rounded-xl border border-border bg-muted/40 hover:bg-muted text-foreground transition-colors whitespace-nowrap"
+                >
+                  {reply}
+                </button>
+              ))}
+            </div>
           </div>
         ) : (
           groupedMessages.map((group) => (
@@ -309,12 +399,14 @@ export default function FloatingChatBox({
               )}
             >
               {!group.isMine && (
-                <div className="w-6 h-6 rounded-full overflow-hidden bg-muted shrink-0 flex items-center justify-center text-[9px] font-bold text-muted-foreground">
+                <div className="relative w-6 h-6 rounded-full overflow-hidden bg-muted shrink-0 flex items-center justify-center text-[9px] font-bold text-muted-foreground">
                   {avatarSrc ? (
-                    <img
+                    <Image
                       src={avatarSrc}
                       alt=""
-                      className="w-full h-full object-cover"
+                      fill
+                      className="object-cover rounded-full"
+                      unoptimized
                     />
                   ) : (
                     initials[0]
@@ -360,7 +452,31 @@ export default function FloatingChatBox({
         chatPartnerName={recipientName}
         onSubmit={handleSubmit}
         onSentMedia={handleSentMedia}
+        isFloating={true}
+      />
+
+      <ConfirmationModal
+        isOpen={isBlockModalOpen}
+        onClose={() => setIsBlockModalOpen(false)}
+        onConfirm={() =>
+          blockUser(recipientId, () => {
+            setIsBlockModalOpen(false);
+            onClose();
+          })
+        }
+        title="Block User"
+        message={
+          <>
+            Are you sure you want to block{" "}
+            <span className="text-primary font-semibold">{recipientName}</span>?
+            You will no longer see their messages.
+          </>
+        }
+        confirmText="Block"
+        loading={blocking}
       />
     </div>
   );
-}
+});
+
+export default FloatingChatBox;

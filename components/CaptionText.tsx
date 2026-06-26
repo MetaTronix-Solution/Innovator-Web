@@ -23,10 +23,10 @@ export default function CaptionText({ caption, className }: Props) {
           return (
             <button
               key={i}
-              onClick={(e) => {
-                e.stopPropagation();
-                router.push(`/search?q=${encodeURIComponent(seg.value)}`);
-              }}
+              // onClick={(e) => {
+              //   e.stopPropagation();
+              //   router.push(`/search?q=${encodeURIComponent(seg.value)}`);
+              // }}
               className="text-primary font-semibold hover:underline underline-offset-2"
             >
               {seg.value}

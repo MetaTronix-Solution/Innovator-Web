@@ -16,6 +16,7 @@ interface ChatInputFormProps {
   chatPartnerName: string;
   onSubmit: (e: React.FormEvent) => void;
   onSentMedia: (newMsg: any) => void;
+  isFloating?: boolean;
 }
 
 export default function ChatInputForm({
@@ -30,6 +31,7 @@ export default function ChatInputForm({
   chatPartnerName,
   onSubmit,
   onSentMedia,
+  isFloating = false,
 }: ChatInputFormProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -74,19 +76,34 @@ export default function ChatInputForm({
           >
             <Smile size={16} />
           </button>
+          {isFloating && (
+            <button
+              type="submit"
+              disabled={
+                (!typeMessage.trim() && !hasMediaFiles) ||
+                loading ||
+                (!!activeChatId && !isSendReady)
+              }
+              className="w-7 h-7 rounded-full bg-orange-600 text-white flex items-center justify-center hover:bg-orange-500 disabled:opacity-30 transition-all active:scale-95 shrink-0"
+            >
+              <Send size={13} />
+            </button>
+          )}
         </div>
 
-        <button
-          type="submit"
-          disabled={
-            (!typeMessage.trim() && !hasMediaFiles) ||
-            loading ||
-            (!!activeChatId && !isSendReady)
-          }
-          className="w-9 h-9 rounded-full bg-orange-600 text-white flex items-center justify-center hover:bg-orange-500 disabled:opacity-30 transition-all active:scale-95 shrink-0"
-        >
-          <Send size={14} />
-        </button>
+        {!isFloating && (
+          <button
+            type="submit"
+            disabled={
+              (!typeMessage.trim() && !hasMediaFiles) ||
+              loading ||
+              (!!activeChatId && !isSendReady)
+            }
+            className="w-9 h-9 rounded-full bg-orange-600 text-white flex items-center justify-center hover:bg-orange-500 disabled:opacity-30 transition-all active:scale-95 shrink-0"
+          >
+            <Send size={14} />
+          </button>
+        )}
       </form>
     </div>
   );

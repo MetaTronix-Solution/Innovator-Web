@@ -28,11 +28,9 @@ function AuthHydrator({ children }: { children: React.ReactNode }) {
   const hydratedRef = useRef(false);
 
   useEffect(() => {
-    // Crucial: Wait for Auth status to resolve before deciding to clear credentials
     if (status === "loading" || hydratedRef.current) return;
 
     const rehydrate = async () => {
-      // 1. Check for quick-login flag
       if (
         typeof window !== "undefined" &&
         sessionStorage.getItem("just_logged_in") === "true"
@@ -42,7 +40,6 @@ function AuthHydrator({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // 2. Try fetching current user
       try {
         const res = await fetch("/api/auth/me");
         if (res.ok) {
@@ -55,7 +52,6 @@ function AuthHydrator({ children }: { children: React.ReactNode }) {
         console.error("AuthHydrator: Failed to fetch profile from API", err);
       }
 
-      // 3. If API failed, try to sync session with server-side cookie
       if (status === "authenticated" && session?.accessToken) {
         try {
           const cookieRes = await fetch("/api/auth/set-cookie", {
@@ -87,7 +83,6 @@ function AuthHydrator({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // 4. Final fallback: If unauthenticated, clear credentials
       dispatch(clearCredentials());
       hydratedRef.current = true;
     };
@@ -104,11 +99,7 @@ function AppProvider({ children }: { children: React.ReactNode }) {
       <Provider store={store}>
         {/* <PersistGate loading={null} persistor={persistor}> */}
         <PersistGate
-          loading={
-            <div className="h-screen w-full flex items-center justify-center">
-              Loading...
-            </div>
-          }
+          loading={null}
           onBeforeLift={() =>
             new Promise((resolve) => setTimeout(resolve, 100))
           }

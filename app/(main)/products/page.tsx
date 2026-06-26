@@ -339,7 +339,7 @@ export default function EcommercePage() {
 
       <div ref={sentinelRef} className="h-1" />
 
-      <div className="fixed bottom-20 md:bottom-8 right-8 z-40">
+      <div className="fixed bottom-20 md:bottom-8 right-8 md:right-24 z-40">
         <button
           onClick={() => router.push("/my-cart")}
           className={`bg-primary text-white rounded-full shadow-lg hover:scale-105 transition-all flex items-center justify-center ${
