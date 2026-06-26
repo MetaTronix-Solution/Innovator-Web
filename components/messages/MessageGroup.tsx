@@ -1,9 +1,9 @@
 "use client";
 
 import React from "react";
-import { ChatMessage } from "./MessageView";
 import { Avatar } from "./MessageView";
 import { MediaBubble } from "./MediaUploadButton";
+import { ChatMessage } from "@/lib/store/features/messagesSlice";
 
 interface MessageGroupProps {
   group: {
@@ -36,8 +36,7 @@ export default function MessageGroup({
   const firstMsg = group.messages[0];
   const lastMsg = group.messages[group.messages.length - 1];
   const senderName =
-    firstMsg.sender_full_name ||
-    (group.isMine ? "You" : currentChatName);
+    firstMsg.sender_full_name || (group.isMine ? "You" : currentChatName);
   const senderAvatarSrc = group.isMine
     ? currentUserAvatar
     : firstMsg.sender_avatar || currentChatAvatar;
@@ -72,11 +71,7 @@ export default function MessageGroup({
           while (i < group.messages.length) {
             const msg = group.messages[i];
             const textBody =
-              msg.message ||
-              msg.text ||
-              msg.body ||
-              msg.content ||
-              "";
+              msg.message || msg.text || msg.body || msg.content || "";
 
             if (msg.attachment && !textBody.trim()) {
               const attachmentBatch: string[] = [];

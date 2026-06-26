@@ -9,9 +9,9 @@ import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import Image from "next/image";
 import { getMediaUrl } from "@/lib/utils/getMediaUrl";
 import { MessageCircle, Search, X } from "lucide-react";
-import { ActiveChatUser } from "./MessageView";
 import { cn } from "@/lib/utils";
 import useDebounce from "@/lib/hooks/useDebounce";
+import { ActiveChatUser } from "@/lib/store/features/messagesSlice";
 
 const getLastMsgPreview = (msg: any, currentUserId: string): string => {
   const isMine = String(msg.sender) === currentUserId;

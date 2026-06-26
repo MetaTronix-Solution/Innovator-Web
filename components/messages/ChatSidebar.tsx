@@ -8,9 +8,9 @@ import {
   Trash2,
   Loader2,
 } from "lucide-react";
-import { ActiveChatUser } from "./MessageView";
 import { MutualUser } from "@/app/(main)/messages/page";
 import { Avatar } from "./MessageView";
+import { ActiveChatUser } from "@/lib/store/features/messagesSlice";
 
 interface ChatSidebarProps {
   conversations: ActiveChatUser[];

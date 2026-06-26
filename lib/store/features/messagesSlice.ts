@@ -113,7 +113,6 @@ const messagesSlice = createSlice({
     ) => {
       const { chatId, message, currentUserId } = action.payload;
 
-      // 1. Add to message history
       if (!state.chatHistories[chatId]) {
         state.chatHistories[chatId] = [];
       }
@@ -130,7 +129,6 @@ const messagesSlice = createSlice({
         );
       }
 
-      // 2. Update thread list
       const isMeSender = String(message.sender) === String(currentUserId);
       const msgText =
         message.message ||
@@ -150,18 +148,15 @@ const messagesSlice = createSlice({
         thread.time = msgTimeStr;
         thread.rawTime = message.created_at;
 
-        // Increment unread count if received from someone else and it's not the active conversation
         if (!isMeSender && String(state.activeChatId) !== String(chatId)) {
           thread.unread = (thread.unread ?? 0) + 1;
         } else if (String(state.activeChatId) === String(chatId)) {
           thread.unread = 0;
         }
 
-        // Move thread to top of list
         const [movedThread] = state.threads.splice(threadIndex, 1);
         state.threads.unshift(movedThread);
       } else {
-        // Construct brand new thread node if it doesn't exist
         const newThread: ActiveChatUser = {
           id: chatId,
           conversation_id: message.attachment || "", // temporary field or placeholder

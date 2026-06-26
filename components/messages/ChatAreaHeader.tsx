@@ -2,8 +2,8 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { X, Clock, MoreVertical, Check } from "lucide-react";
-import { ActiveChatUser } from "./MessageView";
 import { Avatar } from "./MessageView";
+import { ActiveChatUser } from "@/lib/store/features/messagesSlice";
 
 interface ChatAreaHeaderProps {
   currentChat: ActiveChatUser;
