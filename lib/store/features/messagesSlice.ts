@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { ReactNode } from "react";
 
 export interface ChatMessage {
   id: string;
@@ -24,7 +25,7 @@ export interface ActiveChatUser {
   is_active?: boolean;
   time?: string;
   rawTime?: string;
-  lastMsg?: string;
+  lastMsg?: ReactNode;
   last_message?: string;
   unread?: number;
   avatar?: string | null;
@@ -116,16 +117,27 @@ const messagesSlice = createSlice({
       if (!state.chatHistories[chatId]) {
         state.chatHistories[chatId] = [];
       }
-      const existing = state.chatHistories[chatId].find((m) => m.id === message.id);
+      const existing = state.chatHistories[chatId].find(
+        (m) => m.id === message.id,
+      );
       if (!existing) {
-        state.chatHistories[chatId] = [...state.chatHistories[chatId], message].sort(
-          (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+        state.chatHistories[chatId] = [
+          ...state.chatHistories[chatId],
+          message,
+        ].sort(
+          (a, b) =>
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
         );
       }
 
       // 2. Update thread list
       const isMeSender = String(message.sender) === String(currentUserId);
-      const msgText = message.message || message.text || message.body || message.content || "";
+      const msgText =
+        message.message ||
+        message.text ||
+        message.body ||
+        message.content ||
+        "";
       const msgTimeStr = formatMessageTime(message.created_at);
 
       let threadIndex = state.threads.findIndex(
@@ -165,7 +177,10 @@ const messagesSlice = createSlice({
           lastMsg: msgText,
           time: msgTimeStr,
           rawTime: message.created_at,
-          unread: !isMeSender && String(state.activeChatId) !== String(chatId) ? 1 : 0,
+          unread:
+            !isMeSender && String(state.activeChatId) !== String(chatId)
+              ? 1
+              : 0,
         };
         state.threads.unshift(newThread);
       }

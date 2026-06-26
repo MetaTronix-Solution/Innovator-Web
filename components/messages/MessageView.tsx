@@ -20,43 +20,14 @@ import {
   setHistoryLoading,
   markThreadAsRead,
   deleteThread,
+  ActiveChatUser,
+  ChatMessage,
 } from "@/lib/store/features/messagesSlice";
 
 import ChatSidebar from "./ChatSidebar";
 import ChatAreaHeader from "./ChatAreaHeader";
 import MessageGroup from "./MessageGroup";
 import ChatInputForm from "./ChatInputForm";
-
-export interface ChatMessage {
-  id: string;
-  sender: string | number;
-  sender_username?: string;
-  sender_full_name?: string;
-  sender_avatar?: string | null;
-  message?: string;
-  text?: string;
-  body?: string;
-  content?: string;
-  attachment?: string | null;
-  created_at: string;
-}
-
-export interface ActiveChatUser {
-  id: string;
-  conversation_id?: string;
-  name?: string;
-  username?: string;
-  full_name?: string;
-  active?: boolean;
-  is_active?: boolean;
-  time?: string;
-  rawTime?: string;
-  lastMsg?: ReactNode;
-  last_message?: string;
-  unread?: number;
-  avatar?: string | null;
-  profile_picture?: string | null;
-}
 
 interface MessagesViewProps {
   conversations: ActiveChatUser[];
