@@ -22,7 +22,6 @@ export default function MainLayout({
   const pathname = usePathname();
 
   const hasRedirected = useRef(false);
-  const isMessagesPage = pathname === "/messages";
   const scrollPositions = useRef<Record<string, number>>({});
 
   useEffect(() => {

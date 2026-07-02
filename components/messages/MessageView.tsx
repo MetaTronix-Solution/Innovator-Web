@@ -5,7 +5,7 @@ import { useSelector, useDispatch } from "react-redux";
 import Image from "next/image";
 import { getMediaUrl } from "@/lib/utils/getMediaUrl";
 import { useChatBridge } from "@/lib/hooks/useChatBridge";
-import { MutualUser } from "@/app/(main)/messages/page";
+import { MutualUser } from "@/app/(main)/messages/layout";
 import { RootState } from "@/lib/store/store";
 import {
   setActiveChatId,

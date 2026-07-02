@@ -8,7 +8,7 @@ import {
   Trash2,
   Loader2,
 } from "lucide-react";
-import { MutualUser } from "@/app/(main)/messages/page";
+import { MutualUser } from "@/app/(main)/messages/layout";
 import { Avatar } from "./MessageView";
 import { ActiveChatUser } from "@/lib/store/features/messagesSlice";
 
