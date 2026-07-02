@@ -22,11 +22,14 @@ import ChatSidebar from "./ChatSidebar";
 import ChatAreaHeader from "./ChatAreaHeader";
 import MessageGroup from "./MessageGroup";
 import ChatInputForm from "./ChatInputForm";
+import { setChatDeletionPreference } from "@/lib/services/chatPreferences";
+import { useRouter } from "next/navigation";
 
 interface MessagesViewProps {
   conversations: ActiveChatUser[];
   mutualUsers: MutualUser[];
   token: string | null;
+  urlUserId: string | null;
   onClose: () => void;
 }
 
@@ -145,8 +148,10 @@ export default function MessagesView({
   conversations: rawConversations = [],
   mutualUsers = [],
   token,
+  urlUserId,
   onClose,
 }: MessagesViewProps) {
+  const router = useRouter();
   const stableToken = typeof token === "string" ? token : null;
 
   const conversations: ActiveChatUser[] = Array.isArray(rawConversations)
@@ -168,6 +173,12 @@ export default function MessagesView({
   const { activeChatId, chatHistories, loadingHistory } = useSelector(
     (state: RootState) => state.messages,
   );
+
+  useEffect(() => {
+    if (urlUserId !== activeChatId) {
+      dispatch(setActiveChatId(urlUserId));
+    }
+  }, [urlUserId, dispatch]);
 
   const messages = activeChatId ? chatHistories[activeChatId] || [] : [];
   const loading = activeChatId ? loadingHistory[activeChatId] || false : false;
@@ -229,14 +240,14 @@ export default function MessagesView({
         setTempChat({ id: userId, ...meta });
       }
       markAsRead(userId);
-      dispatch(setActiveChatId(userId));
+      router.push(`/messages/${userId}`);
     },
     [conversations, tempChat, markAsRead, dispatch],
   );
 
   const handleCloseChat = useCallback(() => {
-    dispatch(setActiveChatId(null));
     setTempChat(null);
+    router.push("/messages");
   }, [dispatch]);
 
   const handleIncomingMessage = useCallback(
@@ -377,6 +388,23 @@ export default function MessagesView({
     }
   };
 
+  const handleToggleAutoDelete = async () => {
+    if (!currentChat?.id) return;
+
+    const newValue = !autoDelete24h;
+    setAutoDelete24h(newValue);
+
+    try {
+      await setChatDeletionPreference(
+        currentChat.id,
+        newValue ? "24_hours" : "never",
+      );
+    } catch (err) {
+      console.error("Failed to update deletion preference:", err);
+      setAutoDelete24h(!newValue);
+    }
+  };
+
   const handleSentMedia = useCallback(
     (newMsg: any) => {
       dispatch(
@@ -412,8 +440,8 @@ export default function MessagesView({
     <div
       className={`flex w-full bg-background font-sans antialiased overflow-hidden ${
         activeChatId
-          ? "h-[calc(100dvh-72px)] md:h-[calc(100vh-80px)]"
-          : "h-[calc(100dvh-64px)] md:h-[calc(100vh-72px)]"
+          ? "h-[calc(100dvh-8px)] md:h-[calc(100vh-80px)]"
+          : "h-[calc(100dvh-8px)] md:h-[calc(100vh-72px)]"
       }`}
     >
       {/* Sidebar */}
@@ -448,7 +476,7 @@ export default function MessagesView({
                 getChatActiveStatus(currentChat),
               )}
               autoDelete24h={autoDelete24h}
-              onToggleAutoDelete={() => setAutoDelete24h((v) => !v)}
+              onToggleAutoDelete={handleToggleAutoDelete}
               onCloseChat={handleCloseChat}
             />
             <div

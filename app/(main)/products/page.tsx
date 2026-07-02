@@ -71,9 +71,11 @@ export default function EcommercePage() {
   useEffect(() => {
     hasMoreRef.current = hasMore;
   }, [hasMore]);
+
   useEffect(() => {
     loadingMoreRef.current = loadingMore;
   }, [loadingMore]);
+
   useEffect(() => {
     pageRef.current = page;
   }, [page]);

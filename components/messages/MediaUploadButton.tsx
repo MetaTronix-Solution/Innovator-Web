@@ -406,7 +406,6 @@ function SingleFileBubble({ src, isMine }: { src: string; isMine: boolean }) {
   );
 }
 
-// Attachment preview card (before send)
 function AttachmentPreviewCard({
   preview,
   onRemove,

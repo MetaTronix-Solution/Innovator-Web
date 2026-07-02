@@ -40,7 +40,6 @@ export default function ChatAreaHeader({
 
   return (
     <div className="px-2 h-[60px] border-b border-border/60 flex items-center gap-3 shrink-0 bg-background relative">
-      {/* Back button - mobile only */}
       <button
         onClick={onCloseChat}
         className="md:hidden w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted/50 text-muted-foreground transition-colors"

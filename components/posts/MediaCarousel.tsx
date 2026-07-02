@@ -58,7 +58,7 @@ const MediaCarousel = memo(
       return (
         <div
           className="w-full bg-muted/20 border-y border-border/40 cursor-pointer"
-          onClick={() => openModal(0)} // ✅ uncomment this
+          onClick={() => openModal(0)}
         >
           <div className="relative w-full h-[400px]">
             <Image
@@ -84,7 +84,7 @@ const MediaCarousel = memo(
                   e.stopPropagation();
                   closeModal();
                 }}
-                className="absolute top-6 left-6 z-[1000] p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors"
+                className="absolute top-6 right-6 z-[1000] p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors"
               >
                 <X size={24} />
               </button>
@@ -143,12 +143,12 @@ const MediaCarousel = memo(
 
             <button
               onClick={closeModal}
-              className="absolute top-6 left-6 z-[1000] p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors"
+              className="absolute top-6 right-6 z-[1000] p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors"
             >
               <X size={24} />
             </button>
 
-            <div className="absolute top-7 right-7 z-[1000] text-white/80 font-mono text-sm">
+            <div className="absolute top-7 left-7 z-[1000] text-white/80 font-mono text-sm">
               {currentIndex + 1} / {media.length}
             </div>
 

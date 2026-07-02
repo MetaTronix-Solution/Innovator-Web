@@ -13,6 +13,13 @@ export interface ChatMessage {
   content?: string;
   attachment?: string | null;
   created_at: string;
+  parent?: string | null;
+  replied_to_details?: {
+    id: string;
+    message: string;
+    sender_username: string;
+    has_attachment: boolean;
+  } | null;
 }
 
 export interface ActiveChatUser {
@@ -201,6 +208,26 @@ const messagesSlice = createSlice({
     },
 
     resetMessages: () => initialState,
+
+    deleteMessageLocally: (
+      state,
+      action: PayloadAction<{ chatId: string; messageId: string | number }>,
+    ) => {
+      const { chatId, messageId } = action.payload;
+      if (!state.chatHistories[chatId]) return;
+      state.chatHistories[chatId] = state.chatHistories[chatId].filter(
+        (msg) => String(msg.id) !== String(messageId),
+      );
+    },
+
+    updateMessageId: (state, action) => {
+      const { chatId, tempId, realId } = action.payload;
+      const history = state.chatHistories[chatId];
+      const msg = history.find((m) => m.id === tempId);
+      if (msg) {
+        msg.id = realId;
+      }
+    },
   },
 });
 
@@ -214,6 +241,8 @@ export const {
   markThreadAsRead,
   deleteThread,
   resetMessages,
+  deleteMessageLocally,
+  updateMessageId,
 } = messagesSlice.actions;
 
 export default messagesSlice.reducer;

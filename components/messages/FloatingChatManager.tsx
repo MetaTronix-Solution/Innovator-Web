@@ -196,6 +196,20 @@ export default function FloatingChatManager() {
     setShowList(false);
     setSearch("");
     setSearchResults([]);
+
+    if (thread.unread ?? 0 > 0) {
+      setThreads((prev) =>
+        prev.map((t) => (t.id === thread.id ? { ...t, unread: 0 } : t)),
+      );
+
+      const formData = new FormData();
+      formData.append("sender_id", thread.id);
+
+      fetch("/api/chats/mark-as-read/", {
+        method: "POST",
+        body: formData,
+      }).catch(() => {});
+    }
   };
 
   const visibleChats = useMemo(
@@ -252,7 +266,7 @@ export default function FloatingChatManager() {
       )
     : mergedWithPresence;
 
-  if (!mounted) return null;
+  if (!mounted || !currentUserId) return null;
 
   return createPortal(
     <div className="hidden fixed bottom-0 right-4 z-50 md:flex items-end gap-3">

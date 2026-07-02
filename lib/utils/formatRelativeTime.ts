@@ -17,3 +17,22 @@ export function formatRelativeTime(dateString: string): string {
     year: "numeric",
   });
 }
+
+export function formatDateSeparator(dateString: string): string {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+
+  if (date.toDateString() === today.toDateString()) return "Today";
+  if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
+
+  const isSameYear = date.getFullYear() === today.getFullYear();
+
+  return date.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: isSameYear ? undefined : "numeric",
+  });
+}

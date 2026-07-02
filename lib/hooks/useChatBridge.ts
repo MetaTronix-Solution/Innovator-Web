@@ -16,8 +16,14 @@ export const useChatBridge = (
   onMessage: (data: any) => void,
 ) => {
   const [isSendReady, setIsSendReady] = useState(false);
+  const [isReceiveReady, setIsReceiveReady] = useState(false);
   const sendWs = useRef<WebSocket | null>(null);
   const receiveWs = useRef<WebSocket | null>(null);
+
+  const onMessageRef = useRef(onMessage);
+  useEffect(() => {
+    onMessageRef.current = onMessage;
+  }, [onMessage]);
 
   useEffect(() => {
     if (!receiveRoomId || !sendRoomId || !receiverToken || !senderToken) return;
@@ -27,16 +33,16 @@ export const useChatBridge = (
     const rWs = new WebSocket(
       `${WS_BASE}/ws/chat/${receiveRoomId}/?token=${receiverToken}`,
     );
-
+    rWs.onopen = () => setIsReceiveReady(true);
+    rWs.onclose = () => setIsReceiveReady(false);
     rWs.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        onMessage(data);
+        onMessageRef.current(data);
       } catch (e) {
         console.error("WS Parse Error:", e);
       }
     };
-
     receiveWs.current = rWs;
 
     const sWs = new WebSocket(
@@ -44,6 +50,15 @@ export const useChatBridge = (
     );
     sWs.onopen = () => setIsSendReady(true);
     sWs.onclose = () => setIsSendReady(false);
+    sWs.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        console.log("Received on sWs (sender socket):", data);
+        onMessageRef.current(data);
+      } catch (e) {
+        console.error("WS Parse Error (sWs):", e);
+      }
+    };
     sendWs.current = sWs;
 
     return () => {
@@ -58,5 +73,11 @@ export const useChatBridge = (
     }
   };
 
-  return { sendMessage, isSendReady };
+  const markAsRead = () => {
+    if (receiveWs.current?.readyState === WebSocket.OPEN) {
+      receiveWs.current.send(JSON.stringify({ type: "mark_as_read" }));
+    }
+  };
+
+  return { sendMessage, markAsRead, isSendReady, isReceiveReady };
 };

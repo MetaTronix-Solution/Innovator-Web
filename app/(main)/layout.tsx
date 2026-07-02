@@ -106,7 +106,7 @@ export default function MainLayout({
             <LeftSidebar />
           </aside>
 
-          <main className={`w-full min-w-0 md:px-4 max-w-[680px] md:pb-20`}>
+          <main className={`w-full min-w-0 md:px-4 max-w-[680px]`}>
             {children}
           </main>
 

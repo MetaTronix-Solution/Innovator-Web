@@ -11,18 +11,15 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json();
 
-  const formData = new FormData();
-  formData.append("sender_id", body.sender_id);
-
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/chats/mark-as-read/`,
+    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/chat-preferences/`,
     {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: formData,
+      body: JSON.stringify(body),
     },
   );
 
